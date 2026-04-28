@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celestial Calculator & Gyro Error</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Astronomy Engine library -->
+    <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+    <style>
+        body {
+            background-color: #0f172a; /* Slate 900 */
+            color: #f8fafc; /* Slate 50 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .compass-bg {
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 70%);
+        }
+        /* Hide arrows on number input for clean look, but keep them accessible on hover/focus */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button {  
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="max-w-4xl w-full">
+        <!-- Header -->
+        <header class="mb-8 text-center border-b border-slate-700 pb-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-400 mb-2">Celestial Calculator</h1>
+            <p class="text-slate-400 text-sm md:text-base">Altitude, Azimuth & Gyro Compass Error</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Input Panel -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-400 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Observation Parameters
+                </h2>
+
+                <div class="space-y-4">
+                    <!-- Location (DDM Format) -->
+                    <div class="space-y-3">
+                        <!-- Latitude -->
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Latitude (DDM)</label>
+                            <div class="flex space-x-2 items-center">
+                                <input type="number" id="latDeg" min="0" max="90" step="1" placeholder="Deg" class="w-20 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 text-center">
+                                <span class="text-slate-400">°</span>
+                                <input type="number" id="latMin" min="0" max="59.99" step="0.1" placeholder="Min" class="w-24 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 text-center">
+                                <span class="text-slate-400">'</span>
+                                <select id="latDir" class="flex-1 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500">
+                                    <option value="1">N</option>
+                                    <option value="-1">S</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Longitude -->
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Longitude (DDM)</label>
+                            <div class="flex space-x-2 items-center">
+                                <input type="number" id="lonDeg" min="0" max="180" step="1" placeholder="Deg" class="w-20 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 text-center">
+                                <span class="text-slate-400">°</span>
+                                <input type="number" id="lonMin" min="0" max="59.99" step="0.1" placeholder="Min" class="w-24 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 text-center">
+                                <span class="text-slate-400">'</span>
+                                <select id="lonDir" class="flex-1 bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500">
+                                    <option value="1">E</option>
+                                    <option value="-1">W</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="btnLocation" class="w-full bg-slate-700 hover:bg-slate-600 text-sm py-2 rounded transition text-blue-300">
+                        📍 Use Current GPS
+                    </button>
+
+                    <!-- Time -->
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Local Date</label>
+                            <input type="date" id="dateInput" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 text-sm cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Local Time</label>
+                            <input type="time" id="timeInput" step="1" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 text-sm cursor-pointer">
+                        </div>
+                    </div>
+                    <button id="btnNow" class="w-full bg-slate-700 hover:bg-slate-600 text-sm py-2 rounded transition text-blue-300">
+                        ⌚ Set Time to Now
+                    </button>
+
+                    <!-- Celestial Body -->
+                    <div class="pt-2">
+                        <label class="block text-xs text-slate-400 mb-1">Celestial Body</label>
+                        <select id="bodySelect" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 cursor-pointer">
+                            <optgroup label="Solar System">
+                                <option value="Sun">☀️ Sun</option>
+                                <option value="Moon">🌙 Moon</option>
+                                <option value="Venus">⭐ Venus</option>
+                                <option value="Mars">🔴 Mars</option>
+                                <option value="Jupiter">🪐 Jupiter</option>
+                                <option value="Saturn">🪐 Saturn</option>
+                            </optgroup>
+                            <optgroup label="Major Navigational Stars">
+                                <option value="CATALOG_Sirius">✨ Sirius</option>
+                                <option value="CATALOG_Canopus">✨ Canopus</option>
+                                <option value="CATALOG_Arcturus">✨ Arcturus</option>
+                                <option value="CATALOG_Vega">✨ Vega</option>
+                                <option value="CATALOG_Capella">✨ Capella</option>
+                                <option value="CATALOG_Rigel">✨ Rigel</option>
+                                <option value="CATALOG_Procyon">✨ Procyon</option>
+                                <option value="CATALOG_Betelgeuse">✨ Betelgeuse</option>
+                                <option value="CATALOG_Polaris">✨ Polaris (North Star)</option>
+                            </optgroup>
+                            <optgroup label="Messier Objects (Deep Sky)">
+                                <option value="CATALOG_M31">🌌 M31 (Andromeda Galaxy)</option>
+                                <option value="CATALOG_M42">🌌 M42 (Orion Nebula)</option>
+                                <option value="CATALOG_M45">🌌 M45 (Pleiades)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <button id="btnCalculate" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg mt-4 shadow-lg transition">
+                        CALCULATE
+                    </button>
+                </div>
+            </div>
+
+            <!-- Result Panel -->
+            <div class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 relative overflow-hidden compass-bg flex flex-col justify-between">
+                <h2 class="text-xl font-semibold mb-6 text-amber-400 flex items-center relative z-10">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                    Calculation Results
+                </h2>
+
+                <div class="space-y-4 relative z-10">
+                    <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">True Altitude (Ho)</p>
+                        <p class="text-4xl font-mono text-white" id="outAltitude">--° --' --"</p>
+                        <p class="text-sm mt-1" id="altStatus"></p>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">True Azimuth (Zn)</p>
+                        <p class="text-4xl font-mono text-blue-300" id="outAzimuth">--° --' --"</p>
+                        <p class="text-sm text-slate-400 mt-1">Calculated from True North (000°)</p>
+                    </div>
+
+                    <!-- Gyro Error Section -->
+                    <div class="bg-slate-700/80 p-4 rounded-lg border border-amber-600/50 mt-4 shadow-inner">
+                        <h3 class="text-sm font-semibold text-amber-400 mb-3 uppercase tracking-wider">Gyro Compass Error</h3>
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="w-1/2">
+                                <label class="block text-xs text-slate-300 mb-1">Gyro Bearing (GB) °</label>
+                                <input type="number" id="gyroInput" step="0.1" placeholder="e.g. 045.5" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white focus:outline-none focus:border-amber-500 font-mono text-lg">
+                            </div>
+                            <div class="w-1/2 text-right">
+                                <p class="text-xs text-slate-300 mb-1 uppercase">Error</p>
+                                <p class="text-3xl font-mono font-bold text-slate-500" id="outGyroError">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compass Decoration -->
+                <div class="absolute right-[-20%] bottom-[-10%] opacity-10 pointer-events-none">
+                    <svg width="300" height="300" viewBox="0 0 100 100" class="animate-[spin_60s_linear_infinite]">
+                        <circle cx="50" cy="50" r="48" stroke="white" stroke-width="1" fill="none"/>
+                        <path d="M50 5 L55 45 L95 50 L55 55 L50 95 L45 55 L5 50 L45 45 Z" fill="white"/>
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+        
+        <footer class="mt-8 text-center text-slate-500 text-xs">
+            Calculations account for standard atmospheric refraction and J2000 Epoch.<br>
+            Powered by Astronomy Engine. Custom Star/Messier catalog based on J2000 coordinates.
+        </footer>
+    </div>
+
+    <script>
+        // Global variable to store true azimuth for Gyro Error calculation
+        window.currentTrueAzimuth = undefined;
+
+        // Static Catalog for Fixed Stars and Messier Objects (J2000 Epoch)
+        // RA in hours, Dec in degrees
+        const celestialCatalog = {
+            "Sirius": { ra: 6.7525, dec: -16.7161 },
+            "Canopus": { ra: 6.3992, dec: -52.6957 },
+            "Arcturus": { ra: 14.2610, dec: 19.1822 },
+            "Vega": { ra: 18.6156, dec: 38.7836 },
+            "Capella": { ra: 5.2781, dec: 45.9980 },
+            "Rigel": { ra: 5.2423, dec: -8.2016 },
+            "Procyon": { ra: 7.6551, dec: 5.2242 },
+            "Polaris": { ra: 2.5303, dec: 89.2641 },
+            "Betelgeuse": { ra: 5.9195, dec: 7.4070 },
+            "M31": { ra: 0.7123, dec: 41.2690 },     // Andromeda Galaxy
+            "M42": { ra: 5.5881, dec: -5.3911 },     // Orion Nebula
+            "M45": { ra: 3.7836, dec: 24.1167 }      // Pleiades
+        };
+
+        // Convert Decimal to DMS (Degrees, Minutes, Seconds)
+        function toDMS(deg) {
+            if (isNaN(deg)) return "--";
+            let val = Math.abs(deg);
+            let d = Math.floor(val);
+            let m = Math.floor((val - d) * 60);
+            let s = ((val - d - m / 60) * 3600).toFixed(1);
+            let sign = deg < 0 ? "-" : "";
+            
+            // Format to 3 digits for Degrees in Azimuth
+            let dStr = String(d).padStart(deg >= 0 && deg <= 360 ? 3 : 1, '0');
+            let mStr = String(m).padStart(2, '0');
+            let sStr = String(s).padStart(4, '0'); // e.g. 05.1
+
+            return `${sign}${dStr}° ${mStr}' ${sStr}"`;
+        }
+
+        // Set current local time to input fields
+        function setNow() {
+            const now = new Date();
+            document.getElementById('dateInput').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            document.getElementById('timeInput').value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+        }
+
+        // Convert Decimal coordinate to DDM and populate UI
+        function populateDDM(lat, lon) {
+            // Latitude
+            document.getElementById('latDir').value = lat >= 0 ? "1" : "-1";
+            let absLat = Math.abs(lat);
+            document.getElementById('latDeg').value = Math.floor(absLat);
+            document.getElementById('latMin').value = ((absLat - Math.floor(absLat)) * 60).toFixed(2);
+
+            // Longitude
+            document.getElementById('lonDir').value = lon >= 0 ? "1" : "-1";
+            let absLon = Math.abs(lon);
+            document.getElementById('lonDeg').value = Math.floor(absLon);
+            document.getElementById('lonMin').value = ((absLon - Math.floor(absLon)) * 60).toFixed(2);
+        }
+
+        // Get GPS Location
+        function getLocation() {
+            if (navigator.geolocation) {
+                const btn = document.getElementById('btnLocation');
+                btn.innerText = "Acquiring GPS...";
+                navigator.geolocation.getCurrentPosition((position) => {
+                    populateDDM(position.coords.latitude, position.coords.longitude);
+                    btn.innerText = "📍 Use Current GPS";
+                    calculate(); // Auto-calculate after getting fix
+                }, (error) => {
+                    alert("Failed to get location: " + error.message);
+                    btn.innerText = "📍 Use Current GPS";
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        // Parse DDM inputs into Decimal Degrees
+        function getDecimalLocation() {
+            let latDeg = parseFloat(document.getElementById('latDeg').value) || 0;
+            let latMin = parseFloat(document.getElementById('latMin').value) || 0;
+            let latDir = parseFloat(document.getElementById('latDir').value) || 1;
+            let lat = (latDeg + (latMin / 60)) * latDir;
+
+            let lonDeg = parseFloat(document.getElementById('lonDeg').value) || 0;
+            let lonMin = parseFloat(document.getElementById('lonMin').value) || 0;
+            let lonDir = parseFloat(document.getElementById('lonDir').value) || 1;
+            let lon = (lonDeg + (lonMin / 60)) * lonDir;
+
+            return { lat, lon };
+        }
+
+        // Main Celestial Calculation
+        function calculate() {
+            const loc = getDecimalLocation();
+            const dateStr = document.getElementById('dateInput').value;
+            const timeStr = document.getElementById('timeInput').value;
+            const bodyName = document.getElementById('bodySelect').value;
+
+            if (document.getElementById('latDeg').value === "" || document.getElementById('lonDeg').value === "" || !dateStr || !timeStr) {
+                alert("Please complete the Latitude, Longitude, Date, and Time fields.");
+                return;
+            }
+
+            const localDate = new Date(`${dateStr}T${timeStr}`);
+            
+            try {
+                const astroTime = new Astronomy.MakeTime(localDate);
+                // Observer height of eye set to 15 meters (approximate for cargo bridge)
+                const observer = new Astronomy.Observer(loc.lat, loc.lon, 15);
+                
+                let ra, dec;
+
+                // Check if the selected body is from our custom catalog or Solar System
+                if (bodyName.startsWith("CATALOG_")) {
+                    const catalogKey = bodyName.replace("CATALOG_", "");
+                    const objData = celestialCatalog[catalogKey];
+                    ra = objData.ra;
+                    dec = objData.dec;
+                } else {
+                    // It's a built-in Solar System body
+                    const body = Astronomy.Body[bodyName];
+                    // Calculate Equator (RA, Dec) with aberration correction
+                    const equ = Astronomy.Equator(body, astroTime, observer, true, true);
+                    ra = equ.ra;
+                    dec = equ.dec;
+                }
+                
+                // Calculate Horizon (Altitude, Azimuth) with standard refraction
+                const hor = Astronomy.Horizon(astroTime, observer, ra, dec, 'normal');
+
+                // Output formatting
+                document.getElementById('outAltitude').innerText = toDMS(hor.altitude);
+                document.getElementById('outAzimuth').innerText = toDMS(hor.azimuth);
+                
+                // Store True Azimuth globally for Gyro calculation
+                window.currentTrueAzimuth = hor.azimuth;
+
+                // Altitude Status
+                const altStatusEl = document.getElementById('altStatus');
+                if (hor.altitude > 0) {
+                    altStatusEl.innerText = "Body is ABOVE the horizon (Visible)";
+                    altStatusEl.className = "text-sm mt-1 text-emerald-400";
+                } else {
+                    altStatusEl.innerText = "Body is BELOW the horizon (Not Visible)";
+                    altStatusEl.className = "text-sm mt-1 text-red-400";
+                }
+
+                // Auto-update Gyro Error if value exists
+                calculateGyroError();
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred during astronomical calculations.");
+            }
+        }
+
+        // Gyro Compass Error Calculation
+        function calculateGyroError() {
+            let gb = parseFloat(document.getElementById('gyroInput').value);
+            let outEl = document.getElementById('outGyroError');
+            
+            if (isNaN(gb) || window.currentTrueAzimuth === undefined) {
+                outEl.innerText = "--";
+                outEl.className = "text-3xl font-mono font-bold text-slate-500";
+                return;
+            }
+
+            let zn = window.currentTrueAzimuth;
+            let error = zn - gb;
+            
+            // Normalize error to be between -180 and +180 degrees
+            if (error > 180) error -= 360;
+            if (error < -180) error += 360;
+
+            // Direction: True > Gyro => East (+). True < Gyro => West (-)
+            let direction = error >= 0 ? "E" : "W";
+            let absVal = Math.abs(error).toFixed(1);
+
+            outEl.innerText = `${absVal}° ${direction}`;
+            outEl.className = error >= 0 ? "text-3xl font-mono font-bold text-emerald-400" : "text-3xl font-mono font-bold text-red-400";
+        }
+
+        // Event Listeners
+        document.getElementById('btnNow').addEventListener('click', setNow);
+        document.getElementById('btnLocation').addEventListener('click', getLocation);
+        document.getElementById('btnCalculate').addEventListener('click', calculate);
+        document.getElementById('gyroInput').addEventListener('input', calculateGyroError);
+
+        // Initial Setup
+        window.onload = () => {
+            setNow();
+            // Optional default setup can go here
+        };
+    </script>
+</body>
+</html>
