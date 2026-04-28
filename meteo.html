@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Charts Dashboard</title>
+    <meta name="description" content="Professional meteorological weather charts, surface pressure analysis, forecast maps, and satellite pictures">
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+        }
+        
+        /* Smooth transitions for links */
+        .link-item {
+            transition: all 0.3s ease;
+            border-left: 2px solid transparent;
+        }
+        .link-item:hover {
+            transform: translateX(6px);
+            color: #1d4ed8; /* Blue 700 */
+            border-left: 2px solid #3b82f6; /* Blue 500 */
+            padding-left: 0.5rem;
+        }
+
+        /* Custom scrollbar for a cleaner look */
+        .card-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .card-content::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        .card-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+        }
+        .card-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        
+        /* Interactive Card Hover */
+        .category-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50/90 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-slate-800">Meteorological <span class="text-blue-600">Hub</span></span>
+                </div>
+                <div class="hidden md:flex space-x-6 text-sm font-semibold text-slate-600">
+                    <a href="#analysis" class="hover:text-blue-600 transition"><i class="fa-solid fa-chart-line mr-1"></i> Analysis</a>
+                    <a href="#satellite" class="hover:text-blue-600 transition"><i class="fa-solid fa-satellite mr-1"></i> Satellite</a>
+                    <a href="#aviation" class="hover:text-blue-600 transition"><i class="fa-solid fa-plane mr-1"></i> Aviation</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-slate-900 relative overflow-hidden">
+        <!-- Background Pattern/Gradient -->
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-900/80 z-0"></div>
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 z-0"></div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto text-center py-20 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight animate-fade-in-up" style="animation-delay: 0.1s;">
+                Weather Charts
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto font-light animate-fade-in-up" style="animation-delay: 0.2s;">
+                Professional directory for surface analysis, predictive models, satellite imagery, and global meteorological data.
+            </p>
+            
+            <!-- Search Bar -->
+            <div class="max-w-2xl mx-auto relative animate-fade-in-up" style="animation-delay: 0.3s;">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                </div>
+                <input type="text" id="searchInput" class="block w-full pl-12 pr-4 py-4 border-0 rounded-2xl leading-5 bg-white/10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:text-slate-900 sm:text-base shadow-2xl backdrop-blur-sm transition-all duration-300" placeholder="Search charts, models, locations...">
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Main Categories Grid -->
+        <div id="linksContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Category Card 1: Analysis -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-blue-50/50 to-transparent">
+                    <div class="bg-blue-100 p-2.5 rounded-xl text-blue-600 shadow-sm">
+                        <i class="fa-solid fa-map-location-dot w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">MSLP Analysis & Forecast</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://www.jma.go.jp/bosai/weather_map/#lang=en" target="_blank" class="link-item flex items-start text-slate-600 font-medium"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-blue-400 text-xs"></i>Surface Analysis ASAS JMH</a></li>
+                        <li><a href="https://www.weathercharts.org/ukmomslp.htm" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>UKMO MSLP Synoptic Charts Analysis</a></li>
+                        <li><a href="http://wetter3.de/fax.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>DWD MSLP Analysis & Forecast</a></li>
+                        <li><a href="https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Animated Surface Pressure Forecast</a></li>
+                        <li><a href="https://ocean.weather.gov/Atl_tab.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>North Atlantic Analysis (Surface, 500mb)</a></li>
+                        <li><a href="https://page.met.fu-berlin.de/wetterpate/static/anabwkna.gif" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>MSLP Analysis with Plotted Observations</a></li>
+                        <li><a href="https://meteocentre.com/numerical-weather-prediction/map-explorer.php?mod=gfs&map=eur&lang=en" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>MSLP - 500 mb Height Forecast</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 2: Models -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.2s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-emerald-50/50 to-transparent">
+                    <div class="bg-emerald-100 p-2.5 rounded-xl text-emerald-600 shadow-sm">
+                        <i class="fa-solid fa-laptop-code w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Forecast Models</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://www.fnmoc.navy.mil/wxmap_cgi/index.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>FNMOC Navy Atmospheric Models</a></li>
+                        <li><a href="http://www.meteociel.fr/modeles/gfse_cartes.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>GFS Europe (Meteociel)</a></li>
+                        <li><a href="https://www.netweather.tv/charts-and-data/gfs" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>GFS 16 day Forecast (Netweather)</a></li>
+                        <li><a href="https://iri.columbia.edu/our-expertise/climate/forecasts/seasonal-climate-forecasts/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>IRI Seasonal Climate Forecasts</a></li>
+                        <li><a href="https://www.wetterzentrale.de/topkarten.php?model=gfs&time=3&lid=OP" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Wetterzentrale Prognosis T+0 to T+384</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 3: Satellite -->
+            <div id="satellite" class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.3s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-purple-50/50 to-transparent">
+                    <div class="bg-purple-100 p-2.5 rounded-xl text-purple-600 shadow-sm">
+                        <i class="fa-solid fa-satellite w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Satellite & Radar</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="http://www.sat24.com/en/eu" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Sat24 Europe Geostationary</a></li>
+                        <li><a href="http://www.meteoam.it/?q=meteosat" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Europe Meteosat Imagery</a></li>
+                        <li><a href="https://www.goes.noaa.gov/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>NOAA Geostationary Satellite Server</a></li>
+                        <li><a href="http://www.meteox.com/h.aspx?r=&soort=loop6uur&URL" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Europe Weather RADAR (Animation)</a></li>
+                        <li><a href="https://www.metoffice.gov.uk/public/weather/observation/rainfall-radar" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>UK Met Office Rainfall Radar</a></li>
+                        <li><a href="https://en.allmetsat.com/images/europe.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>AllMetSat Satellite Images</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 4: Sea & Ocean -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.4s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-cyan-50/50 to-transparent">
+                    <div class="bg-cyan-100 p-2.5 rounded-xl text-cyan-600 shadow-sm">
+                        <i class="fa-solid fa-water w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Sea, Ocean State & Tides</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://www.oceanweather.com/data/NATL-Northern/index.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>North Atlantic Wave Height & Direction</a></li>
+                        <li><a href="https://oceancurrents.rsmas.miami.edu/atlantic/atlantic.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Atlantic Ocean Surface Currents</a></li>
+                        <li><a href="https://www.bsh.de/EN/DATA/Climate-and-Sea/Sea_temperatures/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>North Sea & Baltic Sea Temperatures</a></li>
+                        <li><a href="http://www.ukho.gov.uk/EasyTide/EasyTide/SelectPort.aspx" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Admiralty EasyTide Predictions</a></li>
+                        <li><a href="https://www.ntslf.org/tides/predictions" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Tidal Predictions UK & Irish Ports</a></li>
+                        <li><a href="https://www.fnmoc.navy.mil/wxmap_cgi/index.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Global Wave Height & Swell (FNMOC)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 5: Aviation -->
+            <div id="aviation" class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.5s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-amber-50/50 to-transparent">
+                    <div class="bg-amber-100 p-2.5 rounded-xl text-amber-600 shadow-sm">
+                        <i class="fa-solid fa-plane-departure w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Aviation Weather</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://aviationweather.gov/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Aviation Weather Center (NWS)</a></li>
+                        <li><a href="https://www.tmdg.co.uk/weather/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Aviation Info & VOLMET</a></li>
+                        <li><a href="http://www.ogimet.com/umetars.phtml.en" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>OGIMET Global Latest METARs</a></li>
+                        <li><a href="https://en.allmetsat.com/metar-taf/index.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>METAR & TAF Decoded</a></li>
+                        <li><a href="https://www.orbifly.com/member/metmap.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Orbifly Interactive METAR Map</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 6: Sferics -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.6s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-red-50/50 to-transparent">
+                    <div class="bg-red-100 p-2.5 rounded-xl text-red-600 shadow-sm">
+                        <i class="fa-solid fa-bolt w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Sferics & Lightning</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://www.blitzortung.org/en/live_lightning_maps.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Blitzortung Live Lightning Maps</a></li>
+                        <li><a href="http://www.lightningmaps.org/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>LightningMap.org (Live & Density)</a></li>
+                        <li><a href="https://www.estofex.org/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>ESTOFEX Forecasts</a></li>
+                        <li><a href="http://wwlln.net" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>WWLLN - World Wide Lightning Location</a></li>
+                        <li><a href="https://www.euclid.org/realtime.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>EUCLID Europe Lightning Strikes</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 7: Polar -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.7s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-teal-50/50 to-transparent">
+                    <div class="bg-teal-100 p-2.5 rounded-xl text-teal-600 shadow-sm">
+                        <i class="fa-solid fa-icicles w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Polar & Snow Cover</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://cryosphere.today/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Arctic & Antarctic Polar Sea Ice</a></li>
+                        <li><a href="https://www.canada.ca/en/environment-climate-change/services/ice-forecasts-observations.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Canadian Ice Service Conditions</a></li>
+                        <li><a href="http://ocean.dmi.dk/anim/index.uk.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Danish Met Institute Sea Ice</a></li>
+                        <li><a href="https://nsidc.org/data/seaice_index" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>NSIDC Sea Ice Index</a></li>
+                        <li><a href="https://www.snow-forecast.com/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Snow-Forecast.com (Global)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 8: Temp & Wind -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.8s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-orange-50/50 to-transparent">
+                    <div class="bg-orange-100 p-2.5 rounded-xl text-orange-600 shadow-sm">
+                        <i class="fa-solid fa-temperature-half w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Temperature, Wind & Precip</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://earth.nullschool.net/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Earth Nullschool Interactive Map</a></li>
+                        <li><a href="https://www.meteoblue.com/en/weather/map/wind10m/europe" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Meteoblue Wind Forecast</a></li>
+                        <li><a href="http://wxmaps.org/pix/temp4.html" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Surface Temp Forecast & Anomaly</a></li>
+                        <li><a href="https://www.cpc.ncep.noaa.gov/products/timeseries/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Global Precipitation Time Series</a></li>
+                        <li><a href="https://www.wetterzentrale.de/en/topkarten.php" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Cloud Cover Europe & Atlantic</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Category Card 9: Archives -->
+            <div class="category-card bg-white rounded-2xl border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-fade-in-up" style="animation-delay: 0.9s;">
+                <div class="p-5 border-b border-slate-100 flex items-center space-x-4 bg-gradient-to-r from-slate-100/50 to-transparent">
+                    <div class="bg-slate-200 p-2.5 rounded-xl text-slate-700 shadow-sm">
+                        <i class="fa-solid fa-box-archive w-5 h-5 flex items-center justify-center"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Archives & Misc</h3>
+                </div>
+                <div class="p-5 overflow-y-auto card-content flex-grow">
+                    <ul class="space-y-4 text-sm">
+                        <li><a href="https://www.metoffice.gov.uk/research/climate/maps-and-data" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>UK Climate Maps and Data</a></li>
+                        <li><a href="https://www.ncdc.noaa.gov/cdo-web/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>NCDC Climatic Data Centre (NOAA)</a></li>
+                        <li><a href="http://polarmet.osu.edu/NAO/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>North Atlantic Oscillation Index</a></li>
+                        <li><a href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Earthquakes Hazard Program</a></li>
+                        <li><a href="http://www.n2yo.com/?s=25544" target="_blank" class="link-item flex items-start text-slate-600"><i class="fa-solid fa-arrow-right-long mt-1 mr-3 text-slate-300 text-xs"></i>Real-time Satellite/ISS Tracking</a></li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Professional Footer -->
+    <footer class="bg-white border-t border-slate-200 py-12 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden mb-10 shadow-sm animate-fade-in-up" style="animation-delay: 1s;">
+                <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <h5 class="text-blue-800 font-bold mb-2 flex items-center text-lg"><i class="fa-solid fa-circle-info mr-2"></i> User Advisory</h5>
+                <p class="text-slate-600 text-sm mb-3">
+                    The external links and meteorological products indexed on this dashboard are provided for general situational awareness, educational study, and personal interest.
+                </p>
+                <p class="text-slate-800 text-sm font-semibold">
+                    Not a substitute for official advisories. For safety and operational navigation, please consult directly with authorized meteorological agencies or official GMDSS broadcasts.
+                </p>
+            </div>
+            
+            <div class="text-center text-xs text-slate-400 font-medium animate-fade-in-up" style="animation-delay: 1.1s;">
+                <p class="mb-1">Modernized Interface &bull; Compiled for easy navigation</p>
+                <p class="opacity-50 hover:opacity-100 transition-opacity"><a href="https://weathercharts.org" target="_blank">Inspired by original data index from weathercharts.org</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Search Filtering Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const cards = document.querySelectorAll('.category-card');
+            
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                cards.forEach(card => {
+                    const links = card.querySelectorAll('li');
+                    let hasVisibleLink = false;
+                    
+                    links.forEach(link => {
+                        const text = link.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            link.style.display = 'block';
+                            hasVisibleLink = true;
+                        } else {
+                            link.style.display = 'none';
+                        }
+                    });
+                    
+                    const cardTitle = card.querySelector('h3').textContent.toLowerCase();
+                    if (hasVisibleLink || cardTitle.includes(searchTerm)) {
+                        card.style.display = 'flex';
+                        if (!hasVisibleLink && cardTitle.includes(searchTerm)) {
+                            links.forEach(link => link.style.display = 'block');
+                        }
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
