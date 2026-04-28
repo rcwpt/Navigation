@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMDSS DSC Station Finder - MV PROSPERA</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        background: "#f8fafc",
+                        border: "#e2e8f0",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Turf.js for distance calculation -->
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #f8fafc; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Custom Leaflet Marker for Ship */
+        .ship-marker {
+            background-color: #1e40af; /* Blue-800 */
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        /* Custom Leaflet Marker for Stations */
+        .station-marker {
+            background-color: white;
+            border: 2px solid #0f172a;
+            border-radius: 6px;
+            padding: 3px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .station-marker.hf-type { border-color: #0284c7; color: #0284c7; }
+        .station-marker.mf-type { border-color: #16a34a; color: #16a34a; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(30, 64, 175, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0); }
+        }
+
+        /* Crosshair cursor when clicking on map */
+        .leaflet-container { cursor: crosshair; }
+    </style>
+</head>
+<body class="antialiased font-sans flex h-screen w-screen text-slate-800">
+
+    <!-- Map Container -->
+    <div class="relative w-full h-full flex-grow">
+        <div id="map"></div>
+    </div>
+
+    <!-- Sidebar Panel -->
+    <div class="absolute top-4 left-4 z-[1000] w-[420px] bg-white/95 backdrop-blur-md shadow-2xl border border-slate-200 rounded-xl flex flex-col max-h-[calc(100vh-32px)]">
+        
+        <!-- Header -->
+        <div class="p-5 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
+            <h1 class="text-lg font-extrabold tracking-tight text-slate-900 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                    <i data-lucide="radio-tower" class="w-6 h-6 text-blue-600"></i>
+                    GMDSS DSC FINDER
+                </span>
+                <span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded border border-blue-200 uppercase">A3 Area</span>
+            </h1>
+            <p class="text-[11px] text-slate-500 mt-2 font-medium">Click on the map or input coordinates to find the nearest MF/HF DSC Coast Stations for testing.</p>
+        </div>
+        
+        <!-- Position Input Area -->
+        <div class="p-5 flex flex-col gap-4 border-b border-slate-200 bg-white">
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Latitude (DD)</label>
+                    <input type="number" id="input-lat" step="0.0001" placeholder="-2.5000" class="w-full bg-slate-50 border border-slate-200 text-sm font-medium rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Longitude (DD)</label>
+                    <input type="number" id="input-lng" step="0.0001" placeholder="118.0000" class="w-full bg-slate-50 border border-slate-200 text-sm font-medium rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex items-end h-full">
+                    <button id="btn-set-pos" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition-colors shadow-sm" title="Set Position">
+                        <i data-lucide="target" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center justify-center p-3 border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg text-xs font-medium text-blue-700">
+                <i data-lucide="mouse-pointer-click" class="w-4 h-4 mr-2"></i> Or simply click anywhere on the map
+            </div>
+        </div>
+
+        <!-- Station List Area -->
+        <div class="flex-grow overflow-y-auto flex flex-col bg-slate-50/50">
+            <div class="p-4 pb-2 sticky top-0 bg-white/95 backdrop-blur z-10 border-b border-slate-200 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="list-ordered" class="w-4 h-4 text-slate-500"></i>
+                    Nearest Stations
+                </h2>
+                <!-- Filter Toggle -->
+                <select id="type-filter" class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white font-medium focus:outline-none">
+                    <option value="ALL">All Bands (MF/HF)</option>
+                    <option value="HF">HF Only (Global)</option>
+                    <option value="MF">MF Only (Coastal)</option>
+                </select>
+            </div>
+            
+            <div id="station-list" class="p-4 space-y-3 flex-grow">
+                <!-- Empty State -->
+                <div class="text-center py-10 opacity-60">
+                    <i data-lucide="map-pin" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
+                    <p class="text-sm font-semibold text-slate-600">No Position Set</p>
+                    <p class="text-xs text-slate-500 mt-1">Set vessel position to calculate distances.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Input for Copying MMSI -->
+    <input type="text" id="copy-mmsi-hidden" class="absolute left-[-9999px] opacity-0" tabindex="-1" />
+
+    <script>
+        lucide.createIcons();
+
+        // GLOBAL GMDSS MF/HF DSC Coast Stations Database
+        // Diperbarui sesuai dengan data dari tabel gambar referensi.
+        const dscStations = [
+            // ASIA / PACIFIC
+            { name: 'Shanghai', country: 'China', mmsi: '004122100', type: 'MF/HF', lat: 31.23, lng: 121.47, area: 'East China Sea & Coastal China', freq: 'Any frequency' },
+            { name: 'Hong Kong', country: 'China', mmsi: '004773500', type: 'HF', lat: 22.31, lng: 114.16, area: 'South China Sea - Pearl River Delta', freq: '8MHz' },
+            { name: 'Ho Chi Minh-Ville', country: 'Vietnam', mmsi: '005743030', type: 'HF', lat: 10.82, lng: 106.63, area: 'Vietnam', freq: '16MHz/12MHz' },
+            { name: 'Bangkok', country: 'Thailand', mmsi: '005671000', type: 'HF', lat: 13.75, lng: 100.50, area: 'Thailand', freq: '8MHz' },
+            { name: 'Dalian', country: 'China', mmsi: '004121300', type: 'MF/HF', lat: 38.92, lng: 121.62, area: 'China', freq: '2/4MHz' },
+            { name: 'Hai Phong', country: 'Vietnam', mmsi: '005741040', type: 'MF/HF', lat: 20.84, lng: 106.68, area: 'Vietnam', freq: 'Unspecified' },
+            { name: 'SEOUL', country: 'Korea', mmsi: '004400002', type: 'MF/HF', lat: 37.56, lng: 126.97, area: 'Korea', freq: 'Unspecified' },
+            { name: 'Wiluna', country: 'Australia', mmsi: '005030001', type: 'HF', lat: -26.59, lng: 120.22, area: 'Australia/Indian Ocean', freq: 'Auto-acknowledge' },
+            { name: 'Busan Coast Radio', country: 'Korea', mmsi: '004401004', type: 'HF', lat: 35.17, lng: 129.07, area: 'Korea Strait & Sea of Japan', freq: '12MHz' },
+            { name: 'Incheon Coast Radio', country: 'Korea', mmsi: '004401001', type: 'HF', lat: 37.45, lng: 126.70, area: 'Yellow Sea - Korea West Coast', freq: '8MHz' },
+            { name: 'Ambon Radio', country: 'Indonesia', mmsi: '005250006', type: 'HF', lat: -3.69, lng: 128.18, area: 'Eastern Indonesia/Banda Sea', freq: '8MHz' },
+            { name: 'Balikpapan Radio', country: 'Indonesia', mmsi: '005250009', type: 'HF', lat: -1.23, lng: 116.82, area: 'Central Indonesia - Makassar Strait/Java Sea', freq: '8MHz' },
+            { name: 'Mumbai Radio', country: 'India', mmsi: '004192203', type: 'HF', lat: 19.07, lng: 72.87, area: 'Arabian Sea - NW Indian Ocean', freq: '12MHz' },
+            { name: 'Chennai Radio', country: 'India', mmsi: '004194401', type: 'HF', lat: 13.08, lng: 80.27, area: 'Bay of Bengal - NE Indian Ocean', freq: '12MHz' },
+            { name: 'Tokyo Coast Guard Radio', country: 'Japan', mmsi: '004310001', type: 'HF', lat: 35.67, lng: 139.65, area: 'NW Pacific & Japanese waters', freq: '12MHz' },
+
+            // USA
+            { name: 'Boston', country: 'USA', mmsi: '003669991', type: 'HF', lat: 42.36, lng: -71.05, area: 'East coast USA', freq: '8MHz' },
+            { name: 'New Orleans', country: 'USA', mmsi: '003669998', type: 'MF/HF', lat: 29.95, lng: -90.07, area: 'Caribbean Sea', freq: 'Unspecified' },
+            { name: 'Point Reyes/CAMSPAC', country: 'USA', mmsi: '003669990', type: 'HF', lat: 38.10, lng: -122.87, area: 'West coast USA', freq: '4MHz' },
+            { name: 'Honolulu', country: 'USA', mmsi: '003699993', type: 'MF/HF', lat: 21.30, lng: -157.85, area: 'Pacific', freq: 'Unspecified' },
+            { name: 'Miami', country: 'USA', mmsi: '003669997', type: 'MF/HF', lat: 25.76, lng: -80.19, area: 'USA', freq: 'Unspecified' },
+            { name: 'Kodiak', country: 'USA', mmsi: '003669899', type: 'MF/HF', lat: 57.79, lng: -152.40, area: 'Alaska', freq: 'Unspecified' },
+
+            // EUROPE (Berdasarkan list gambar)
+            { name: 'Cape Town', country: 'South Africa', mmsi: '006010001', type: 'MF/HF', lat: -33.92, lng: 18.42, area: 'Cape of Good Hope approaches', freq: 'Unspecified' },
+            { name: 'Lyngby', country: 'Denmark', mmsi: '002191000', type: 'MF', lat: 55.77, lng: 12.50, area: 'North/Baltic Seas', freq: '2MHz' },
+            { name: 'Madrid', country: 'Spain', mmsi: '002241078', type: 'HF', lat: 40.41, lng: -3.70, area: 'Mediterranean Sea', freq: '8MHz' },
+            { name: 'Istanbul Radio', country: 'Turkey', mmsi: '002711000', type: 'HF', lat: 41.00, lng: 28.97, area: 'Black Sea', freq: '16MHz/12MHz' },
+            { name: 'Olympia Radio', country: 'Greece', mmsi: '002371000', type: 'MF/HF', lat: 37.98, lng: 23.72, area: 'Mediterranean Sea', freq: 'Any frequency' },
+            { name: 'Valencia', country: 'Spain', mmsi: '002241004', type: 'HF', lat: 39.46, lng: -0.37, area: 'Western Mediterranean', freq: '8MHz' },
+            { name: 'Rogaland', country: 'Norway', mmsi: '002570300', type: 'HF', lat: 58.96, lng: 5.73, area: 'North Sea', freq: '8MHz' },
+
+            // MIDDLE EAST
+            { name: 'Jeddah Radio', country: 'Saudi Arabia', mmsi: '004030000', type: 'HF', lat: 21.48, lng: 39.19, area: 'Red Sea - East side', freq: '12MHz' },
+            { name: 'Bandar Abbas Radio', country: 'Iran', mmsi: '004225300', type: 'HF', lat: 27.18, lng: 56.26, area: 'Persian Gulf', freq: '8MHz' },
+            { name: 'Alexandria Radio', country: 'Egypt', mmsi: '006221111', type: 'HF', lat: 31.20, lng: 29.91, area: 'Eastern Mediterranean & Approaches to Suez', freq: '8MHz' },
+            { name: 'Mauritius Radio', country: 'Mauritius', mmsi: '006452700', type: 'HF', lat: -20.34, lng: 57.55, area: 'Southwestern Indian Ocean', freq: '12MHz' },
+
+            // SOUTH AMERICA
+            { name: 'Rio de Janeiro Radio', country: 'Brazil', mmsi: '007100001', type: 'HF', lat: -22.90, lng: -43.20, area: 'Southwest Atlantic - Brazilian coast', freq: '12MHz' },
+            { name: 'Buenos Aires Radio', country: 'Argentina', mmsi: '007010111', type: 'HF', lat: -34.60, lng: -58.38, area: 'Southwest Atlantic - Río de la Plata', freq: '8MHz' },
+            { name: 'Montevideo Radio', country: 'Uruguay', mmsi: '007703870', type: 'HF', lat: -34.90, lng: -56.16, area: 'South Atlantic - River Plate area', freq: '8MHz' }
+        ];
+
+        // Initialize Map
+        const map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([-2.0, 118.0], 4); // Default to Indonesia center
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Map Carto TileLayer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        let shipMarker = null;
+        let stationMarkersGroup = L.layerGroup().addTo(map);
+        let activePosition = null;
+
+        // Render Stations on Map
+        function renderStationMarkers(filter = 'ALL') {
+            stationMarkersGroup.clearLayers();
+
+            dscStations.forEach(station => {
+                if (filter === 'HF' && station.type === 'MF') return;
+                if (filter === 'MF' && station.type === 'HF') return;
+
+                const isHF = station.type.includes('HF');
+                const badgeClass = isHF ? 'hf-type' : 'mf-type';
+                const iconHtml = `
+                    <div class="station-marker ${badgeClass}">
+                        ${station.name}
+                    </div>
+                `;
+
+                const customIcon = L.divIcon({
+                    html: iconHtml,
+                    className: 'leaflet-custom-marker-wrap',
+                    iconSize: [0, 0]
+                });
+
+                L.marker([station.lat, station.lng], { icon: customIcon }).addTo(stationMarkersGroup);
+            });
+        }
+
+        renderStationMarkers();
+
+        // --- MAP CLICK HANDLER ---
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            
+            // Update Inputs
+            document.getElementById('input-lat').value = lat.toFixed(4);
+            document.getElementById('input-lng').value = lng.toFixed(4);
+            
+            updateVesselPosition(lat, lng);
+        });
+
+        // --- MANUAL INPUT HANDLER ---
+        document.getElementById('btn-set-pos').addEventListener('click', function() {
+            const lat = parseFloat(document.getElementById('input-lat').value);
+            const lng = parseFloat(document.getElementById('input-lng').value);
+            
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                alert("Invalid coordinate values.");
+                return;
+            }
+            
+            updateVesselPosition(lat, lng);
+            map.flyTo([lat, lng], 5, { animate: true, duration: 1 });
+        });
+
+        // Filter Handler
+        document.getElementById('type-filter').addEventListener('change', function() {
+            const filter = this.value;
+            renderStationMarkers(filter);
+            if (activePosition) {
+                calculateDistances(activePosition.lat, activePosition.lng, filter);
+            }
+        });
+
+        // --- CORE LOGIC: Update Position & Calculate Nearest ---
+        function updateVesselPosition(lat, lng) {
+            activePosition = { lat, lng };
+
+            // Remove old ship marker
+            if (shipMarker) map.removeLayer(shipMarker);
+
+            // Create Ship Marker
+            const shipIcon = L.divIcon({
+                html: `<div class="ship-marker"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-navigation"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div>`,
+                className: 'leaflet-custom-marker-wrap',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            shipMarker = L.marker([lat, lng], { icon: shipIcon, zIndexOffset: 9999 }).addTo(map);
+
+            // Trigger calculation
+            const filter = document.getElementById('type-filter').value;
+            calculateDistances(lat, lng, filter);
+        }
+
+        function calculateDistances(vesselLat, vesselLng, filter) {
+            const vesselPt = turf.point([vesselLng, vesselLat]);
+            const calculatedStations = [];
+
+            dscStations.forEach(st => {
+                // Apply filter
+                if (filter === 'HF' && st.type === 'MF') return;
+                if (filter === 'MF' && st.type === 'HF') return;
+
+                const stPt = turf.point([st.lng, st.lat]);
+                const distNM = turf.distance(vesselPt, stPt, { units: 'nauticalmiles' });
+                
+                calculatedStations.push({
+                    ...st,
+                    distance: distNM
+                });
+            });
+
+            // Sort by distance (Nearest first)
+            calculatedStations.sort((a, b) => a.distance - b.distance);
+
+            // Render top 10 to UI
+            renderSidebarList(calculatedStations.slice(0, 10));
+        }
+
+        function renderSidebarList(stations) {
+            const listContainer = document.getElementById('station-list');
+            listContainer.innerHTML = '';
+
+            if (stations.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-10 opacity-60">
+                        <p class="text-sm font-semibold text-slate-600">No stations found for this filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            stations.forEach((st, index) => {
+                const distFormatted = st.distance.toFixed(1);
+                
+                // Kalkulasi Gradien Warna (Hijau -> Kuning -> Merah)
+                // index 0 akan bernilai 120 (Hijau), index 9 bernilai mendekati 0 (Merah)
+                const hue = Math.max(0, 120 - (index * 13)); 
+                const dynamicBorderColor = `hsl(${hue}, 70%, 50%)`;
+                const dynamicTextColor = `hsl(${hue}, 80%, 35%)`;
+                const dynamicBgColor = `hsl(${hue}, 80%, 95%)`;
+
+                const typeColor = st.type.includes('HF') ? 'bg-sky-100 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-700 border-slate-200';
+
+                const div = document.createElement('div');
+                div.className = `group bg-white p-3.5 rounded-xl border shadow-sm hover:shadow-md transition-all`;
+                div.style.borderColor = dynamicBorderColor;
+                div.style.borderWidth = index === 0 ? '2px' : '1px'; // Yang terdekat bordernya sedikit lebih tebal
+                
+                div.innerHTML = `
+                    <div class="flex items-start justify-between mb-2">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${typeColor}">${st.type}</span>
+                                ${index === 0 ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded animate-pulse" style="background-color: ${dynamicBorderColor}; color: white;">NEAREST</span>` : ''}
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-900 leading-tight">${st.name}</h3>
+                            <p class="text-[11px] font-medium text-slate-500 mt-0.5 flex items-center gap-1">
+                                <i data-lucide="map-pin" class="w-3 h-3"></i> ${st.country}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Distance</p>
+                            <p class="text-sm font-black" style="color: ${dynamicTextColor}">${distFormatted} <span class="text-[10px] font-semibold text-slate-500">NM</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="rounded-lg p-2.5 mt-3 border border-slate-100" style="background-color: ${dynamicBgColor}">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="text-[10px] font-semibold text-slate-500 uppercase">MMSI Number</p>
+                                <p class="text-sm font-mono font-bold tracking-wider text-slate-800">${st.mmsi}</p>
+                            </div>
+                            <button onclick="copyMMSI('${st.mmsi}', this)" class="bg-white border hover:bg-slate-50 text-slate-600 text-[10px] font-bold px-2 py-1.5 rounded transition-colors flex items-center gap-1 shadow-sm" style="border-color: ${dynamicBorderColor}; color: ${dynamicTextColor}">
+                                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <div>
+                                <p class="text-[9px] font-semibold text-slate-500 uppercase">Coverage Area</p>
+                                <p class="text-[11px] font-semibold text-slate-800 mt-0.5">${st.area}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-semibold text-slate-500 uppercase">Watch Frequencies</p>
+                                <p class="text-[11px] font-semibold text-slate-800 mt-0.5 break-words">${st.freq}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            lucide.createIcons();
+        }
+
+        // --- COPY MMSI HELPER ---
+        window.copyMMSI = function(mmsi, btnElement) {
+            const copyInput = document.getElementById('copy-mmsi-hidden');
+            copyInput.value = mmsi;
+            copyInput.select();
+            copyInput.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-600"></i> Copied`;
+                btnElement.classList.add('border-green-200', 'bg-green-50', 'text-green-700');
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHtml;
+                    btnElement.classList.remove('border-green-200', 'bg-green-50', 'text-green-700');
+                    lucide.createIcons();
+                }, 1500);
+            } catch (err) {
+                console.error('Copy failed');
+            }
+        };
+
+    </script>
+</body>
+</html>
