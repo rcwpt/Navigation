@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAVTEX TRACKER BY @c.wijaya.t.</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        border: "hsl(214.3 31.8% 91.4%)",
+                        background: "hsl(0 0% 100%)",
+                        foreground: "hsl(222.2 84% 4.9%)",
+                        primary: { DEFAULT: "hsl(222.2 47.4% 11.2%)", foreground: "hsl(210 40% 98%)" },
+                        muted: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(215.4 16.3% 46.9%)" },
+                        accent: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(222.2 47.4% 11.2%)" },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Turf.js for distance calculation & geometry -->
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #f8fafc; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Leaflet Custom Icon Wrapper */
+        .leaflet-custom-marker-wrap {
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        /* Marker CSS */
+        .navtex-marker {
+            background-color: white;
+            border: 2px solid #0f172a;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            cursor: default;
+            white-space: nowrap;
+            width: max-content;
+        }
+        .navtex-marker.active {
+            background-color: #ef4444;
+            border-color: #991b1b;
+            color: white;
+            transform: scale(1.1);
+            z-index: 999 !important;
+        }
+        .marker-letter {
+            background: #0f172a;
+            color: white;
+            border-radius: 4px;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        .navtex-marker.active .marker-letter {
+            background: white;
+            color: #ef4444;
+        }
+
+        /* Hidden textarea for copying */
+        .sr-only-copy {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="text-foreground antialiased font-sans flex h-screen w-screen">
+
+    <textarea id="copy-area" class="sr-only-copy" tabindex="-1"></textarea>
+
+    <!-- Map Container -->
+    <div class="relative w-full h-full flex-grow">
+        <div id="map"></div>
+    </div>
+
+    <!-- Sidebar Panel (Left) -->
+    <div class="absolute top-4 left-4 z-[1000] w-[400px] bg-background/95 backdrop-blur-md shadow-2xl border border-border rounded-xl flex flex-col max-h-[calc(100vh-32px)]">
+        
+        <!-- Header -->
+        <div class="p-5 border-b border-border bg-slate-50/50 rounded-t-xl">
+            <h1 class="text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
+                <i data-lucide="satellite-dish" class="w-6 h-6 text-blue-600"></i>
+                NAVTEX TRACKER <span class="text-blue-600 font-bold text-sm bg-blue-100 px-2 py-1 rounded-md ml-auto">BY @c.wijaya.t.</span>
+            </h1>
+            <p class="text-xs text-muted-foreground mt-2 font-medium">Global NAVAREA Coverage Analysis Tool</p>
+        </div>
+        
+        <!-- Control & Upload Area -->
+        <div class="p-5 flex flex-col gap-4 border-b border-border">
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-sm font-semibold text-slate-800">Route Waypoint Data</label>
+                    <span class="text-[10px] text-muted-foreground">.rtz, .rou, .csv, .txt</span>
+                </div>
+                
+                <label for="route-upload" class="group relative flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <div class="bg-white p-2 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 text-blue-600"></i>
+                        </div>
+                        <p class="mb-1 text-xs text-slate-600"><span class="font-semibold">Click to browse</span> or drag file</p>
+                        <p class="text-[10px] text-slate-400">ADC Route / Decimal (DD) Supported</p>
+                    </div>
+                    <input id="route-upload" type="file" class="hidden" accept=".txt,.csv,.rtz,.rou" />
+                </label>
+            </div>
+            
+            <button id="clear-btn" class="hidden w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 hover:text-red-600 text-slate-700 text-sm font-medium rounded-lg transition-colors shadow-sm">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear Route
+            </button>
+        </div>
+
+        <!-- Affected Stations List -->
+        <div class="flex-grow overflow-y-auto p-0 flex flex-col">
+            <div class="p-5 pb-2 sticky top-0 bg-background/95 backdrop-blur z-10 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="radio" class="w-4 h-4 text-emerald-600"></i>
+                        Stations in Range
+                    </h2>
+                    <span id="station-count" class="bg-emerald-100 text-emerald-700 py-0.5 px-2 rounded-md text-xs font-bold shadow-sm">0</span>
+                </div>
+                <!-- Copy Button -->
+                <button id="copy-btn" class="hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-md border border-blue-200 transition-colors shadow-sm">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                </button>
+            </div>
+            
+            <div id="affected-list" class="p-5 pt-3 space-y-3 flex-grow">
+                <div class="text-center py-8">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                        <i data-lucide="map" class="w-6 h-6 text-slate-400"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-600">No route uploaded</p>
+                    <p class="text-xs text-slate-400 mt-1">Upload a route to calculate 400 NM NAVTEX coverage.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Comprehensive Global NAVTEX Database - NAVAREA I to XXI
+        // Decimal Coordinates Format: Latitude (- = South), Longitude (- = West)
+        const navtexStations = [
+            // NAVAREA I
+            { id: '1_A', b1: 'A', name: 'Svalbard', country: 'Norway', lat: 78.22, lng: 15.65, range: 400 },
+            { id: '1_B', b1: 'B', name: 'Bodo', country: 'Norway', lat: 67.28, lng: 14.40, range: 400 },
+            { id: '1_C', b1: 'C', name: 'Vardo', country: 'Norway', lat: 70.36, lng: 31.10, range: 400 },
+            { id: '1_D', b1: 'D', name: 'Torshavn', country: 'Faroe Islands', lat: 62.00, lng: -6.76, range: 400 },
+            { id: '1_E', b1: 'E', name: 'Niton', country: 'UK', lat: 50.58, lng: -1.28, range: 400 },
+            { id: '1_F', b1: 'F', name: 'Tallinn', country: 'Estonia', lat: 59.43, lng: 24.75, range: 400 },
+            { id: '1_G', b1: 'G', name: 'Cullercoats', country: 'UK', lat: 55.03, lng: -1.43, range: 400 },
+            { id: '1_H', b1: 'H', name: 'Bjuroklubb', country: 'Sweden', lat: 64.48, lng: 21.58, range: 400 },
+            { id: '1_I', b1: 'I', name: 'Grimeton', country: 'Sweden', lat: 57.11, lng: 12.39, range: 400 },
+            { id: '1_J', b1: 'J', name: 'Gislovshammar', country: 'Sweden', lat: 55.49, lng: 14.31, range: 400 },
+            { id: '1_K', b1: 'K', name: 'Niton', country: 'UK', lat: 50.58, lng: -1.28, range: 400 },
+            { id: '1_L', b1: 'L', name: 'Rogaland', country: 'Norway', lat: 58.96, lng: 5.73, range: 400 },
+            { id: '1_M', b1: 'M', name: 'Jeloy', country: 'Norway', lat: 59.43, lng: 10.61, range: 400 },
+            { id: '1_N', b1: 'N', name: 'Orlandet', country: 'Norway', lat: 63.68, lng: 9.66, range: 400 },
+            { id: '1_O', b1: 'O', name: 'Portpatrick', country: 'UK', lat: 54.84, lng: -5.11, range: 400 },
+            { id: '1_P', b1: 'P', name: 'Netherlands Coastguard', country: 'Netherlands', lat: 52.95, lng: 4.76, range: 400 },
+            { id: '1_Q', b1: 'Q', name: 'Malin Head', country: 'Ireland', lat: 55.38, lng: -7.38, range: 400 },
+            { id: '1_R', b1: 'R', name: 'Saudanes', country: 'Iceland', lat: 66.27, lng: -18.96, range: 400 },
+            { id: '1_S', b1: 'S', name: 'Pinneberg', country: 'Germany', lat: 53.66, lng: 9.79, range: 400 },
+            { id: '1_T', b1: 'T', name: 'Oostende', country: 'Belgium', lat: 51.23, lng: 2.92, range: 400 },
+            { id: '1_V', b1: 'V', name: 'Oostende', country: 'Belgium', lat: 51.23, lng: 2.92, range: 400 },
+            { id: '1_W', b1: 'W', name: 'Valentia', country: 'Ireland', lat: 51.93, lng: -10.23, range: 400 },
+            { id: '1_X', b1: 'X', name: 'Grindavik', country: 'Iceland', lat: 63.84, lng: -22.43, range: 400 },
+
+            // NAVAREA II
+            { id: '2_A', b1: 'A', name: 'Cross Corsen', country: 'France', lat: 48.41, lng: -4.76, range: 400 },
+            { id: '2_D', b1: 'D', name: 'Coruna', country: 'Spain', lat: 43.36, lng: -8.41, range: 400 },
+            { id: '2_F', b1: 'F', name: 'Horta', country: 'Portugal', lat: 38.53, lng: -28.62, range: 400 },
+            { id: '2_I', b1: 'I', name: 'Las Palmas', country: 'Spain', lat: 28.12, lng: -15.43, range: 400 },
+            { id: '2_M', b1: 'M', name: 'Casablanca', country: 'Morocco', lat: 33.59, lng: -7.61, range: 400 },
+            { id: '2_P', b1: 'P', name: 'Dakar', country: 'Senegal', lat: 14.69, lng: -17.44, range: 400 },
+            { id: '2_R', b1: 'R', name: 'Monsanto', country: 'Portugal', lat: 38.73, lng: -9.18, range: 400 },
+            { id: '2_U', b1: 'U', name: 'Sao Vicente', country: 'Cape Verde', lat: 16.83, lng: -24.98, range: 400 },
+            { id: '2_X', b1: 'X', name: 'Tarifa', country: 'Spain', lat: 36.01, lng: -5.60, range: 400 },
+
+            // NAVAREA III
+            { id: '3_A', b1: 'A', name: 'Novorossiysk', country: 'Russia', lat: 44.72, lng: 37.76, range: 400 },
+            { id: '3_B', b1: 'B', name: 'Alger', country: 'Algeria', lat: 36.75, lng: 3.05, range: 400 },
+            { id: '3_C', b1: 'C', name: 'Odessa', country: 'Ukraine', lat: 46.48, lng: 30.72, range: 400 },
+            { id: '3_D', b1: 'D', name: 'Istanbul', country: 'Turkey', lat: 41.00, lng: 28.97, range: 400 },
+            { id: '3_E', b1: 'E', name: 'Samsun', country: 'Turkey', lat: 41.28, lng: 36.33, range: 400 },
+            { id: '3_F', b1: 'F', name: 'Antalya', country: 'Turkey', lat: 36.88, lng: 30.70, range: 400 },
+            { id: '3_I', b1: 'I', name: 'Izmir', country: 'Turkey', lat: 38.41, lng: 27.13, range: 400 },
+            { id: '3_J', b1: 'J', name: 'Varna', country: 'Bulgaria', lat: 43.20, lng: 27.91, range: 400 },
+            { id: '3_K', b1: 'K', name: 'Kerkyra', country: 'Greece', lat: 39.62, lng: 19.91, range: 400 },
+            { id: '3_L', b1: 'L', name: 'Limnos', country: 'Greece', lat: 39.87, lng: 25.26, range: 400 },
+            { id: '3_M', b1: 'M', name: 'Cyprus', country: 'Cyprus', lat: 35.12, lng: 33.42, range: 400 },
+            { id: '3_N', b1: 'N', name: 'Alexandria', country: 'Egypt', lat: 31.20, lng: 29.91, range: 400 },
+            { id: '3_O', b1: 'O', name: 'Malta', country: 'Malta', lat: 35.93, lng: 14.40, range: 400 },
+            { id: '3_P', b1: 'P', name: 'Haifa', country: 'Israel', lat: 32.81, lng: 34.98, range: 400 },
+            { id: '3_Q', b1: 'Q', name: 'Split', country: 'Croatia', lat: 43.50, lng: 16.44, range: 400 },
+            { id: '3_R', b1: 'R', name: 'Roma', country: 'Italy', lat: 41.90, lng: 12.49, range: 400 },
+            { id: '3_T', b1: 'T', name: 'Cagliari', country: 'Italy', lat: 39.22, lng: 9.11, range: 400 },
+            { id: '3_U', b1: 'U', name: 'Mondolfo', country: 'Italy', lat: 43.75, lng: 13.13, range: 400 },
+            { id: '3_V', b1: 'V', name: 'Sellia Marina', country: 'Italy', lat: 38.88, lng: 16.63, range: 400 },
+            { id: '3_W', b1: 'W', name: 'Augusta', country: 'Italy', lat: 37.23, lng: 15.22, range: 400 },
+            { id: '3_X', b1: 'X', name: 'Valencia', country: 'Spain', lat: 39.46, lng: -0.37, range: 400 },
+
+            // NAVAREA IV
+            { id: '4_A', b1: 'A', name: 'Miami', country: 'USA', lat: 25.76, lng: -80.19, range: 400 },
+            { id: '4_C', b1: 'C', name: 'Riviere-au-Renard', country: 'Canada', lat: 48.99, lng: -64.39, range: 400 },
+            { id: '4_E', b1: 'E', name: 'Charleston', country: 'USA', lat: 32.77, lng: -79.93, range: 400 },
+            { id: '4_F', b1: 'F', name: 'Boston', country: 'USA', lat: 42.36, lng: -71.05, range: 400 },
+            { id: '4_G', b1: 'G', name: 'New Orleans', country: 'USA', lat: 29.95, lng: -90.07, range: 400 },
+            { id: '4_H', b1: 'H', name: 'Curacao', country: 'Caribbean Netherlands', lat: 12.16, lng: -68.99, range: 400 },
+            { id: '4_N', b1: 'N', name: 'Portsmouth', country: 'USA', lat: 36.83, lng: -76.29, range: 400 },
+            { id: '4_O', b1: 'O', name: 'Sydney', country: 'Canada', lat: 46.13, lng: -60.19, range: 400 },
+            { id: '4_Q', b1: 'Q', name: 'Yarmouth', country: 'Canada', lat: 43.83, lng: -66.11, range: 400 },
+            { id: '4_R', b1: 'R', name: 'San Juan', country: 'Puerto Rico', lat: 18.46, lng: -66.10, range: 400 },
+            { id: '4_V', b1: 'V', name: 'Bermuda', country: 'UK', lat: 32.30, lng: -64.75, range: 400 },
+            { id: '4_W', b1: 'W', name: 'Robin Hood Bay', country: 'Canada', lat: 48.01, lng: -53.29, range: 400 },
+            { id: '4_X', b1: 'X', name: 'Iqaluit', country: 'Canada', lat: 63.74, lng: -68.51, range: 400 },
+
+            // NAVAREA V
+            { id: '5_B', b1: 'B', name: 'Salinopolis', country: 'Brazil', lat: -0.61, lng: -47.35, range: 400 },
+            { id: '5_E', b1: 'E', name: 'Recife', country: 'Brazil', lat: -8.05, lng: -34.88, range: 400 },
+            { id: '5_F', b1: 'F', name: 'Rio de Janeiro', country: 'Brazil', lat: -22.90, lng: -43.20, range: 400 },
+            { id: '5_S', b1: 'S', name: 'Rio Grande', country: 'Brazil', lat: -32.03, lng: -52.09, range: 400 },
+
+            // NAVAREA VI
+            { id: '6_F', b1: 'F', name: 'La Paloma', country: 'Uruguay', lat: -34.66, lng: -54.16, range: 400 },
+            { id: '6_M', b1: 'M', name: 'Buenos Aires', country: 'Argentina', lat: -34.60, lng: -58.38, range: 400 },
+            { id: '6_N', b1: 'N', name: 'Rio Gallegos', country: 'Argentina', lat: -51.62, lng: -69.21, range: 400 },
+            { id: '6_P', b1: 'P', name: 'Comodoro Rivadavia', country: 'Argentina', lat: -45.86, lng: -67.49, range: 400 },
+            { id: '6_Q', b1: 'Q', name: 'Bahia Blanca', country: 'Argentina', lat: -38.71, lng: -62.26, range: 400 },
+            { id: '6_R', b1: 'R', name: 'Mar del Plata', country: 'Argentina', lat: -38.00, lng: -57.55, range: 400 },
+
+            // NAVAREA VII
+            { id: '7_C', b1: 'C', name: 'Cape Town', country: 'South Africa', lat: -33.92, lng: 18.42, range: 400 },
+            { id: '7_I', b1: 'I', name: 'Port Elizabeth', country: 'South Africa', lat: -33.96, lng: 25.60, range: 400 },
+            { id: '7_O', b1: 'O', name: 'Durban', country: 'South Africa', lat: -29.85, lng: 31.02, range: 400 },
+            { id: '7_S', b1: 'S', name: 'Walvis Bay', country: 'Namibia', lat: -22.95, lng: 14.50, range: 400 },
+
+            // NAVAREA VIII
+            { id: '8_C', b1: 'C', name: 'Mauritius', country: 'Mauritius', lat: -20.34, lng: 57.55, range: 400 },
+            { id: '8_G', b1: 'G', name: 'Myeik', country: 'Myanmar', lat: 12.43, lng: 98.60, range: 400 },
+            { id: '8_H', b1: 'H', name: 'Veraval', country: 'India', lat: 20.90, lng: 70.36, range: 400 },
+            { id: '8_I', b1: 'I', name: 'Kyaukpyu', country: 'Myanmar', lat: 19.43, lng: 93.53, range: 400 },
+            { id: '8_J', b1: 'J', name: 'Vengrula Point', country: 'India', lat: 15.86, lng: 73.63, range: 400 },
+            { id: '8_L', b1: 'L', name: 'Muttam Point', country: 'India', lat: 8.12, lng: 77.31, range: 400 },
+            { id: '8_O', b1: 'O', name: 'Porto Novo', country: 'India', lat: 11.49, lng: 79.76, range: 400 },
+            { id: '8_P', b1: 'P', name: 'Mumbai', country: 'India', lat: 19.07, lng: 72.87, range: 400 },
+            { id: '8_Q', b1: 'Q', name: 'Vakalpudi', country: 'India', lat: 17.01, lng: 82.28, range: 400 },
+            { id: '8_S', b1: 'S', name: 'Balasore', country: 'India', lat: 21.49, lng: 86.92, range: 400 },
+            { id: '8_T', b1: 'T', name: 'Mahe', country: 'Seychelles', lat: -4.67, lng: 55.52, range: 400 },
+
+            // NAVAREA IX
+            { id: '9_A', b1: 'A', name: 'Bushehr', country: 'Iran', lat: 28.92, lng: 50.83, range: 400 },
+            { id: '9_B', b1: 'B', name: 'Bandar Abbas', country: 'Iran', lat: 27.18, lng: 56.26, range: 400 },
+            { id: '9_F', b1: 'F', name: 'Bandar-e-Khomeini', country: 'Iran', lat: 30.42, lng: 49.07, range: 400 },
+            { id: '9_H', b1: 'H', name: 'Jeddah', country: 'Saudi Arabia', lat: 21.48, lng: 39.19, range: 400 },
+            { id: '9_M', b1: 'M', name: 'Muscat', country: 'Oman', lat: 23.58, lng: 58.40, range: 400 },
+            { id: '9_P', b1: 'P', name: 'Karachi', country: 'Pakistan', lat: 24.86, lng: 67.00, range: 400 },
+            { id: '9_V', b1: 'V', name: 'Quseir', country: 'Egypt', lat: 26.10, lng: 34.27, range: 400 },
+            { id: '9_X', b1: 'X', name: 'Ismailia', country: 'Egypt', lat: 30.60, lng: 32.27, range: 400 },
+
+            // NAVAREA XI
+            { id: '11_A', b1: 'A', name: 'Jayapura', country: 'Indonesia', lat: -2.5333, lng: 140.7000, range: 400 },
+            { id: '11_B', b1: 'B', name: 'Ambon', country: 'Indonesia', lat: -3.7000, lng: 128.1833, range: 400 },
+            { id: '11_C', b1: 'C', name: 'Singapore', country: 'Singapore', lat: 1.3333, lng: 103.8333, range: 400 },
+            { id: '11_D1', b1: 'D', name: 'Makassar', country: 'Indonesia', lat: -5.1333, lng: 119.4167, range: 400 },
+            { id: '11_D2', b1: 'D', name: 'Pyongyang', country: 'North Korea', lat: 39.0333, lng: 125.7500, range: 400 },
+            { id: '11_E1', b1: 'E', name: 'Jakarta', country: 'Indonesia', lat: -6.1167, lng: 106.8833, range: 400 },
+            { id: '11_E2', b1: 'E', name: 'Hamhung', country: 'North Korea', lat: 39.9167, lng: 127.5333, range: 400 },
+            { id: '11_F', b1: 'F', name: 'Bangkok', country: 'Thailand', lat: 13.7500, lng: 100.5167, range: 400 },
+            { id: '11_G', b1: 'G', name: 'Naha', country: 'Japan', lat: 26.2167, lng: 127.6833, range: 400 },
+            { id: '11_H', b1: 'H', name: 'Moji', country: 'Japan', lat: 33.9500, lng: 130.9667, range: 400 },
+            { id: '11_I', b1: 'I', name: 'Yokohama', country: 'Japan', lat: 35.4333, lng: 139.6333, range: 400 },
+            { id: '11_J', b1: 'J', name: 'Otaru', country: 'Japan', lat: 43.2000, lng: 141.0000, range: 400 },
+            { id: '11_K', b1: 'K', name: 'Kushiro', country: 'Japan', lat: 42.9833, lng: 144.3833, range: 400 },
+            { id: '11_L', b1: 'L', name: 'Hong Kong', country: 'China', lat: 22.2833, lng: 114.1500, range: 400 },
+            { id: '11_M', b1: 'M', name: 'Sanya', country: 'China', lat: 18.2333, lng: 109.5000, range: 400 },
+            { id: '11_N', b1: 'N', name: 'Guangzhou', country: 'China', lat: 23.1167, lng: 113.2500, range: 400 },
+            { id: '11_O', b1: 'O', name: 'Fuzhou', country: 'China', lat: 26.0833, lng: 119.3000, range: 400 },
+            { id: '11_P1', b1: 'P', name: 'Shanghai', country: 'China', lat: 31.2333, lng: 121.4667, range: 400 },
+            { id: '11_P2', b1: 'P', name: 'Keelung', country: 'Taiwan', lat: 25.1333, lng: 121.7333, range: 400 },
+            { id: '11_Q', b1: 'Q', name: 'Lianyungang', country: 'China', lat: 34.6000, lng: 119.1667, range: 400 },
+            { id: '11_R', b1: 'R', name: 'Dalian', country: 'China', lat: 38.9167, lng: 121.6167, range: 400 },
+            { id: '11_S', b1: 'S', name: 'Sandakan', country: 'Malaysia', lat: 5.8333, lng: 118.1167, range: 400 },
+            { id: '11_T', b1: 'T', name: 'Miri', country: 'Malaysia', lat: 4.4000, lng: 114.0000, range: 400 },
+            { id: '11_U', b1: 'U', name: 'Penang', country: 'Malaysia', lat: 5.4167, lng: 100.3333, range: 400 },
+            { id: '11_V1', b1: 'V', name: 'Guam', country: 'USA', lat: 13.4667, lng: 144.7833, range: 400 },
+            { id: '11_V2', b1: 'V', name: 'Jukbyeon', country: 'South Korea', lat: 37.0500, lng: 129.4167, range: 400 },
+            { id: '11_W1', b1: 'W', name: 'Manila', country: 'Philippines', lat: 14.6000, lng: 120.9833, range: 400 },
+            { id: '11_W2', b1: 'W', name: 'Byeonsan', country: 'South Korea', lat: 35.6333, lng: 126.5333, range: 400 },
+            { id: '11_X', b1: 'X', name: 'Ho Chi Minh City', country: 'Vietnam', lat: 10.7667, lng: 106.6667, range: 400 },
+
+            // NAVAREA XII
+            { id: '12_C', b1: 'C', name: 'San Francisco', country: 'USA', lat: 37.77, lng: -122.41, range: 400 },
+            { id: '12_D', b1: 'D', name: 'Prince Rupert', country: 'Canada', lat: 54.31, lng: -130.32, range: 400 },
+            { id: '12_H', b1: 'H', name: 'Tofino', country: 'Canada', lat: 49.15, lng: -125.90, range: 400 },
+            { id: '12_J', b1: 'J', name: 'Kodiak', country: 'USA', lat: 57.79, lng: -152.40, range: 400 },
+            { id: '12_L', b1: 'L', name: 'Adak', country: 'USA', lat: 51.88, lng: -176.65, range: 400 },
+            { id: '12_O', b1: 'O', name: 'Honolulu', country: 'USA', lat: 21.30, lng: -157.85, range: 400 },
+            { id: '12_Q', b1: 'Q', name: 'Cambria', country: 'USA', lat: 35.56, lng: -121.08, range: 400 },
+            { id: '12_W', b1: 'W', name: 'Astoria', country: 'USA', lat: 46.18, lng: -123.83, range: 400 },
+            { id: '12_X', b1: 'X', name: 'Ketchikan', country: 'USA', lat: 55.34, lng: -131.64, range: 400 },
+            { id: '12_Z', b1: 'Z', name: 'La Coruna / Antisana', country: 'Ecuador', lat: -0.73, lng: -90.31, range: 400 },
+
+            // NAVAREA XIII
+            { id: '13_A', b1: 'A', name: 'Vladivostok', country: 'Russia', lat: 43.1167, lng: 131.9000, range: 400 },
+            { id: '13_B', b1: 'B', name: 'Kholmsk', country: 'Russia', lat: 47.0500, lng: 142.0500, range: 400 },
+            { id: '13_C', b1: 'C', name: 'Petropavlovsk-Kamchatskiy', country: 'Russia', lat: 53.0167, lng: 158.6500, range: 400 },
+            { id: '13_D', b1: 'D', name: 'Magadan', country: 'Russia', lat: 59.5667, lng: 150.8000, range: 400 },
+            { id: '13_G', b1: 'G', name: 'Okhotsk', country: 'Russia', lat: 59.3667, lng: 143.2500, range: 400 },
+
+            // NAVAREA XIV
+            { id: '14_K', b1: 'K', name: 'Chatham Islands', country: 'New Zealand', lat: -43.95, lng: -176.55, range: 400 },
+
+            // NAVAREA XV
+            { id: '15_A', b1: 'A', name: 'Antofagasta', country: 'Chile', lat: -23.65, lng: -70.40, range: 400 },
+            { id: '15_B', b1: 'B', name: 'Valparaiso', country: 'Chile', lat: -33.04, lng: -71.62, range: 400 },
+            { id: '15_C', b1: 'C', name: 'Talcahuano', country: 'Chile', lat: -36.71, lng: -73.11, range: 400 },
+            { id: '15_D', b1: 'D', name: 'Puerto Montt', country: 'Chile', lat: -41.46, lng: -72.94, range: 400 },
+            { id: '15_E', b1: 'E', name: 'Punta Arenas', country: 'Chile', lat: -53.15, lng: -70.90, range: 400 },
+            { id: '15_F', b1: 'F', name: 'Rapa Nui', country: 'Chile', lat: -27.11, lng: -109.36, range: 400 },
+
+            // NAVAREA XVI
+            { id: '16_S', b1: 'S', name: 'Paita', country: 'Peru', lat: -5.08, lng: -81.11, range: 400 },
+            { id: '16_U', b1: 'U', name: 'Callao', country: 'Peru', lat: -12.06, lng: -77.14, range: 400 },
+            { id: '16_W', b1: 'W', name: 'Mollendo', country: 'Peru', lat: -17.02, lng: -72.01, range: 400 },
+
+            // NAVAREA XVII & XVIII
+            { id: '17_H', b1: 'H', name: 'Iqaluit', country: 'Canada', lat: 63.74, lng: -68.51, range: 400 },
+
+            // NAVAREA XIX
+            { id: '19_A', b1: 'A', name: 'Svalbard', country: 'Norway', lat: 78.22, lng: 15.65, range: 400 },
+            { id: '19_B', b1: 'B', name: 'Bodo', country: 'Norway', lat: 67.28, lng: 14.40, range: 400 },
+            { id: '19_C', b1: 'C', name: 'Vardo', country: 'Norway', lat: 70.36, lng: 31.10, range: 400 },
+
+            // NAVAREA XX
+            { id: '20_K', b1: 'K', name: 'Murmansk', country: 'Russia', lat: 68.95, lng: 33.08, range: 400 },
+            { id: '20_L', b1: 'L', name: 'Arkhangelsk', country: 'Russia', lat: 64.54, lng: 40.53, range: 400 },
+            { id: '20_M', b1: 'M', name: 'Dikson', country: 'Russia', lat: 73.50, lng: 80.51, range: 400 },
+            { id: '20_N', b1: 'N', name: 'Mys Sterlegova', country: 'Russia', lat: 75.39, lng: 88.89, range: 400 }
+        ];
+
+        // Initialize Map (Leaflet JS for secure iframe compatibility)
+        const map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([-2.0, 118.0], 4);
+
+        // Add Zoom Control at the bottom right
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Tile layer Carto Voyager
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        let stationMarkers = [];
+        let radiusLayers = [];
+        let routeLayer = null;
+
+        // Render Navtex Points
+        function drawNavtexMap(affectedIds = []) {
+            // Clear previous markers & radiuses
+            stationMarkers.forEach(m => map.removeLayer(m));
+            radiusLayers.forEach(r => map.removeLayer(r));
+            stationMarkers = [];
+            radiusLayers = [];
+
+            navtexStations.forEach(station => {
+                const isAffected = affectedIds.includes(station.id);
+                
+                // Dynamic styling
+                const fillColor = isAffected ? '#fca5a5' : '#e2e8f0'; // Light red / Grey
+                const fillOpacity = isAffected ? 0.2 : 0.05;
+                const lineColor = isAffected ? '#dc2626' : '#94a3b8'; // Dark red / Dark grey
+
+                // Create Custom HTML Marker via Leaflet divIcon
+                const iconHtml = `
+                    <div class="navtex-marker ${isAffected ? 'active' : ''}">
+                        <div class="marker-letter">${station.b1}</div>
+                        <span>${station.name}</span>
+                    </div>
+                `;
+
+                const customIcon = L.divIcon({
+                    html: iconHtml,
+                    className: 'leaflet-custom-marker-wrap',
+                    iconSize: [120, 30], // Generic bounding box to prevent Leaflet clipping
+                    iconAnchor: [60, 15] // Center the anchor
+                });
+
+                const marker = L.marker([station.lat, station.lng], { 
+                    icon: customIcon,
+                    zIndexOffset: isAffected ? 1000 : 0
+                }).addTo(map);
+                
+                stationMarkers.push(marker);
+
+                // Create 400 NM Radius Circle Geometry (Turf.js -> GeoJSON -> Leaflet)
+                const center = [station.lng, station.lat];
+                const options = { steps: 64, units: 'nauticalmiles' };
+                const circleGeojson = turf.circle(center, station.range, options);
+                
+                const circleLayer = L.geoJSON(circleGeojson, {
+                    style: {
+                        color: lineColor,
+                        weight: 1.5,
+                        dashArray: '4, 4',
+                        fillColor: fillColor,
+                        fillOpacity: fillOpacity
+                    }
+                }).addTo(map);
+                
+                radiusLayers.push(circleLayer);
+            });
+        }
+
+        // Initial Map Render
+        drawNavtexMap();
+
+        // --- FILE UPLOAD HANDLER ---
+        document.getElementById('route-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Simple loading state
+            document.getElementById('affected-list').innerHTML = `
+                <div class="flex justify-center items-center py-10 text-blue-600">
+                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+                </div>
+            `;
+            lucide.createIcons();
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const content = evt.target.result;
+                const ext = file.name.split('.').pop().toLowerCase();
+                let coordinates = [];
+
+                setTimeout(() => {
+                    try {
+                        if (ext === 'rtz') {
+                            coordinates = parseRTZ(content);
+                        } else if (ext === 'txt' || ext === 'csv' || ext === 'rou') {
+                            coordinates = parseCSV_TXT(content);
+                        }
+
+                        if (coordinates.length < 2) {
+                            alert("Unknown format or the file contains less than 2 waypoints.");
+                            resetApp();
+                            return;
+                        }
+
+                        processVoyageRoute(coordinates);
+                    } catch (err) {
+                        console.error(err);
+                        alert("A system error occurred while reading the file.");
+                        resetApp();
+                    }
+                }, 300); // Simulated delay to prevent UI freeze
+            };
+            reader.readAsText(file);
+        });
+
+        // RTZ Parser (Standard ECDIS XML format)
+        function parseRTZ(xmlStr) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+            const waypoints = xmlDoc.getElementsByTagName("waypoint");
+            const coords = [];
+            
+            for (let i = 0; i < waypoints.length; i++) {
+                const pos = waypoints[i].getElementsByTagName("position")[0];
+                if (pos) {
+                    const lat = parseFloat(pos.getAttribute("lat"));
+                    const lon = parseFloat(pos.getAttribute("lon"));
+                    if (!isNaN(lat) && !isNaN(lon)) coords.push([lon, lat]);
+                }
+            }
+            return coords;
+        }
+
+        // TXT/CSV/ROU Parser (Decimal Coordinates: DD with optional N/S/E/W)
+        function parseCSV_TXT(text) {
+            const coords = [];
+            const lines = text.split('\n');
+
+            lines.forEach(line => {
+                // Match decimal numbers with optional direction (e.g., -12.345, 12.345, 12.345N, 12.345 N)
+                const matches = [...line.matchAll(/(-?\d+\.\d+)[°\s]*([NSEW])?/gi)];
+                
+                if (matches.length >= 2) {
+                    let val1 = parseFloat(matches[0][1]);
+                    const dir1 = matches[0][2] ? matches[0][2].toUpperCase() : '';
+                    if (dir1 === 'S' || dir1 === 'W') val1 = -Math.abs(val1);
+
+                    let val2 = parseFloat(matches[1][1]);
+                    const dir2 = matches[1][2] ? matches[1][2].toUpperCase() : '';
+                    if (dir2 === 'S' || dir2 === 'W') val2 = -Math.abs(val2);
+                    
+                    let lat, lon;
+                    
+                    // Detect Lat/Lon based on direction letter (N/S vs E/W)
+                    if (dir1 === 'N' || dir1 === 'S' || dir2 === 'E' || dir2 === 'W') {
+                        lat = (dir1 === 'N' || dir1 === 'S') ? val1 : val2;
+                        lon = (dir2 === 'E' || dir2 === 'W') ? val2 : val1;
+                    } else if (dir2 === 'N' || dir2 === 'S' || dir1 === 'E' || dir1 === 'W') {
+                        lat = (dir2 === 'N' || dir2 === 'S') ? val2 : val1;
+                        lon = (dir1 === 'E' || dir1 === 'W') ? val1 : val2;
+                    } else {
+                        // Fallback based on value (>90 is definitely Longitude)
+                        if (Math.abs(val1) > 90) { lon = val1; lat = val2; }
+                        else { lat = val1; lon = val2; }
+                    }
+
+                    // Validate lat/lon ranges
+                    if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                        coords.push([lon, lat]);
+                    }
+                }
+            });
+            return coords;
+        }
+
+        // --- MAIN LOGIC: SPATIAL CALCULATION ---
+        function processVoyageRoute(coordinates) {
+            // Clear existing route if any
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+            }
+
+            // Create line geometry object (GeoJSON uses [lng, lat] format)
+            const lineString = turf.lineString(coordinates);
+            
+            // Render route on map using Leaflet GeoJSON
+            routeLayer = L.geoJSON(lineString, {
+                style: {
+                    color: '#1e3a8a',
+                    weight: 3,
+                    dashArray: '5, 5'
+                }
+            }).addTo(map);
+
+            // Set map camera to route bounds
+            const routeBounds = routeLayer.getBounds();
+            map.fitBounds(routeBounds, { padding: [100, 100], maxZoom: 8 });
+
+            document.getElementById('clear-btn').classList.remove('hidden');
+
+            const affectedStations = [];
+            
+            // Loop through all stations to calculate closest distance to vessel route
+            navtexStations.forEach(station => {
+                const pt = turf.point([station.lng, station.lat]);
+                // Turf calculates distance from point to closest line segment
+                const distance = turf.pointToLineDistance(pt, lineString, { units: 'nauticalmiles' });
+                
+                if (distance <= station.range) {
+                    affectedStations.push({
+                        ...station,
+                        distanceToRoute: distance.toFixed(1) // 1 decimal format
+                    });
+                }
+            });
+
+            // Sort by Station Alphabet (b1) then by country name
+            affectedStations.sort((a, b) => {
+                if (a.b1 === b.b1) return a.country.localeCompare(b.country);
+                return a.b1.localeCompare(b.b1);
+            });
+
+            // Refresh Map Visual (Highlight affected stations in red)
+            drawNavtexMap(affectedStations.map(s => s.id));
+
+            // Update Left Sidebar UI & Prepare copy text
+            renderSidebarList(affectedStations);
+        }
+
+        function renderSidebarList(stations) {
+            const listContainer = document.getElementById('affected-list');
+            const counter = document.getElementById('station-count');
+            const copyBtn = document.getElementById('copy-btn');
+            const copyArea = document.getElementById('copy-area');
+            
+            counter.innerText = stations.length;
+            listContainer.innerHTML = '';
+            
+            let copyText = "NAVTEX STATIONS LIST (400 NM Radius):\n\n";
+
+            if (stations.length === 0) {
+                copyArea.value = "";
+                copyBtn.classList.add('hidden');
+                listContainer.innerHTML = `
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                        <i data-lucide="shield-alert" class="w-6 h-6 text-amber-500 mx-auto mb-2"></i>
+                        <p class="text-sm text-amber-800 font-medium">Out of Coverage</p>
+                        <p class="text-xs text-amber-600 mt-1">The voyage route is outside the NAVTEX coverage area.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            copyBtn.classList.remove('hidden');
+
+            stations.forEach(st => {
+                // Add data to copy string
+                copyText += `${st.b1} - ${st.name} (${st.country})\n`;
+
+                const div = document.createElement('div');
+                // Calculate distance progress bar (closer = red, further = green)
+                const distancePercent = Math.min((st.distanceToRoute / st.range) * 100, 100);
+                const barColor = distancePercent < 30 ? 'bg-red-500' : (distancePercent < 70 ? 'bg-amber-500' : 'bg-emerald-500');
+
+                div.className = "group relative bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all";
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-md bg-slate-900 text-white font-bold text-lg shadow-inner">
+                                ${st.b1}
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800 leading-none">${st.name}</h3>
+                                <p class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                                    <i data-lucide="map-pin" class="w-3 h-3"></i> ${st.country} • ${st.range} NM
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Closest Point</p>
+                            <p class="text-sm font-bold text-slate-900">${st.distanceToRoute} <span class="text-[10px] text-slate-500">NM</span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Distance Visualization (Inverted Progress Bar) -->
+                    <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden flex">
+                        <div class="h-1.5 ${barColor} rounded-full" style="width: ${100 - distancePercent}%"></div>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            // Save to hidden textarea
+            copyArea.value = copyText.trim();
+
+            // Re-initialize icons inside the new list
+            lucide.createIcons();
+        }
+
+        // --- COPY BUTTON HANDLER ---
+        document.getElementById('copy-btn').addEventListener('click', function() {
+            const copyArea = document.getElementById('copy-area');
+            copyArea.select();
+            copyArea.setSelectionRange(0, 99999); // For mobile
+            
+            try {
+                document.execCommand('copy');
+                // Temporarily change button appearance for feedback
+                const btn = document.getElementById('copy-btn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="check-check" class="w-3.5 h-3.5"></i> Copied!`;
+                btn.classList.replace('text-blue-700', 'text-emerald-700');
+                btn.classList.replace('bg-blue-50', 'bg-emerald-50');
+                btn.classList.replace('border-blue-200', 'border-emerald-200');
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.replace('text-emerald-700', 'text-blue-700');
+                    btn.classList.replace('bg-emerald-50', 'bg-blue-50');
+                    btn.classList.replace('border-emerald-200', 'border-blue-200');
+                    lucide.createIcons();
+                }, 2000);
+            } catch (err) {
+                alert('Failed to copy. Please try again.');
+            }
+        });
+
+        function resetApp() {
+            // Remove route from Leaflet Map
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+                routeLayer = null;
+            }
+            
+            // Return markers and map to normal view
+            drawNavtexMap([]); 
+            
+            // Reset UI
+            document.getElementById('station-count').innerText = '0';
+            document.getElementById('copy-btn').classList.add('hidden');
+            document.getElementById('copy-area').value = "";
+            document.getElementById('affected-list').innerHTML = `
+                <div class="text-center py-8">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                        <i data-lucide="map" class="w-6 h-6 text-slate-400"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-600">No route uploaded</p>
+                    <p class="text-xs text-slate-400 mt-1">Upload a route to calculate 400 NM NAVTEX coverage.</p>
+                </div>
+            `;
+            document.getElementById('route-upload').value = '';
+            document.getElementById('clear-btn').classList.add('hidden');
+            lucide.createIcons();
+            
+            // Return camera position to the center of Indonesia
+            map.setView([-2.0, 118.0], 4, { animate: true });
+        }
+
+        document.getElementById('clear-btn').addEventListener('click', resetApp);
+    </script>
+</body>
+</html>
