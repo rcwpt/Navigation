@@ -186,10 +186,10 @@
         <div class="text-center px-4 relative">
             <div class="absolute inset-0 bg-cyan-500/10 blur-[100px] rounded-full"></div>
             <i class="fa-solid fa-ship text-7xl text-cyan-400 mb-8 animate-pulse relative z-10 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]"></i>
-            <h1 class="text-4xl md:text-6xl font-bold mb-4 text-white tracking-tight relative z-10">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 text-white tracking-tight relative z-10" data-i18n="splash_title">
                 SYSTEM <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">INIT</span>
             </h1>
-            <p class="text-cyan-200/60 font-mono-tech text-sm tracking-[0.2em] uppercase animate-pulse">Establishing Uplink...</p>
+            <p class="text-cyan-200/60 font-mono-tech text-sm tracking-[0.2em] uppercase animate-pulse" data-i18n="splash_subtitle">Establishing Uplink...</p>
         </div>
     </div>
 
@@ -207,9 +207,9 @@
         
         <!-- Language Selector -->
         <div class="absolute top-4 right-4 md:top-8 md:right-8 flex space-x-2 z-40 bg-[#112240]/80 backdrop-blur rounded-full p-1 border border-white/5">
-            <button onclick="changeLanguage('English')" class="w-9 h-9 rounded-full bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 flex items-center justify-center text-lg transition-all shadow-lg" title="English">🇬🇧</button>
-            <button onclick="changeLanguage('Chinese')" class="w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0" title="中文">🇨🇳</button>
-            <button onclick="changeLanguage('Indonesian')" class="w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0" title="Bahasa Indonesia">🇮🇩</button>
+            <button id="btn-lang-en" onclick="setLanguage('en')" class="lang-btn w-9 h-9 rounded-full bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 flex items-center justify-center text-lg transition-all shadow-lg opacity-100 grayscale-0" title="English">🇬🇧</button>
+            <button id="btn-lang-zh" onclick="setLanguage('zh')" class="lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0 border border-transparent" title="中文">🇨🇳</button>
+            <button id="btn-lang-id" onclick="setLanguage('id')" class="lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0 border border-transparent" title="Bahasa Indonesia">🇮🇩</button>
         </div>
 
         <!-- Header -->
@@ -217,8 +217,8 @@
             <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#112240] border border-cyan-500/20 mb-6 shadow-[0_0_30px_rgba(100,255,218,0.1)] radar-icon">
                 <i class="fa-solid fa-crosshairs text-3xl text-[#64ffda]"></i>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-3 text-slate-200">Bridge <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Dashboard</span></h1>
-            <p class="text-slate-400 text-sm md:text-base font-mono-tech tracking-widest uppercase">Tactical Navigation & Comms Hub</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-3 text-slate-200" data-i18n="header_title">Bridge <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Dashboard</span></h1>
+            <p class="text-slate-400 text-sm md:text-base font-mono-tech tracking-widest uppercase" data-i18n="header_subtitle">Tactical Navigation & Comms Hub</p>
         </header>
 
         <!-- Primary Tools Grid -->
@@ -230,14 +230,14 @@
                     <div class="icon-box cyan w-14 h-14 rounded-xl bg-cyan-950/50 border border-cyan-900 flex items-center justify-center text-cyan-400">
                         <i class="fa-solid fa-satellite-dish text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-cyan-500/50 border border-cyan-500/20 px-2 py-1 rounded">COMMS</span>
+                    <span class="text-[10px] font-mono-tech text-cyan-500/50 border border-cyan-500/20 px-2 py-1 rounded" data-i18n="badge_comms">COMMS</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors mb-3">Navtex Tracker</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors mb-3" data-i18n="card1_title">Navtex Tracker</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card1_desc">
                     Monitor MSI (Maritime Safety Information), meteorological warnings, and navigational alerts broadcasted via Navigation Telex.
                 </p>
                 <div class="flex items-center text-cyan-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-cyan-300">
-                    <span>INITIALIZE</span>
+                    <span data-i18n="btn_init">INITIALIZE</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
@@ -248,14 +248,14 @@
                     <div class="icon-box emerald w-14 h-14 rounded-xl bg-emerald-950/50 border border-emerald-900 flex items-center justify-center text-emerald-400">
                         <i class="fa-solid fa-tower-broadcast text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-emerald-500/50 border border-emerald-500/20 px-2 py-1 rounded">GMDSS</span>
+                    <span class="text-[10px] font-mono-tech text-emerald-500/50 border border-emerald-500/20 px-2 py-1 rounded" data-i18n="badge_gmdss">GMDSS</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors mb-3">DSC Directory</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors mb-3" data-i18n="card2_title">DSC Directory</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card2_desc">
                     Database lookup for Coast Radio Stations worldwide and designated Digital Selective Calling frequencies for routine/distress comms.
                 </p>
                 <div class="flex items-center text-emerald-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-emerald-300">
-                    <span>SEARCH DB</span>
+                    <span data-i18n="btn_search">SEARCH DB</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
@@ -266,14 +266,14 @@
                     <div class="icon-box amber w-14 h-14 rounded-xl bg-amber-950/50 border border-amber-900 flex items-center justify-center text-amber-400">
                         <i class="fa-solid fa-cloud-bolt text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-amber-500/50 border border-amber-500/20 px-2 py-1 rounded">ENV</span>
+                    <span class="text-[10px] font-mono-tech text-amber-500/50 border border-amber-500/20 px-2 py-1 rounded" data-i18n="badge_env">ENV</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-amber-400 transition-colors mb-3">Marine Meteo</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-amber-400 transition-colors mb-3" data-i18n="card3_title">Marine Meteo</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card3_desc">
                     Real-time meteorological telemetry, synoptic charts, and oceanographic conditions critical for safe route planning.
                 </p>
                 <div class="flex items-center text-amber-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-amber-300">
-                    <span>VIEW DATA</span>
+                    <span data-i18n="btn_view">VIEW DATA</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
@@ -284,34 +284,33 @@
                     <div class="icon-box purple w-14 h-14 rounded-xl bg-purple-950/50 border border-purple-900 flex items-center justify-center text-purple-400">
                         <i class="fa-solid fa-star-half-stroke text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-purple-500/50 border border-purple-500/20 px-2 py-1 rounded">ASTRO</span>
+                    <span class="text-[10px] font-mono-tech text-purple-500/50 border border-purple-500/20 px-2 py-1 rounded" data-i18n="badge_astro">ASTRO</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-purple-400 transition-colors mb-3">Celestial Calc</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-purple-400 transition-colors mb-3" data-i18n="card4_title">Celestial Calc</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card4_desc">
                     Automated sight reduction algorithms for traditional position fixing using Sun, Moon, Planets, and Navigational Stars.
                 </p>
                 <div class="flex items-center text-purple-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-purple-300">
-                    <span>CALCULATE</span>
+                    <span data-i18n="btn_calc">CALCULATE</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
 
-            <!-- Card 5: NEW MODUL - Gyro Error ABC -->
+            <!-- Card 5: Gyro Error ABC -->
             <a href="https://rcwpt.github.io/Navigation/gyroerror.html" target="_blank" class="glass-card card-rose p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 500ms;">
                 <div class="flex items-start justify-between mb-6">
                     <div class="icon-box rose w-14 h-14 rounded-xl bg-rose-950/50 border border-rose-900 flex items-center justify-center text-rose-400 relative overflow-hidden">
-                        <!-- Compass animated element inside icon box -->
                         <i class="fa-solid fa-compass-drafting text-2xl relative z-10"></i>
                         <div class="absolute inset-0 border-[2px] border-dashed border-rose-500/30 rounded-full animate-[spin_10s_linear_infinite] scale-150"></div>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-rose-500/50 border border-rose-500/20 px-2 py-1 rounded shadow-[0_0_10px_rgba(244,63,94,0.2)]">NAV</span>
+                    <span class="text-[10px] font-mono-tech text-rose-500/50 border border-rose-500/20 px-2 py-1 rounded shadow-[0_0_10px_rgba(244,63,94,0.2)]" data-i18n="badge_nav">NAV</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-rose-400 transition-colors mb-3">Gyro Error (ABC)</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
-                    Hitung dan verifikasi kesalahan kompas Gyro (Gyro Error) menggunakan metode tabel A, B, C berdasarkan azimuth benda angkasa. Esensial untuk akurasi haluan.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-rose-400 transition-colors mb-3" data-i18n="card5_title">Gyro Error (ABC)</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card5_desc">
+                    Calculate and verify Gyro compass error using ABC tables based on celestial azimuths. Essential for precise heading accuracy.
                 </p>
                 <div class="flex items-center text-rose-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-rose-300">
-                    <span>EXECUTE</span>
+                    <span data-i18n="btn_exec">EXECUTE</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
@@ -321,8 +320,8 @@
                 <div class="w-12 h-12 rounded-full bg-[#233554]/50 flex items-center justify-center mb-4">
                     <i class="fa-solid fa-lock text-lg text-slate-500"></i>
                 </div>
-                <h3 class="text-lg font-medium text-slate-400 mb-2 font-mono-tech">SLOT_06 [EMPTY]</h3>
-                <p class="text-slate-500 text-xs px-4">
+                <h3 class="text-lg font-medium text-slate-400 mb-2 font-mono-tech" data-i18n="card6_title">SLOT_06 [EMPTY]</h3>
+                <p class="text-slate-500 text-xs px-4" data-i18n="card6_desc">
                     Expansion bay offline. Awaiting payload for future bridge integration tools.
                 </p>
             </div>
@@ -331,15 +330,15 @@
         <!-- Section Divider -->
         <div class="flex items-center justify-center space-x-6 mb-16 fade-in-section">
             <div class="h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent w-full max-w-sm"></div>
-            <div class="px-4 py-1 border border-cyan-500/20 rounded bg-[#112240] text-cyan-400 text-xs font-mono-tech tracking-widest">PROTOCOLS</div>
+            <div class="px-4 py-1 border border-cyan-500/20 rounded bg-[#112240] text-cyan-400 text-xs font-mono-tech tracking-widest" data-i18n="proto_badge">PROTOCOLS</div>
             <div class="h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent w-full max-w-sm"></div>
         </div>
 
         <!-- GMDSS Testing Protocols Section -->
         <section class="mb-12 fade-in-section">
             <div class="mb-10 text-center">
-                <h2 class="text-2xl md:text-3xl font-semibold text-slate-200 mb-3">GMDSS Maintenance Directives</h2>
-                <p class="text-sm text-slate-400 max-w-2xl mx-auto">Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.</p>
+                <h2 class="text-2xl md:text-3xl font-semibold text-slate-200 mb-3" data-i18n="proto_title">GMDSS Maintenance Directives</h2>
+                <p class="text-sm text-slate-400 max-w-2xl mx-auto" data-i18n="proto_desc">Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
@@ -347,56 +346,56 @@
                 <!-- Daily Tests -->
                 <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-cyan-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-cyan-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200">Daily</h3>
+                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="daily_title">Daily</h3>
                         <i class="fa-solid fa-clock text-cyan-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Verify VHF DSC internal connections & display via built-in test.</li>
-                        <li>Execute MF/HF DSC internal diagnostic (no external transmission).</li>
-                        <li>Confirm INMARSAT-C login status to appropriate Ocean Region.</li>
-                        <li>Check reserve source of energy (batteries) status & printer paper.</li>
+                        <li data-i18n="daily_1">Verify VHF DSC internal connections & display via built-in test.</li>
+                        <li data-i18n="daily_2">Execute MF/HF DSC internal diagnostic (no external transmission).</li>
+                        <li data-i18n="daily_3">Confirm INMARSAT-C login status to appropriate Ocean Region.</li>
+                        <li data-i18n="daily_4">Check reserve source of energy (batteries) status & printer paper.</li>
                     </ul>
                 </div>
 
                 <!-- Weekly Tests -->
                 <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-emerald-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-emerald-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200">Weekly</h3>
+                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="weekly_title">Weekly</h3>
                         <i class="fa-solid fa-calendar-week text-emerald-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Transmit DSC test call to Coast Station (MF/HF).</li>
-                        <li>Verify internal comms between duplicate VHF sets.</li>
-                        <li>Operate equipment from reserve source of energy (if applicable).</li>
-                        <li>Log vessel-to-vessel test if coast station test fails.</li>
+                        <li data-i18n="weekly_1">Transmit DSC test call to Coast Station (MF/HF).</li>
+                        <li data-i18n="weekly_2">Verify internal comms between duplicate VHF sets.</li>
+                        <li data-i18n="weekly_3">Operate equipment from reserve source of energy (if applicable).</li>
+                        <li data-i18n="weekly_4">Log vessel-to-vessel test if coast station test fails.</li>
                     </ul>
                 </div>
 
                 <!-- Monthly Tests -->
                 <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-amber-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-amber-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200">Monthly</h3>
+                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="monthly_title">Monthly</h3>
                         <i class="fa-regular fa-calendar-days text-amber-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>INMARSAT-C Performance Verification (PV).</li>
-                        <li>EPIRB self-test (check physical condition & HRU expiry).</li>
-                        <li>SARTs visual check & live radar test (avoid port interference).</li>
-                        <li>Detailed inspection of emergency batteries & connections.</li>
+                        <li data-i18n="monthly_1">INMARSAT-C Performance Verification (PV).</li>
+                        <li data-i18n="monthly_2">EPIRB self-test (check physical condition & HRU expiry).</li>
+                        <li data-i18n="monthly_3">SARTs visual check & live radar test (avoid port interference).</li>
+                        <li data-i18n="monthly_4">Detailed inspection of emergency batteries & connections.</li>
                     </ul>
                 </div>
 
                 <!-- Logbook Rules -->
                 <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-rose-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-rose-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200">Radio Log</h3>
+                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="log_title">Radio Log</h3>
                         <i class="fa-solid fa-book-bookmark text-rose-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Record exact vessel position (Lat/Long) daily.</li>
-                        <li>Log all distress, urgency, and safety communications.</li>
-                        <li>Record details of all maintenance and testing (Pass/Fail).</li>
-                        <li>Master must review and sign the logbook daily.</li>
+                        <li data-i18n="log_1">Record exact vessel position (Lat/Long) daily.</li>
+                        <li data-i18n="log_2">Log all distress, urgency, and safety communications.</li>
+                        <li data-i18n="log_3">Record details of all maintenance and testing (Pass/Fail).</li>
+                        <li data-i18n="log_4">Master must review and sign the logbook daily.</li>
                     </ul>
                 </div>
 
@@ -409,7 +408,7 @@
     <footer class="mt-auto py-6 border-t border-[#233554] bg-[#050b14]/80 backdrop-blur-md relative z-10">
         <div class="container mx-auto px-4 flex justify-center items-center">
             <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-3 text-slate-400 hover:text-slate-200 transition-colors duration-300 bg-[#112240] px-4 py-2 rounded-full border border-white/5">
-                <span class="text-xs font-mono-tech">SYSTEM.AUTHOR</span>
+                <span class="text-xs font-mono-tech" data-i18n="footer_author">SYSTEM.AUTHOR</span>
                 <span class="w-1 h-1 bg-cyan-400 rounded-full group-hover:scale-150 transition-transform"></span>
                 <span class="font-medium text-cyan-400 group-hover:text-[#64ffda] transition-colors duration-300">@c.wijaya.t</span>
                 <i class="fa-brands fa-instagram text-lg group-hover:text-pink-500 transition-colors duration-300 ml-1"></i>
@@ -419,9 +418,197 @@
 
     <!-- Interactive Scripts -->
     <script>
+        // Language Dictionary
+        const translations = {
+            en: {
+                splash_title: 'SYSTEM <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">INIT</span>',
+                splash_subtitle: 'Establishing Uplink...',
+                header_title: 'Bridge <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Dashboard</span>',
+                header_subtitle: 'Tactical Navigation & Comms Hub',
+                badge_comms: 'COMMS', badge_gmdss: 'GMDSS', badge_env: 'ENV', badge_astro: 'ASTRO', badge_nav: 'NAV',
+                card1_title: 'Navtex Tracker',
+                card1_desc: 'Monitor MSI (Maritime Safety Information), meteorological warnings, and navigational alerts broadcasted via Navigation Telex.',
+                btn_init: 'INITIALIZE',
+                card2_title: 'DSC Directory',
+                card2_desc: 'Database lookup for Coast Radio Stations worldwide and designated Digital Selective Calling frequencies for routine/distress comms.',
+                btn_search: 'SEARCH DB',
+                card3_title: 'Marine Meteo',
+                card3_desc: 'Real-time meteorological telemetry, synoptic charts, and oceanographic conditions critical for safe route planning.',
+                btn_view: 'VIEW DATA',
+                card4_title: 'Celestial Calc',
+                card4_desc: 'Automated sight reduction algorithms for traditional position fixing using Sun, Moon, Planets, and Navigational Stars.',
+                btn_calc: 'CALCULATE',
+                card5_title: 'Gyro Error (ABC)',
+                card5_desc: 'Calculate and verify Gyro compass error using ABC tables based on celestial azimuths. Essential for precise heading accuracy.',
+                btn_exec: 'EXECUTE',
+                card6_title: 'SLOT_06 [EMPTY]',
+                card6_desc: 'Expansion bay offline. Awaiting payload for future bridge integration tools.',
+                proto_badge: 'PROTOCOLS',
+                proto_title: 'GMDSS Maintenance Directives',
+                proto_desc: 'Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.',
+                daily_title: 'Daily',
+                daily_1: 'Verify VHF DSC internal connections & display via built-in test.',
+                daily_2: 'Execute MF/HF DSC internal diagnostic (no external transmission).',
+                daily_3: 'Confirm INMARSAT-C login status to appropriate Ocean Region.',
+                daily_4: 'Check reserve source of energy (batteries) status & printer paper.',
+                weekly_title: 'Weekly',
+                weekly_1: 'Transmit DSC test call to Coast Station (MF/HF).',
+                weekly_2: 'Verify internal comms between duplicate VHF sets.',
+                weekly_3: 'Operate equipment from reserve source of energy (if applicable).',
+                weekly_4: 'Log vessel-to-vessel test if coast station test fails.',
+                monthly_title: 'Monthly',
+                monthly_1: 'INMARSAT-C Performance Verification (PV).',
+                monthly_2: 'EPIRB self-test (check physical condition & HRU expiry).',
+                monthly_3: 'SARTs visual check & live radar test (avoid port interference).',
+                monthly_4: 'Detailed inspection of emergency batteries & connections.',
+                log_title: 'Radio Log',
+                log_1: 'Record exact vessel position (Lat/Long) daily.',
+                log_2: 'Log all distress, urgency, and safety communications.',
+                log_3: 'Record details of all maintenance and testing (Pass/Fail).',
+                log_4: 'Master must review and sign the logbook daily.',
+                footer_author: 'SYSTEM.AUTHOR'
+            },
+            zh: {
+                splash_title: '系统 <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">初始化</span>',
+                splash_subtitle: '建立连接中...',
+                header_title: '驾驶台 <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">仪表板</span>',
+                header_subtitle: '战术导航与通信中心',
+                badge_comms: '通信', badge_gmdss: '全球海上遇险', badge_env: '环境', badge_astro: '天文', badge_nav: '导航',
+                card1_title: '航行警告追踪器',
+                card1_desc: '监控通过航行警告电传播发的海上安全信息（MSI）、气象警告和导航警报。',
+                btn_init: '初始化',
+                card2_title: 'DSC 目录',
+                card2_desc: '全球海岸电台及指定的数字选择性呼叫频率数据库查询，用于日常/遇险通信。',
+                btn_search: '搜索数据库',
+                card3_title: '海洋气象',
+                card3_desc: '对于安全航线规划至关重要的实时气象遥测、天气图和海洋条件。',
+                btn_view: '查看数据',
+                card4_title: '天文计算器',
+                card4_desc: '使用太阳、月亮、行星和导航星进行传统定位的自动化视差修正算法。',
+                btn_calc: '计算',
+                card5_title: '电罗经误差 (ABC)',
+                card5_desc: '基于天体方位使用 ABC 表计算和验证电罗经误差。对精确航向至关重要。',
+                btn_exec: '执行',
+                card6_title: '插槽_06 [空]',
+                card6_desc: '扩展托架离线。等待未来驾驶台集成工具的有效载荷。',
+                proto_badge: '协议',
+                proto_title: 'GMDSS 维护指令',
+                proto_desc: '符合 SOLAS 第 IV 章规定的强制性日常维护和操作验证程序。',
+                daily_title: '每日',
+                daily_1: '通过内置测试验证 VHF DSC 内部连接和显示。',
+                daily_2: '执行 MF/HF DSC 内部诊断（无外部传输）。',
+                daily_3: '确认 INMARSAT-C 登录到适当的洋区状态。',
+                daily_4: '检查备用能源（电池）状态和打印纸。',
+                weekly_title: '每周',
+                weekly_1: '向海岸电台发送 DSC 测试呼叫（MF/HF）。',
+                weekly_2: '验证重复 VHF 设备之间的内部通信。',
+                weekly_3: '从备用能源操作设备（如适用）。',
+                weekly_4: '如果海岸电台测试失败，记录船对船测试。',
+                monthly_title: '每月',
+                monthly_1: 'INMARSAT-C 性能验证 (PV)。',
+                monthly_2: 'EPIRB 自检（检查物理状况和 HRU 过期时间）。',
+                monthly_3: 'SART 目视检查和实弹雷达测试（避免港口干扰）。',
+                monthly_4: '对紧急电池和连接进行详细检查。',
+                log_title: '无线电日志',
+                log_1: '每天记录准确的船舶位置（经/纬度）。',
+                log_2: '记录所有遇险、紧急和安全通信。',
+                log_3: '记录所有维护和测试的详细信息（通过/失败）。',
+                log_4: '船长必须每天审查并签署日志。',
+                footer_author: '系统.作者'
+            },
+            id: {
+                splash_title: 'SISTEM <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">INISIALISASI</span>',
+                splash_subtitle: 'Membangun Koneksi...',
+                header_title: 'Dasbor <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Anjungan</span>',
+                header_subtitle: 'Pusat Navigasi Taktis & Komunikasi',
+                badge_comms: 'KOMUNIKASI', badge_gmdss: 'GMDSS', badge_env: 'LINGKUNGAN', badge_astro: 'ASTRO', badge_nav: 'NAVIGASI',
+                card1_title: 'Pelacak Navtex',
+                card1_desc: 'Pantau MSI (Informasi Keselamatan Maritim), peringatan meteorologi, dan peringatan navigasi yang disiarkan melalui Navtex.',
+                btn_init: 'INISIALISASI',
+                card2_title: 'Direktori DSC',
+                card2_desc: 'Pencarian basis data untuk Stasiun Radio Pantai di seluruh dunia dan frekuensi Digital Selective Calling untuk komunikasi rutin/marabahaya.',
+                btn_search: 'CARI DB',
+                card3_title: 'Meteo Maritim',
+                card3_desc: 'Telemetri meteorologi waktu nyata, peta sinoptik, dan kondisi oseanografi yang penting untuk perencanaan rute yang aman.',
+                btn_view: 'LIHAT DATA',
+                card4_title: 'Kalkulator Selestial',
+                card4_desc: 'Algoritma reduksi pandangan otomatis untuk penentuan posisi tradisional menggunakan Matahari, Bulan, Planet, dan Bintang Navigasi.',
+                btn_calc: 'HITUNG',
+                card5_title: 'Kesalahan Gyro (ABC)',
+                card5_desc: 'Hitung dan verifikasi kesalahan kompas Gyro menggunakan tabel ABC berdasarkan azimuth benda angkasa. Esensial untuk akurasi haluan.',
+                btn_exec: 'EKSEKUSI',
+                card6_title: 'SLOT_06 [KOSONG]',
+                card6_desc: 'Slot ekspansi offline. Menunggu modul untuk alat integrasi anjungan masa depan.',
+                proto_badge: 'PROTOKOL',
+                proto_title: 'Arahan Pemeliharaan GMDSS',
+                proto_desc: 'Prosedur pemeliharaan rutin dan verifikasi operasional wajib yang sesuai dengan peraturan SOLAS Bab IV.',
+                daily_title: 'Harian',
+                daily_1: 'Verifikasi koneksi internal & tampilan VHF DSC melalui tes bawaan.',
+                daily_2: 'Lakukan diagnostik internal MF/HF DSC (tanpa transmisi eksternal).',
+                daily_3: 'Konfirmasi status login INMARSAT-C ke Wilayah Laut yang sesuai.',
+                daily_4: 'Periksa status sumber energi cadangan (baterai) & kertas printer.',
+                weekly_title: 'Mingguan',
+                weekly_1: 'Kirim panggilan tes DSC ke Stasiun Pantai (MF/HF).',
+                weekly_2: 'Verifikasi komunikasi internal antara set VHF ganda.',
+                weekly_3: 'Operasikan peralatan dari sumber energi cadangan (jika berlaku).',
+                weekly_4: 'Catat tes antar-kapal jika tes stasiun pantai gagal.',
+                monthly_title: 'Bulanan',
+                monthly_1: 'Verifikasi Kinerja INMARSAT-C (PV).',
+                monthly_2: 'Tes mandiri EPIRB (periksa kondisi fisik & kedaluwarsa HRU).',
+                monthly_3: 'Pemeriksaan visual SART & uji radar langsung (hindari gangguan pelabuhan).',
+                monthly_4: 'Inspeksi detail baterai darurat & koneksi.',
+                log_title: 'Buku Log Radio',
+                log_1: 'Catat posisi persis kapal (Lintang/Bujur) setiap hari.',
+                log_2: 'Catat semua komunikasi marabahaya, urgensi, dan keselamatan.',
+                log_3: 'Catat detail semua pemeliharaan dan pengujian (Lulus/Gagal).',
+                log_4: 'Nakhoda harus meninjau dan menandatangani buku log setiap hari.',
+                footer_author: 'SISTEM.PENULIS'
+            }
+        };
+
+        // Language Switching Logic
+        function setLanguage(lang) {
+            if (!translations[lang]) return;
+            
+            // Update Text Nodes
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+
+            // Update Button Styles
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                // Reset all to inactive state
+                btn.classList.add('bg-transparent', 'opacity-40', 'grayscale', 'border-transparent');
+                btn.classList.remove('bg-cyan-900/40', 'border-cyan-500/30', 'shadow-lg', 'opacity-100', 'grayscale-0');
+            });
+
+            // Set active state for clicked button
+            const activeBtn = document.getElementById(`btn-lang-${lang}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-transparent', 'opacity-40', 'grayscale', 'border-transparent');
+                activeBtn.classList.add('bg-cyan-900/40', 'border-cyan-500/30', 'shadow-lg', 'opacity-100', 'grayscale-0');
+            }
+
+            // Show Toast Notification
+            const toast = document.getElementById('toast');
+            const message = document.getElementById('toastMessage');
+            const langNames = { en: 'ENGLISH', zh: 'CHINESE (中文)', id: 'INDONESIAN' };
+            
+            message.innerHTML = `SYSTEM.LANG <span class="text-white">${langNames[lang]}</span> ACTIVE.<br><span class="text-xs text-slate-400">UI localized successfully</span>`;
+            
+            toast.classList.remove('translate-x-[120%]', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]', 'opacity-0');
+            }, 3000);
+        }
+
+        // On Load Logic
         document.addEventListener('DOMContentLoaded', () => {
-            // Splash Screen Logic
-            const splashDuration = 2000; // Dikurangi agar tidak terlalu lama menunggu
+            const splashDuration = 2000; 
 
             setTimeout(() => {
                 const splashScreen = document.getElementById('splashScreen');
@@ -432,23 +619,18 @@
                 setTimeout(() => {
                     mainContent.classList.remove('opacity-0');
                     mainContent.classList.add('opacity-100');
-                    
-                    // Trigger scroll animations after splash
                     setupIntersectionObserver();
                 }, 600); 
 
             }, splashDuration);
         });
 
-        // Scroll Animation Logic (Fade in elements as they appear)
         function setupIntersectionObserver() {
             const sections = document.querySelectorAll('.fade-in-section');
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('is-visible');
-                        // Optional: stop observing once visible
-                        // observer.unobserve(entry.target); 
                     }
                 });
             }, {
@@ -459,24 +641,6 @@
             sections.forEach(section => {
                 observer.observe(section);
             });
-        }
-
-        // Language Toast Notification Logic
-        function changeLanguage(lang) {
-            if (lang === 'English') return;
-
-            const toast = document.getElementById('toast');
-            const message = document.getElementById('toastMessage');
-            
-            message.innerHTML = `MODULE <span class="text-white">${lang.toUpperCase()}</span> NOT FOUND.<br><span class="text-xs text-slate-400">Scheduled for patch v2.0</span>`;
-            
-            // Show toast
-            toast.classList.remove('translate-x-[120%]', 'opacity-0');
-            
-            // Hide toast after delay
-            setTimeout(() => {
-                toast.classList.add('translate-x-[120%]', 'opacity-0');
-            }, 3500);
         }
     </script>
 </body>
