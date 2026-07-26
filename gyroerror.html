@@ -66,6 +66,7 @@
             .max-w-7xl { 
                 box-shadow: none !important; 
                 border: none !important; 
+                overflow: visible !important; /* Mencegah halaman terpotong saat print */
             }
             /* Force browsers to print the yellow/green/dark backgrounds */
             * {
@@ -80,9 +81,15 @@
                 border: none !important;
                 color: transparent !important;
                 resize: none !important;
+                overflow: hidden !important; /* Mencegah scrollbar muncul saat diprint */
+                background: transparent !important;
             }
             .print-spacer::placeholder {
                 color: transparent !important;
+            }
+            /* Menyembunyikan semua scrollbar browser saat print */
+            ::-webkit-scrollbar {
+                display: none !important;
             }
         }
     </style>
@@ -369,7 +376,7 @@
 
         <!-- Print Page Adjuster -->
         <div class="px-4 md:px-6 py-2 bg-slate-50 dark:bg-slate-900/20">
-            <textarea class="print-spacer w-full bg-transparent border border-dashed border-slate-300 dark:border-slate-700 rounded p-2 text-slate-400 dark:text-slate-500 text-xs text-center resize-y outline-none transition-colors focus:border-blue-400 hover:border-blue-300" rows="1" placeholder="[Print Adjuster] Press 'Enter' here multiple times to push the diagrams to the next page when printing..."></textarea>
+            <textarea oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" class="print-spacer w-full bg-transparent border border-dashed border-slate-300 dark:border-slate-700 rounded p-2 text-slate-400 dark:text-slate-500 text-xs text-center resize-none overflow-hidden outline-none transition-colors focus:border-blue-400 hover:border-blue-300" rows="1" placeholder="[Print Adjuster] Press 'Enter' here multiple times to push the diagrams to the next page when printing..."></textarea>
         </div>
 
         <!-- Visualizations Section -->
