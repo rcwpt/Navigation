@@ -75,6 +75,15 @@
             .page-break-avoid {
                 break-inside: avoid;
             }
+            /* Make spacer completely transparent on print but keep its height */
+            .print-spacer {
+                border: none !important;
+                color: transparent !important;
+                resize: none !important;
+            }
+            .print-spacer::placeholder {
+                color: transparent !important;
+            }
         }
     </style>
 </head>
@@ -172,6 +181,7 @@
                                 <span>LATITUDE</span> <i class="fas fa-magic text-yellow-500" title="Auto-formats to 00°00.00'N/S"></i>
                             </label>
                             <input type="text" id="latitude" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="Type num + N/S">
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-1 leading-tight">e.g., type <b>10305N</b> to get 10° 30.5' N</p>
                         </div>
 
                         <div class="space-y-1 relative">
@@ -179,6 +189,7 @@
                                 <span>LONGITUDE</span> <i class="fas fa-magic text-yellow-500" title="Auto-formats to 000°00.00'E/W"></i>
                             </label>
                             <input type="text" id="longitude" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="Type num + E/W">
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 italic mt-1 leading-tight">e.g., type <b>110305E</b> to get 110° 30.5' E</p>
                         </div>
 
                         <div class="space-y-1">
@@ -354,6 +365,11 @@
                 </div>
 
             </div>
+        </div>
+
+        <!-- Print Page Adjuster -->
+        <div class="px-4 md:px-6 py-2 bg-slate-50 dark:bg-slate-900/20">
+            <textarea class="print-spacer w-full bg-transparent border border-dashed border-slate-300 dark:border-slate-700 rounded p-2 text-slate-400 dark:text-slate-500 text-xs text-center resize-y outline-none transition-colors focus:border-blue-400 hover:border-blue-300" rows="1" placeholder="[Print Adjuster] Press 'Enter' here multiple times to push the diagrams to the next page when printing..."></textarea>
         </div>
 
         <!-- Visualizations Section -->
