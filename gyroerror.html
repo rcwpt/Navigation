@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compass Error by Azimuth (ABC Method)</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0f172a',
+                        darkcard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Custom styling to match the image's yellow input boxes */
+        .input-yellow {
+            background-color: #fef08a !important; /* tailwind yellow-200 */
+            border: 1px solid #ca8a04; /* tailwind yellow-600 */
+            color: #1e3a8a;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .input-yellow:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.4);
+        }
+        /* Dark mode inputs */
+        .dark .input-yellow {
+            background-color: #854d0e !important; /* tailwind yellow-800 */
+            border-color: #a16207;
+            color: #fef08a;
+        }
+        .result-box {
+            background-color: #dcfce7 !important; /* tailwind green-100 */
+            border: 1px solid #16a34a;
+            font-weight: 700;
+            color: #166534;
+        }
+        .dark .result-box {
+            background-color: #064e3b !important; /* tailwind emerald-900 */
+            border-color: #059669;
+            color: #6ee7b7;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { 
+                background-color: white !important; 
+                padding: 0 !important;
+            }
+            .max-w-7xl { 
+                box-shadow: none !important; 
+                border: none !important; 
+            }
+            /* Force browsers to print the yellow/green/dark backgrounds */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .page-break-avoid {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-darkbg dark:text-slate-200 p-2 md:p-6 min-h-screen">
+
+    <div class="max-w-7xl mx-auto bg-white dark:bg-darkcard rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 transition-colors duration-300 relative">
+        
+        <!-- Header & Toolbar -->
+        <div class="bg-gradient-to-r from-blue-800 to-cyan-600 dark:from-slate-800 dark:to-slate-900 p-4 md:p-6 text-white relative flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 z-10 mb-4 md:mb-0">
+                <i class="fas fa-ship text-3xl text-cyan-300"></i>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide uppercase">GYRO COMPASS ERROR CALC</h1>
+                    <p class="text-blue-200 dark:text-slate-400 text-sm font-light tracking-widest">BY AZIMUTH (ABC METHOD)</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 z-10 justify-center md:justify-end no-print">
+                <a href="https://rcwpt.github.io/Navigation/" class="bg-slate-800/50 hover:bg-slate-700 p-2 rounded-lg text-sm transition shadow border border-slate-500/30 flex items-center text-white text-decoration-none" title="Back to Home">
+                    <i class="fas fa-home md:mr-1"></i> <span class="hidden md:inline">Home</span>
+                </a>
+
+                <button onclick="window.print()" class="bg-emerald-600/80 hover:bg-emerald-500 p-2 rounded-lg text-sm transition shadow border border-emerald-400/30 flex items-center text-white" title="Print Report">
+                    <i class="fas fa-print md:mr-1"></i> <span class="hidden md:inline">Print</span>
+                </button>
+
+                <button onclick="document.getElementById('importFile').click()" class="bg-blue-700/50 hover:bg-blue-600 p-2 rounded-lg text-sm transition shadow border border-blue-500/30 flex items-center text-white" title="Import Data">
+                    <i class="fas fa-file-import md:mr-1"></i> <span class="hidden md:inline">Import</span>
+                </button>
+                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+                
+                <button onclick="exportData()" class="bg-blue-700/50 hover:bg-blue-600 p-2 rounded-lg text-sm transition shadow border border-blue-500/30 flex items-center text-white" title="Export Data">
+                    <i class="fas fa-file-export md:mr-1"></i> <span class="hidden md:inline">Export</span>
+                </button>
+                
+                <button onclick="toggleDarkMode()" class="bg-slate-800/50 hover:bg-slate-700 p-2 rounded-lg text-sm transition shadow border border-slate-500/30 w-10 flex justify-center items-center text-white" title="Toggle Dark Mode">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+            </div>
+            
+            <i class="fas fa-compass text-6xl absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 opacity-10 hidden md:block"></i>
+        </div>
+
+        <div class="p-4 md:p-6 bg-slate-100/50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
+            <h2 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider"><i class="fas fa-clipboard-list text-blue-500 mr-2"></i>Vessel Information</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div class="space-y-1">
+                    <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">SHIP NAME</label>
+                    <input type="text" id="ship_name" class="input-yellow rounded p-1.5 w-full uppercase" placeholder="M/V ...">
+                </div>
+                <div class="space-y-1">
+                    <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">VOYAGE NO.</label>
+                    <input type="text" id="voyage_no" class="input-yellow rounded p-1.5 w-full uppercase" placeholder="001">
+                </div>
+                <div class="space-y-1">
+                    <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">LAST PORT</label>
+                    <input type="text" id="last_port" class="input-yellow rounded p-1.5 w-full uppercase" placeholder="e.g. SINGAPORE">
+                </div>
+                <div class="space-y-1">
+                    <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">NEXT PORT</label>
+                    <input type="text" id="next_port" class="input-yellow rounded p-1.5 w-full uppercase" placeholder="e.g. HONG KONG">
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- LEFT COLUMN -->
+            <div class="space-y-6">
+                
+                <!-- Observation Details -->
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl shadow-inner border border-slate-200 dark:border-slate-700 transition-colors">
+                    <h2 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-4 border-b dark:border-slate-600 pb-2"><i class="fas fa-info-circle text-blue-500 mr-2"></i>Observation Details</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div class="space-y-1">
+                            <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">CELESTIAL BODY</label>
+                            <input type="text" id="obj_name" value="SUN" class="input-yellow rounded p-1.5 w-full uppercase" placeholder="e.g. SUN">
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="font-semibold text-blue-800 dark:text-blue-400 text-xs">GYRO BEARING (G/B) °</label>
+                            <input type="number" id="gyro_bearing" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="000.0" step="0.1">
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">DATE & UTC TIME</label>
+                            <div class="flex gap-2">
+                                <input type="date" id="obs_date" class="input-yellow rounded p-1.5 w-1/2 calc-trigger">
+                                <input type="time" id="obs_time" class="input-yellow rounded p-1.5 w-1/2 calc-trigger">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 relative">
+                            <label class="font-semibold text-red-600 dark:text-red-400 text-xs flex justify-between">
+                                <span>LATITUDE</span> <i class="fas fa-magic text-yellow-500" title="Auto-formats to 00°00.00'N/S"></i>
+                            </label>
+                            <input type="text" id="latitude" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="Type num + N/S">
+                        </div>
+
+                        <div class="space-y-1 relative">
+                            <label class="font-semibold text-red-600 dark:text-red-400 text-xs flex justify-between">
+                                <span>LONGITUDE</span> <i class="fas fa-magic text-yellow-500" title="Auto-formats to 000°00.00'E/W"></i>
+                            </label>
+                            <input type="text" id="longitude" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="Type num + E/W">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">GYRO COURSE (G/C) °</label>
+                            <input type="number" id="gyro_course" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="000.0" step="0.1">
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">MAG. COURSE (M/C) °</label>
+                            <input type="number" id="mag_course" class="input-yellow rounded p-1.5 w-full calc-trigger" placeholder="000.0" step="0.1">
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="font-semibold text-slate-600 dark:text-slate-400 text-xs">VARIATION (VAR) °</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="var_val" class="input-yellow rounded p-1.5 w-2/3 calc-trigger" placeholder="0.0" step="0.1">
+                                <select id="var_dir" class="input-yellow rounded p-1.5 w-1/3 calc-trigger">
+                                    <option value="E">E</option>
+                                    <option value="W" selected>W</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LHA Calculation Card -->
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl shadow-inner border border-slate-200 dark:border-slate-700 transition-colors">
+                    <h2 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-4 border-b dark:border-slate-600 pb-2"><i class="fas fa-globe text-blue-500 mr-2"></i>LHA Calculation</h2>
+                    <div class="grid grid-cols-12 gap-2 text-sm items-center">
+                        <div class="col-span-6 font-semibold dark:text-slate-300">GHA OF SUN:</div>
+                        <div class="col-span-6 flex gap-1">
+                            <input type="number" id="gha_deg" class="input-yellow rounded p-1.5 w-1/2 calc-trigger text-center" placeholder="Deg">
+                            <input type="number" id="gha_min" class="input-yellow rounded p-1.5 w-1/2 calc-trigger text-center" placeholder="Min" step="0.1">
+                        </div>
+
+                        <div class="col-span-6 font-semibold flex items-center justify-between dark:text-slate-300">
+                            <span>INCREMENTS:</span>
+                            <span class="text-red-500 font-bold mr-2 text-lg">+</span>
+                        </div>
+                        <div class="col-span-6 flex gap-1">
+                            <input type="number" id="inc_deg" class="input-yellow rounded p-1.5 w-1/2 calc-trigger text-center" placeholder="Deg">
+                            <input type="number" id="inc_min" class="input-yellow rounded p-1.5 w-1/2 calc-trigger text-center" placeholder="Min" step="0.1">
+                        </div>
+
+                        <div class="col-span-12 border-b border-slate-300 dark:border-slate-600 my-1"></div>
+
+                        <div class="col-span-6 font-bold text-blue-800 dark:text-blue-400">CORR. GHA OF SUN:</div>
+                        <div class="col-span-6 bg-slate-200 dark:bg-slate-700 rounded p-1.5 text-center font-mono dark:text-slate-200" id="out_corr_gha">000° 00.0'</div>
+
+                        <div class="col-span-6 font-semibold flex items-center justify-between dark:text-slate-300">
+                            <span>LONGITUDE:</span>
+                            <span class="text-red-500 font-bold mr-2 text-xs" id="lon_sign_display">+/- (E+, W-)</span>
+                        </div>
+                        <div class="col-span-6 bg-slate-200 dark:bg-slate-700 rounded p-1.5 text-center font-mono text-slate-600 dark:text-slate-400" id="out_lon_calc">---° --.-'</div>
+
+                        <div class="col-span-12 border-b-2 border-slate-400 dark:border-slate-500 my-1"></div>
+
+                        <div class="col-span-6 font-bold text-lg text-blue-900 dark:text-cyan-300">LHA OF SUN:</div>
+                        <div class="col-span-6 result-box rounded p-2 text-center font-mono text-lg" id="out_lha">---° --.-'</div>
+                    </div>
+                </div>
+
+                <!-- Declination Card -->
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl shadow-inner border border-slate-200 dark:border-slate-700 transition-colors">
+                    <h2 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-4 border-b dark:border-slate-600 pb-2"><i class="fas fa-temperature-empty text-orange-500 mr-2"></i>Declination Calculation</h2>
+                    <div class="grid grid-cols-12 gap-2 text-sm items-center">
+                        <div class="col-span-6 font-semibold dark:text-slate-300">DEC. OF SUN:</div>
+                        <div class="col-span-6 flex gap-1">
+                            <input type="number" id="dec_deg" class="input-yellow rounded p-1.5 w-1/3 calc-trigger text-center" placeholder="Deg">
+                            <input type="number" id="dec_min" class="input-yellow rounded p-1.5 w-1/3 calc-trigger text-center" placeholder="Min" step="0.1">
+                            <select id="dec_dir" class="input-yellow rounded p-1.5 w-1/3 calc-trigger text-center">
+                                <option value="N" selected>N</option>
+                                <option value="S">S</option>
+                            </select>
+                        </div>
+
+                        <div class="col-span-6 font-semibold flex items-center justify-between dark:text-slate-300">
+                            <span>D. CORR:</span>
+                            <select id="d_corr_sign" class="bg-white dark:bg-slate-700 border dark:border-slate-600 rounded text-red-500 dark:text-red-400 font-bold w-10 text-center calc-trigger p-1">
+                                <option value="+">+</option>
+                                <option value="-" selected>-</option>
+                            </select>
+                        </div>
+                        <div class="col-span-6">
+                            <input type="number" id="d_corr_val" class="input-yellow rounded p-1.5 w-full calc-trigger text-center" placeholder="Min (e.g. 0.2)" step="0.1">
+                        </div>
+
+                        <div class="col-span-12 border-b-2 border-slate-400 dark:border-slate-500 my-1"></div>
+
+                        <div class="col-span-6 font-bold text-blue-900 dark:text-cyan-300">TRUE DECLINATION:</div>
+                        <div class="col-span-6 result-box rounded p-1.5 text-center font-mono" id="out_true_dec">--° --.-'</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="space-y-6">
+                
+                <!-- ABC Table Card -->
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl shadow-inner border border-slate-200 dark:border-slate-700 transition-colors">
+                    <div class="flex justify-between items-center mb-4 border-b dark:border-slate-600 pb-2">
+                        <h2 class="text-lg font-bold text-slate-700 dark:text-slate-300"><i class="fas fa-table text-indigo-500 mr-2"></i>ABC Table & Azimuth</h2>
+                        <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-[10px] px-2 py-1 rounded-full border border-green-300 dark:border-green-700 shadow-sm"><i class="fas fa-robot mr-1"></i>AUTO-CALCULATED</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-12 gap-3 text-sm items-center">
+                        <div class="col-span-2 font-bold text-right dark:text-slate-300">A =</div>
+                        <div class="col-span-3 bg-slate-200 dark:bg-slate-700 rounded p-1 text-center font-mono dark:text-slate-200" id="out_a_val">0.000</div>
+                        <div class="col-span-2 bg-slate-200 dark:bg-slate-700 rounded p-1 text-center font-bold dark:text-slate-200" id="out_a_name">-</div>
+                        <div class="col-span-5 text-[10px] md:text-xs text-slate-500 dark:text-slate-400 italic">Tan(Lat) ÷ Tan(LHA) <br>Name opp. Lat (exc. LHA 90-270)</div>
+
+                        <div class="col-span-2 font-bold text-right dark:text-slate-300">B =</div>
+                        <div class="col-span-3 bg-slate-200 dark:bg-slate-700 rounded p-1 text-center font-mono dark:text-slate-200" id="out_b_val">0.000</div>
+                        <div class="col-span-2 bg-slate-200 dark:bg-slate-700 rounded p-1 text-center font-bold dark:text-slate-200" id="out_b_name">-</div>
+                        <div class="col-span-5 text-[10px] md:text-xs text-slate-500 dark:text-slate-400 italic">Tan(Dec) ÷ Sin(LHA) <br>Always same name as Declination</div>
+
+                        <div class="col-span-12 border-b border-slate-300 dark:border-slate-600"></div>
+
+                        <div class="col-span-2 font-bold text-right text-lg dark:text-slate-200">C =</div>
+                        <div class="col-span-3 result-box rounded p-1 text-center font-mono text-lg" id="out_c_val">0.000</div>
+                        <div class="col-span-2 result-box rounded p-1 text-center font-bold text-lg" id="out_c_name">-</div>
+                        <div class="col-span-5 text-[10px] md:text-xs text-slate-600 dark:text-slate-400 font-semibold">(Same name ADD, Diff name SUB)</div>
+
+                        <div class="col-span-12 mt-1"></div>
+
+                        <div class="col-span-4 font-bold text-right text-blue-700 dark:text-blue-400 text-lg">AZIMUTH =</div>
+                        <div class="col-span-8 flex gap-2">
+                            <!-- Blue styling for Azimuth -->
+                            <div class="bg-blue-100 border border-blue-400 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300 rounded p-2 text-center font-bold text-lg w-1/4" id="az_prefix">-</div>
+                            <div class="bg-blue-100 border border-blue-400 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300 rounded p-2 text-center font-mono text-lg w-1/2" id="az_val">000.0°</div>
+                            <div class="bg-blue-100 border border-blue-400 text-blue-800 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300 rounded p-2 text-center font-bold text-lg w-1/4" id="az_suffix">-</div>
+                        </div>
+
+                        <div class="col-span-4 font-bold text-right text-green-700 dark:text-green-400 text-xl leading-tight">TRUE BRG<br><span class="text-[10px] text-slate-500">(TB)</span> =</div>
+                        <div class="col-span-8 bg-green-600 dark:bg-green-700 text-white rounded p-2 text-center font-mono text-xl font-bold tracking-wider shadow-md border-2 border-green-800 flex items-center justify-center" id="out_tb">
+                            ---.-°
+                        </div>
+                    </div>
+
+                    <!-- Interactive Azimuth to True Bearing Diagram -->
+                    <div class="mt-6 bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700 flex flex-col items-center relative shadow-sm group">
+                        <h4 class="text-slate-700 dark:text-slate-300 font-bold mb-1 text-sm text-center">
+                            <i class="fas fa-sync-alt text-indigo-500 mr-1"></i> Azimuth to True Bearing (TB) Diagram
+                        </h4>
+                        <p class="text-[10px] text-slate-400 mb-2">Click to expand & read explanation</p>
+                        
+                        <canvas id="azToTbCanvas" width="280" height="280" class="mt-2 cursor-pointer hover:ring-4 hover:ring-indigo-400/30 rounded-full transition-all" onclick="openModal('azToTbCanvas')" title="Click to enlarge diagram"></canvas>
+                        
+                        <!-- Mini Legend -->
+                        <div class="absolute bottom-4 left-4 text-[10px] bg-white/90 dark:bg-slate-900/90 p-1.5 rounded border border-slate-200 dark:border-slate-600 shadow">
+                            <div class="flex items-center"><div class="w-3 h-3 bg-blue-500 rounded-full mr-1"></div> <span class="dark:text-slate-300">Azimuth</span></div>
+                            <div class="flex items-center mt-1"><div class="w-3 h-3 bg-green-500 rounded-full mr-1"></div> <span class="dark:text-slate-300">True Brg</span></div>
+                        </div>
+                        
+                        <!-- Zoom Icon hint -->
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-indigo-500/50">
+                            <i class="fas fa-search-plus text-5xl drop-shadow-md"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Almanac Simulation Guide -->
+                <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl shadow-inner border border-amber-200 dark:border-amber-700/50 transition-colors">
+                    <h2 class="text-lg font-bold text-amber-800 dark:text-amber-500 mb-3 border-b border-amber-300 dark:border-amber-700/50 pb-2"><i class="fas fa-book-open text-amber-600 mr-2"></i>Almanac & Declination Guide</h2>
+                    <div class="text-sm text-slate-700 dark:text-slate-300 space-y-3" id="almanac_guide_text">
+                        <!-- Dynamic text injected via JS -->
+                        <div class="text-slate-500 dark:text-slate-500 italic text-center py-4">
+                            <i class="fas fa-arrow-left mb-2 text-2xl block text-amber-400/50"></i>
+                            Input Time and Declination to generate the Almanac reading guide automatically.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Visualizations Section -->
+        <div class="bg-slate-100 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 p-4 md:p-6 transition-colors">
+            <h2 class="text-xl font-bold mb-2 text-center text-blue-900 dark:text-blue-300 uppercase tracking-widest"><i class="fas fa-drafting-compass mr-2"></i>Situation & Vector Diagrams</h2>
+            <p class="text-center text-slate-500 text-sm mb-6">Click any diagram to view details and explanations</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Top-Down Ship View -->
+                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center shadow-sm relative group cursor-pointer hover:ring-2 ring-sky-400 transition-all" onclick="openModal('shipCanvas')">
+                    <h3 class="font-bold text-slate-700 dark:text-slate-300 mb-2"><i class="fas fa-ship text-blue-500 mr-1"></i> Ship Overview</h3>
+                    <canvas id="shipCanvas" width="280" height="280" class="bg-sky-50 dark:bg-slate-900 rounded-full shadow-inner border border-slate-300 dark:border-slate-600"></canvas>
+                    <div class="mt-4 text-xs text-center text-slate-600 dark:text-slate-400 space-y-1" id="ship_status_text">
+                        <!-- Dynamic status text -->
+                    </div>
+                    <div class="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-opacity text-sky-500/50">
+                        <i class="fas fa-expand text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- Course Vectors -->
+                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center shadow-sm relative group cursor-pointer hover:ring-2 ring-indigo-400 transition-all" onclick="openModal('courseCanvas')">
+                    <h3 class="font-bold text-slate-700 dark:text-slate-300 mb-2"><i class="fas fa-location-arrow text-indigo-500 mr-1"></i> Course Vectors</h3>
+                    <canvas id="courseCanvas" width="280" height="280" class="bg-slate-50 dark:bg-slate-900 rounded-xl shadow-inner border border-slate-100 dark:border-slate-700"></canvas>
+                    <p class="mt-3 text-[10px] text-center text-slate-500 dark:text-slate-400 px-2">
+                        <span class="text-slate-800 dark:text-slate-200 font-bold">TN</span> True, <span class="text-blue-600 dark:text-blue-400 font-bold">MN</span> Magnetic, <span class="text-red-600 dark:text-red-400 font-bold">CN</span> Compass
+                    </p>
+                    <div class="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-opacity text-indigo-500/50">
+                        <i class="fas fa-expand text-2xl"></i>
+                    </div>
+                </div>
+
+                <!-- Bearing Vectors -->
+                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center shadow-sm relative group cursor-pointer hover:ring-2 ring-green-400 transition-all" onclick="openModal('bearingCanvas')">
+                    <h3 class="font-bold text-slate-700 dark:text-slate-300 mb-2"><i class="fas fa-eye text-green-600 mr-1"></i> Bearing Vectors</h3>
+                    <canvas id="bearingCanvas" width="280" height="280" class="bg-slate-50 dark:bg-slate-900 rounded-xl shadow-inner border border-slate-100 dark:border-slate-700"></canvas>
+                    <p class="mt-3 text-[10px] text-center text-slate-500 dark:text-slate-400 px-2">
+                        <span class="text-green-700 dark:text-green-500 font-bold">TB</span> True Brg, <span class="text-blue-600 dark:text-blue-400 font-bold">MB</span> Mag Brg, <span class="text-red-600 dark:text-red-400 font-bold">CB</span> Comp Brg
+                    </p>
+                    <div class="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-opacity text-green-500/50">
+                        <i class="fas fa-expand text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINAL RESULTS -->
+        <div class="bg-slate-800 dark:bg-slate-950 text-white p-4 md:p-6 transition-colors border-t-4 border-yellow-500">
+            <h2 class="text-xl md:text-2xl font-bold mb-6 text-center text-yellow-400 uppercase tracking-widest"><i class="fas fa-clipboard-check mr-2"></i>Final Results & Errors</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Errors Calculation -->
+                <div class="space-y-3 font-mono text-lg">
+                    <div class="flex justify-between items-center bg-slate-700/80 p-2 rounded">
+                        <span class="font-bold text-sm md:text-base text-slate-300">G/B (Gyro Bearing)</span>
+                        <span class="text-yellow-300 font-bold" id="res_gb">---.-°</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-700/80 p-2 rounded border-b-2 border-slate-500 relative">
+                        <span class="font-bold text-sm md:text-base text-slate-300">T/B (True Bearing)</span>
+                        <span class="text-green-400 font-bold" id="res_tb">---.-°</span>
+                        <div class="absolute -right-4 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs">
+                            <i class="fas fa-minus"></i> Diff
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-600/90 p-3 rounded-lg shadow-lg border border-slate-500 relative overflow-hidden">
+                        <div class="absolute left-0 top-0 h-full w-2 bg-cyan-400"></div>
+                        <div class="flex justify-between items-center pl-3">
+                            <span class="font-bold text-white text-base md:text-xl">G/E (Gyro Error)</span>
+                            <span class="font-bold text-cyan-300 text-xl md:text-2xl" id="res_ge">---.-° -</span>
+                        </div>
+                        <p class="text-[11px] text-cyan-100 mt-1 italic pl-3" id="ge_reason">Awaiting inputs...</p>
+                    </div>
+
+                    <div class="h-4"></div> <!-- Spacer -->
+
+                    <div class="flex justify-between items-center bg-slate-700/80 p-2 rounded">
+                        <span class="font-bold text-sm md:text-base text-slate-300">G/C (Gyro Course)</span>
+                        <span class="text-yellow-300 font-bold" id="res_gc">---.-°</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-700/80 p-2 rounded">
+                        <span class="font-bold text-sm md:text-base text-slate-300">T/C (True Course)</span>
+                        <span class="text-green-400 font-bold" id="res_tc">---.-°</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-700/80 p-2 rounded border-b-2 border-slate-500 relative">
+                        <span class="font-bold text-sm md:text-base text-slate-300">M/C (Mag. Course)</span>
+                        <span class="text-blue-300 font-bold" id="res_mc">---.-°</span>
+                        <div class="absolute -right-4 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs">
+                            <i class="fas fa-minus"></i> Diff
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-600/90 p-3 rounded-lg shadow-lg border border-slate-500 relative overflow-hidden">
+                         <div class="absolute left-0 top-0 h-full w-2 bg-purple-400"></div>
+                        <div class="flex justify-between items-center pl-3">
+                            <span class="font-bold text-white text-base md:text-xl">VARIATION</span>
+                            <span class="font-bold text-purple-300 text-xl md:text-2xl" id="res_var">---.-° -</span>
+                        </div>
+                        <p class="text-[11px] text-purple-100 mt-1 italic pl-3" id="var_reason">Awaiting inputs...</p>
+                    </div>
+                </div>
+
+                <!-- Simple Cheatsheet Text -->
+                <div class="flex flex-col justify-center page-break-avoid">
+                    <div class="bg-slate-700/50 rounded-xl p-5 border border-slate-600">
+                        <h3 class="text-yellow-400 font-bold mb-4 border-b border-slate-500 pb-2 text-lg"><i class="fas fa-lightbulb mr-2"></i> Golden Rules</h3>
+                        <ul class="space-y-4 text-slate-200">
+                            <li class="flex items-start">
+                                <i class="fas fa-arrow-left text-green-400 mt-1 mr-3 text-lg"></i>
+                                <div>
+                                    <b class="text-white text-base">Compass Best, Error West</b>
+                                    <p class="text-xs text-slate-400 mt-1">If Gyro/Mag bearing is numerically LARGER than True bearing, the error is WEST (-).</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-arrow-right text-green-400 mt-1 mr-3 text-lg"></i>
+                                <div>
+                                    <b class="text-white text-base">Compass Least, Error East</b>
+                                    <p class="text-xs text-slate-400 mt-1">If Gyro/Mag bearing is numerically SMALLER than True bearing, the error is EAST (+).</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-calculator text-blue-400 mt-1 mr-3 text-lg"></i>
+                                <div>
+                                    <b class="text-white text-base">Applying Errors to Courses</b>
+                                    <p class="text-xs text-slate-400 mt-1">To get True Course: ADD East errors, SUBTRACT West errors from Gyro/Mag.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center text-slate-500 dark:text-slate-400 text-sm py-6 font-medium no-print">
+        copyright @c.wijaya.t
+    </footer>
+
+    <!-- Modal for Expanded Diagrams & Explanations -->
+    <div id="diagramModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-2 sm:p-4 opacity-0 transition-opacity duration-300 no-print">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-300" id="modalContent">
+            
+            <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <h3 class="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200" id="modalTitle">Diagram Detail</h3>
+                <button onclick="closeModal()" class="text-slate-500 hover:text-red-500 focus:outline-none transition-colors p-1">
+                    <i class="fas fa-times text-2xl md:text-3xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 md:p-8 flex flex-col md:flex-row gap-8 items-center max-h-[80vh] overflow-y-auto">
+                <!-- Large Canvas Container -->
+                <div class="w-full md:w-1/2 flex justify-center items-center relative">
+                    <canvas id="modalCanvas" width="400" height="400" class="w-full max-w-[400px] h-auto bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-inner border-2 border-slate-200 dark:border-slate-700"></canvas>
+                </div>
+                
+                <!-- Dynamic Explanation Text -->
+                <div class="w-full md:w-1/2 flex flex-col space-y-4">
+                    <div id="modalExplanation" class="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed space-y-4">
+                        <!-- Explanation injected here via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Data Store for Modal Synchronization
+        window.simData = {};
+
+        // 1. Dark Mode Toggle
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            } else {
+                html.classList.add('dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+            calculateAll(); // Redraw canvas with correct colors
+        }
+
+        // 2. Export / Import Logic
+        function exportData() {
+            const inputs = document.querySelectorAll('input:not([type="file"]), select');
+            const data = {};
+            inputs.forEach(i => { if(i.id) data[i.id] = i.value; });
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const dateStr = document.getElementById('obs_date').value || 'export';
+            a.download = `gyro_abc_data_${dateStr}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    for(let key in data) {
+                        let el = document.getElementById(key);
+                        if(el) el.value = data[key];
+                    }
+                    calculateAll();
+                } catch(err) {
+                    alert('Invalid file format. Please upload a valid JSON file generated by this tool.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset
+        }
+
+        // 3. Smart Input Formatting
+        function setupSmartInput(inputId, isLon) {
+            const el = document.getElementById(inputId);
+            el.addEventListener('input', function(e) {
+                let raw = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                let nums = raw.replace(/[^0-9]/g, '');
+                let dir = '';
+                let letters = raw.replace(/[^A-Z]/g, '');
+                
+                if (isLon) {
+                    if (letters.includes('E')) dir = 'E';
+                    else if (letters.includes('W')) dir = 'W';
+                    nums = nums.substring(0, 7);
+                } else {
+                    if (letters.includes('N')) dir = 'N';
+                    else if (letters.includes('S')) dir = 'S';
+                    nums = nums.substring(0, 6);
+                }
+
+                let formatted = '';
+                let degLen = isLon ? 3 : 2;
+
+                if (nums.length > 0) formatted += nums.substring(0, degLen);
+                if (nums.length >= degLen) formatted += '°';
+                if (nums.length > degLen) formatted += nums.substring(degLen, degLen + 2);
+                if (nums.length >= degLen + 2) formatted += '.';
+                if (nums.length > degLen + 2) formatted += nums.substring(degLen + 2, degLen + 4);
+                if (nums.length >= degLen + 4) formatted += "'";
+                if (dir) formatted += dir;
+
+                e.target.value = formatted;
+                calculateAll();
+            });
+        }
+
+        setupSmartInput('latitude', false);
+        setupSmartInput('longitude', true);
+
+        function parseSmartCoord(str, isLon) {
+            if (!str) return null;
+            let nums = str.replace(/[^0-9]/g, '');
+            let dir = str.replace(/[^A-Z]/g, '').charAt(0);
+            if (nums.length < 3 || !dir) return null;
+
+            let degLen = isLon ? 3 : 2;
+            let deg = parseInt(nums.substring(0, degLen)) || 0;
+            let minStr = nums.substring(degLen, degLen + 2).padEnd(2, '0');
+            let decStr = nums.substring(degLen + 2, degLen + 4).padEnd(2, '0');
+            let min = parseFloat(minStr + '.' + decStr);
+            return { decimal: deg + (min / 60), dir: dir, deg: deg, min: min };
+        }
+
+        function formatDegMin(deg, min, dir = '') {
+            if(isNaN(deg) || isNaN(min)) return "---° --.-'";
+            return `${Math.floor(deg).toString().padStart(3, '0')}° ${min.toFixed(1).padStart(4, '0')}' ${dir}`.trim();
+        }
+
+        document.querySelectorAll('.calc-trigger').forEach(el => {
+            el.addEventListener('input', calculateAll);
+            el.addEventListener('change', calculateAll);
+        });
+
+        // 4. Main Calculation Engine
+        function calculateAll() {
+            try {
+                const isDark = document.documentElement.classList.contains('dark');
+                let d = window.simData; // Global ref
+
+                // --- LHA CALCULATION ---
+                let ghaDeg = parseFloat(document.getElementById('gha_deg').value);
+                let ghaMin = parseFloat(document.getElementById('gha_min').value);
+                let incDeg = parseFloat(document.getElementById('inc_deg').value);
+                let incMin = parseFloat(document.getElementById('inc_min').value);
+                
+                let hasGha = !isNaN(ghaDeg) && !isNaN(ghaMin);
+                let corrGhaDeg = 0, corrGhaMin = 0, lhaDecimal = 0;
+
+                if(hasGha) {
+                    let totalMin = (ghaDeg * 60 + ghaMin) + ((incDeg||0) * 60 + (incMin||0));
+                    corrGhaDeg = Math.floor(totalMin / 60) % 360;
+                    corrGhaMin = totalMin % 60;
+                    document.getElementById('out_corr_gha').innerText = formatDegMin(corrGhaDeg, corrGhaMin);
+                    lhaDecimal = corrGhaDeg + (corrGhaMin/60);
+                } else {
+                    document.getElementById('out_corr_gha').innerText = "---° --.-'";
+                }
+
+                let lonData = parseSmartCoord(document.getElementById('longitude').value, true);
+                if (lonData) {
+                    document.getElementById('out_lon_calc').innerText = formatDegMin(lonData.deg, lonData.min, lonData.dir);
+                    document.getElementById('lon_sign_display').innerText = lonData.dir === 'E' ? '+ (EAST)' : '- (WEST)';
+                    if(hasGha) {
+                        if (lonData.dir === 'E') lhaDecimal += lonData.decimal;
+                        else lhaDecimal -= lonData.decimal;
+                    }
+                } else {
+                    document.getElementById('out_lon_calc').innerText = "---° --.-'";
+                    document.getElementById('lon_sign_display').innerText = "+/- (E+, W-)";
+                }
+
+                if(hasGha && lonData) {
+                    if (lhaDecimal < 0) lhaDecimal += 360;
+                    if (lhaDecimal >= 360) lhaDecimal -= 360;
+                    let outLhaDeg = Math.floor(lhaDecimal);
+                    let outLhaMin = (lhaDecimal - outLhaDeg) * 60;
+                    document.getElementById('out_lha').innerText = formatDegMin(outLhaDeg, outLhaMin);
+                } else {
+                    document.getElementById('out_lha').innerText = "---° --.-'";
+                }
+
+                // --- DECLINATION ---
+                let decDeg = parseFloat(document.getElementById('dec_deg').value);
+                let decMin = parseFloat(document.getElementById('dec_min').value);
+                let decDirInput = document.getElementById('dec_dir').value;
+                let dCorrSign = document.getElementById('d_corr_sign').value;
+                let dCorrVal = parseFloat(document.getElementById('d_corr_val').value) || 0;
+
+                let trueDecDecimal = 0;
+                let trueDecDir = decDirInput;
+                d.trueDecStr = "--° --.-'";
+
+                if (!isNaN(decDeg) && !isNaN(decMin)) {
+                    let trueDecMinTotal = (decDeg * 60) + decMin;
+                    if (dCorrSign === '+') trueDecMinTotal += dCorrVal;
+                    else trueDecMinTotal -= dCorrVal;
+
+                    if (trueDecMinTotal < 0) {
+                        trueDecMinTotal = Math.abs(trueDecMinTotal);
+                        trueDecDir = decDirInput === 'N' ? 'S' : 'N';
+                    }
+
+                    let outTrueDecDeg = Math.floor(trueDecMinTotal / 60);
+                    let outTrueDecMin = trueDecMinTotal % 60;
+                    trueDecDecimal = outTrueDecDeg + (outTrueDecMin/60);
+                    d.trueDecStr = `${outTrueDecDeg.toString().padStart(2, '0')}° ${outTrueDecMin.toFixed(1).padStart(4, '0')}' ${trueDecDir}`;
+                    document.getElementById('out_true_dec').innerText = d.trueDecStr;
+                } else {
+                    document.getElementById('out_true_dec').innerText = "--° --.-'";
+                }
+                
+                updateAlmanacGuide(decDeg, decMin, decDirInput, dCorrSign, dCorrVal);
+
+                // --- ABC TABLE ---
+                let latData = parseSmartCoord(document.getElementById('latitude').value, false);
+                let canCalcABC = latData && lonData && hasGha && !isNaN(decDeg);
+
+                d.A = 0; d.B = 0; d.C = 0; d.tb = null; d.azDeg = null;
+
+                if (canCalcABC) {
+                    let latRad = latData.decimal * Math.PI / 180;
+                    let lhaRad = lhaDecimal * Math.PI / 180;
+                    let decRad = trueDecDecimal * Math.PI / 180;
+
+                    if (lhaDecimal !== 90 && lhaDecimal !== 270) d.A = Math.abs(Math.tan(latRad) / Math.tan(lhaRad));
+                    d.nameA = (lhaDecimal >= 90 && lhaDecimal <= 270) ? latData.dir : (latData.dir === 'N' ? 'S' : 'N');
+
+                    if (lhaDecimal !== 0 && lhaDecimal !== 180 && lhaDecimal !== 360) d.B = Math.abs(Math.tan(decRad) / Math.sin(lhaRad));
+                    else d.B = 999.999;
+                    d.nameB = trueDecDir;
+
+                    document.getElementById('out_a_val').innerText = d.A.toFixed(3);
+                    document.getElementById('out_a_name').innerText = d.nameA;
+                    document.getElementById('out_b_val').innerText = d.B > 99 ? '∞' : d.B.toFixed(3);
+                    document.getElementById('out_b_name').innerText = d.nameB;
+
+                    if (d.nameA === d.nameB) {
+                        d.C = d.A + d.B; d.nameC = d.nameA;
+                    } else {
+                        d.C = Math.abs(d.A - d.B);
+                        d.nameC = d.A > d.B ? d.nameA : d.nameB;
+                        if (d.A === d.B) d.nameC = '';
+                    }
+
+                    document.getElementById('out_c_val').innerText = d.C > 99 ? '∞' : d.C.toFixed(3);
+                    document.getElementById('out_c_name').innerText = d.nameC || '-';
+
+                    let azRad = Math.atan(1 / (d.C * Math.cos(latRad)));
+                    d.azDeg = Math.abs(azRad * 180 / Math.PI);
+                    
+                    d.prefixAz = d.nameC || 'N';
+                    d.suffixAz = (lhaDecimal > 0 && lhaDecimal < 180) ? 'W' : 'E';
+
+                    document.getElementById('az_prefix').innerText = d.prefixAz;
+                    document.getElementById('az_val').innerText = d.azDeg.toFixed(1) + '°';
+                    document.getElementById('az_suffix').innerText = d.suffixAz;
+
+                    if (d.prefixAz === 'N' && d.suffixAz === 'E') d.tb = d.azDeg;
+                    else if (d.prefixAz === 'N' && d.suffixAz === 'W') d.tb = 360 - d.azDeg;
+                    else if (d.prefixAz === 'S' && d.suffixAz === 'E') d.tb = 180 - d.azDeg;
+                    else if (d.prefixAz === 'S' && d.suffixAz === 'W') d.tb = 180 + d.azDeg;
+
+                    if(d.tb >= 360) d.tb -= 360; if(d.tb < 0) d.tb += 360;
+
+                    document.getElementById('out_tb').innerText = d.tb.toFixed(1).padStart(5, '0') + '°';
+                    document.getElementById('res_tb').innerText = d.tb.toFixed(1).padStart(5, '0') + '°';
+                } else {
+                    document.querySelectorAll('#out_a_val, #out_b_val, #out_c_val').forEach(e => e.innerText = "0.000");
+                    document.querySelectorAll('#out_a_name, #out_b_name, #out_c_name, #az_prefix, #az_suffix').forEach(e => e.innerText = "-");
+                    document.getElementById('az_val').innerText = "000.0°";
+                    document.getElementById('out_tb').innerText = "---.-°";
+                    document.getElementById('res_tb').innerText = "---.-°";
+                }
+
+                // --- ERRORS & RESULTS ---
+                d.gb = parseFloat(document.getElementById('gyro_bearing').value);
+                d.gc = parseFloat(document.getElementById('gyro_course').value);
+                d.mc = parseFloat(document.getElementById('mag_course').value);
+                d.varVal = parseFloat(document.getElementById('var_val').value);
+                d.varDir = document.getElementById('var_dir').value;
+                d.geVal = null; d.geDir = ''; d.tc = null;
+
+                if (!isNaN(d.gb) && d.tb !== null) {
+                    document.getElementById('res_gb').innerText = d.gb.toFixed(1).padStart(5, '0') + '°';
+                    
+                    let geDiff = d.tb - d.gb;
+                    if (geDiff < -180) geDiff += 360;
+                    if (geDiff > 180) geDiff -= 360;
+                    
+                    d.geVal = Math.abs(geDiff);
+                    d.geDir = geDiff > 0 ? 'E' : 'W';
+                    if(d.geVal === 0) d.geDir = 'NIL';
+                    
+                    document.getElementById('res_ge').innerText = `${d.geVal.toFixed(1)}° ${d.geDir}`;
+                    
+                    let geReason = d.geDir === 'E' ? "True > Gyro (Compass Least = Error East)" : "True < Gyro (Compass Best = Error West)";
+                    if(d.geDir === 'NIL') geReason = "Gyro equals True (No Error)";
+                    document.getElementById('ge_reason').innerText = geReason;
+
+                    if (!isNaN(d.gc)) {
+                        document.getElementById('res_gc').innerText = d.gc.toFixed(1).padStart(5, '0') + '°';
+                        
+                        d.tc = d.gc + (d.geDir === 'E' ? d.geVal : -d.geVal);
+                        if (d.tc < 0) d.tc += 360;
+                        if (d.tc >= 360) d.tc -= 360;
+                        
+                        document.getElementById('res_tc').innerText = d.tc.toFixed(1).padStart(5, '0') + '°';
+
+                        if (!isNaN(d.mc)) {
+                            document.getElementById('res_mc').innerText = d.mc.toFixed(1).padStart(5, '0') + '°';
+                            
+                            let varDiff = d.tc - d.mc;
+                            if (varDiff < -180) varDiff += 360;
+                            if (varDiff > 180) varDiff -= 360;
+                            
+                            let vVal = Math.abs(varDiff);
+                            let vDir = varDiff > 0 ? 'E' : 'W'; 
+                            
+                            document.getElementById('res_var').innerText = `${vVal.toFixed(1)}° ${vDir}`;
+                            document.getElementById('var_reason').innerText = vDir === 'E' ? "True > Mag (Variation East)" : "True < Mag (Variation West)";
+                        } else {
+                            document.getElementById('res_mc').innerText = "---.-°";
+                            document.getElementById('res_var').innerText = "---.-° -";
+                            document.getElementById('var_reason').innerText = "Input M/C to calculate Variation";
+                        }
+                    } else {
+                         document.getElementById('res_gc').innerText = "---.-°";
+                         document.getElementById('res_tc').innerText = "---.-°";
+                         document.getElementById('res_mc').innerText = "---.-°";
+                         document.getElementById('res_var').innerText = "---.-° -";
+                         document.getElementById('var_reason').innerText = "Input G/C to continue";
+                    }
+                } else {
+                    document.getElementById('res_gb').innerText = "---.-°";
+                    document.getElementById('res_ge').innerText = "---.-° -";
+                    document.getElementById('res_gc').innerText = "---.-°";
+                    document.getElementById('res_tc').innerText = "---.-°";
+                    document.getElementById('res_mc').innerText = "---.-°";
+                    document.getElementById('res_var').innerText = "---.-° -";
+                    document.getElementById('ge_reason').innerText = "Calculate TB & G/B first";
+                    document.getElementById('var_reason').innerText = "";
+                }
+
+                // Draw thumbnail static Azimuth diagram
+                drawAzToTb('azToTbCanvas', d.prefixAz, d.suffixAz, d.azDeg, d.tb, isDark);
+                
+                // If Modal is open, update its content live
+                if(activeModalDiagram) {
+                    updateModalContent();
+                    if(activeModalDiagram === 'azToTbCanvas') {
+                        drawAzToTb('modalCanvas', d.prefixAz, d.suffixAz, d.azDeg, d.tb, isDark);
+                    }
+                }
+
+                // Trigger Animation Loop for other Canvas
+                updateVisualizations(isDark);
+
+            } catch (error) {
+                console.error("Calculation error:", error);
+            }
+        }
+
+        function updateAlmanacGuide(decDeg, decMin, decDir, dCorrSign, dCorrVal) {
+            let timeStr = document.getElementById('obs_time').value;
+            let container = document.getElementById('almanac_guide_text');
+            
+            if (isNaN(decDeg) || isNaN(decMin) || !timeStr) {
+                container.innerHTML = `
+                    <div class="text-slate-500 dark:text-slate-400 italic text-center py-4">
+                        <i class="fas fa-arrow-left mb-2 text-2xl block text-amber-400/50"></i>
+                        Input Time and Declination to generate the Almanac reading guide.
+                    </div>`;
+                return;
+            }
+
+            let hour = parseInt(timeStr.split(':')[0]) || 0;
+            let minute = parseInt(timeStr.split(':')[1]) || 0;
+            let nextHour = (hour + 1) % 24;
+            let trend = dCorrSign === '+' ? "INCREASING" : "DECREASING";
+            
+            container.innerHTML = `
+                <p><strong>1. Daily Page:</strong> At <b>${hour.toString().padStart(2,'0')}:00 UT</b>, we read the Sun's Declination as <b>${decDeg}° ${decMin}' ${decDir}</b>.</p>
+                <p><strong>2. Finding 'd':</strong> Checking the next hour (<b>${nextHour.toString().padStart(2,'0')}:00 UT</b>), the Declination is ${trend}, so we apply a <b>${dCorrSign}</b> sign.</p>
+                <p><strong>3. Increments Page:</strong> Going to the yellow pages for <b>${minute}m</b>, alongside the GHA increment, we find the <b>d.corr</b> is <b>${dCorrVal}'</b>.</p>
+                <div class="bg-white/50 dark:bg-slate-800/50 p-2 rounded text-xs border border-amber-300/50 flex items-start mt-2">
+                    <i class="fas fa-lightbulb text-amber-500 mt-0.5 mr-2 text-lg"></i>
+                    <p><b>Rule:</b> If Dec. is going UP towards next hour, D.Corr is (+). If going DOWN, D.Corr is (-).</p>
+                </div>
+            `;
+        }
+
+        // --- MODAL LOGIC ---
+        let activeModalDiagram = null;
+
+        function openModal(diagramType) {
+            activeModalDiagram = diagramType;
+            const modal = document.getElementById('diagramModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('modalContent').classList.remove('scale-95');
+            }, 10);
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            updateModalContent();
+            
+            // Draw immediately for static canvas
+            if (diagramType === 'azToTbCanvas') {
+                drawAzToTb('modalCanvas', window.simData.prefixAz, window.simData.suffixAz, window.simData.azDeg, window.simData.tb, isDark);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('diagramModal');
+            modal.classList.add('opacity-0');
+            document.getElementById('modalContent').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                activeModalDiagram = null;
+            }, 300);
+        }
+
+        function updateModalContent() {
+            const titleEl = document.getElementById('modalTitle');
+            const expEl = document.getElementById('modalExplanation');
+            const d = window.simData;
+
+            if (activeModalDiagram === 'azToTbCanvas') {
+                titleEl.innerHTML = '<i class="fas fa-sync-alt text-indigo-500 mr-2"></i> Azimuth to True Bearing';
+                let azText = d.azDeg !== null ? `${d.prefixAz} ${d.azDeg.toFixed(1)}° ${d.suffixAz}` : "Pending";
+                let tbText = d.tb !== null ? `${d.tb.toFixed(1)}°` : "Pending";
+                
+                expEl.innerHTML = `
+                    <h4 class="font-bold text-lg mb-2 text-blue-600 dark:text-blue-400 border-b border-slate-200 dark:border-slate-700 pb-2">Understanding the Conversion</h4>
+                    <p>The <b>Azimuth (<span class="text-blue-600 dark:text-blue-400 font-bold">${azText}</span>)</b> is calculated spherically from the observer. It measures from North or South (based on Latitude/C), towards East or West (based on LHA).</p>
+                    <p>The <b>True Bearing (<span class="text-green-600 dark:text-green-400 font-bold">${tbText}</span>)</b> is the absolute, standard navigational direction measured clockwise from True North (000° to 360°).</p>
+                    
+                    <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-4 shadow-inner">
+                        <p class="font-mono text-center text-lg mb-2">Quadrant Rule Applied:</p>
+                        <div class="grid grid-cols-2 gap-2 text-center text-sm font-semibold">
+                            <div class="${d.prefixAz==='N'&&d.suffixAz==='E' ? 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 ring-2 ring-green-500' : 'text-slate-500'} p-2 rounded">N...E &rarr; TB = Az</div>
+                            <div class="${d.prefixAz==='N'&&d.suffixAz==='W' ? 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 ring-2 ring-green-500' : 'text-slate-500'} p-2 rounded">N...W &rarr; 360 - Az</div>
+                            <div class="${d.prefixAz==='S'&&d.suffixAz==='E' ? 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 ring-2 ring-green-500' : 'text-slate-500'} p-2 rounded">S...E &rarr; 180 - Az</div>
+                            <div class="${d.prefixAz==='S'&&d.suffixAz==='W' ? 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 ring-2 ring-green-500' : 'text-slate-500'} p-2 rounded">S...W &rarr; 180 + Az</div>
+                        </div>
+                    </div>
+                `;
+            } else if (activeModalDiagram === 'shipCanvas') {
+                titleEl.innerHTML = '<i class="fas fa-ship text-sky-500 mr-2"></i> Ship & Celestial Overview';
+                expEl.innerHTML = `
+                    <h4 class="font-bold text-lg mb-2 text-sky-600 dark:text-sky-400 border-b border-slate-200 dark:border-slate-700 pb-2">Vessel Situation</h4>
+                    <p>This diagram represents a bird's-eye view of your vessel aligned with True North.</p>
+                    <ul class="space-y-3 mt-4">
+                        <li class="flex items-center"><i class="fas fa-location-arrow text-slate-800 dark:text-slate-200 mr-3 text-xl w-6 text-center"></i> 
+                            <span><b>True Course (Heading):</b> ${d.tc !== null ? d.tc.toFixed(1)+'°' : 'N/A'}<br><span class="text-xs text-slate-500">The actual direction the bow is pointing relative to True North.</span></span></li>
+                        <li class="flex items-center"><i class="fas fa-sun text-yellow-500 mr-3 text-xl w-6 text-center"></i> 
+                            <span><b>True Bearing (Sun):</b> ${d.tb !== null ? d.tb.toFixed(1)+'°' : 'N/A'}<br><span class="text-xs text-slate-500">The absolute direction of the celestial body.</span></span></li>
+                        <li class="flex items-center"><i class="fas fa-ruler-combined text-indigo-500 mr-3 text-xl w-6 text-center"></i> 
+                            <span><b>Relative Bearing:</b> ${d.tc!==null && d.tb!==null ? ((d.tb - d.tc + 360)%360).toFixed(1)+'°' : 'N/A'} <br><span class="text-xs text-slate-500">Angle of the sun relative to the ship's bow.</span></span></li>
+                    </ul>
+                `;
+            } else if (activeModalDiagram === 'courseCanvas') {
+                titleEl.innerHTML = '<i class="fas fa-location-arrow text-indigo-500 mr-2"></i> Course Vectors Explained';
+                let reasonTxt = d.geDir === 'E' ? "True Course > Gyro Course (Compass Least, Error East)." : "True Course < Gyro Course (Compass Best, Error West).";
+                if(d.geDir === 'NIL') reasonTxt = "True Course = Gyro Course (No Error).";
+                
+                expEl.innerHTML = `
+                    <h4 class="font-bold text-lg mb-2 text-indigo-600 dark:text-indigo-400 border-b border-slate-200 dark:border-slate-700 pb-2">Error Applications</h4>
+                    <p class="mb-4">This diagram shows how your vessel's heading differs across True, Magnetic, and Gyro compasses.</p>
+                    <div class="space-y-4">
+                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-300">1. Gyro Error (G/E): <span class="text-cyan-500">${d.geVal!==null?d.geVal.toFixed(1)+'° '+d.geDir : 'N/A'}</span></p>
+                            <p class="text-xs text-slate-500 mt-1">Gyro Course (${d.gc!==null?d.gc.toFixed(1):'N/A'}) &rarr; True Course (${d.tc!==null?d.tc.toFixed(1):'N/A'}).</p>
+                            <p class="text-xs font-mono text-indigo-600 dark:text-indigo-400 mt-1">Rule: ${reasonTxt}</p>
+                        </div>
+                        
+                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-300">2. Variation: <span class="text-purple-500">${!isNaN(d.varVal)?d.varVal.toFixed(1)+'° '+d.varDir : 'N/A'}</span></p>
+                            <p class="text-xs text-slate-500 mt-1">Magnetic Course (${!isNaN(d.mc)?d.mc.toFixed(1):'N/A'}) &rarr; True Course (${d.tc!==null?d.tc.toFixed(1):'N/A'}).</p>
+                        </div>
+                    </div>
+                `;
+            } else if (activeModalDiagram === 'bearingCanvas') {
+                titleEl.innerHTML = '<i class="fas fa-eye text-green-500 mr-2"></i> Bearing Vectors Explained';
+                let reasonTxt = d.geDir === 'E' ? "True Bearing > Gyro Bearing (Compass Least, Error East)." : "True Bearing < Gyro Bearing (Compass Best, Error West).";
+                if(d.geDir === 'NIL') reasonTxt = "True Bearing = Gyro Bearing (No Error).";
+
+                expEl.innerHTML = `
+                    <h4 class="font-bold text-lg mb-2 text-green-600 dark:text-green-400 border-b border-slate-200 dark:border-slate-700 pb-2">Observation Vectors</h4>
+                    <p class="mb-4">This diagram visually proves the Gyro Error by comparing where the compass <i>says</i> the sun is vs where the math <i>proves</i> the sun is.</p>
+                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-200 dark:border-green-800 shadow-inner">
+                        <ul class="space-y-3">
+                            <li><b class="text-slate-700 dark:text-slate-300">Observed (G/B):</b> <span class="font-mono text-yellow-600 dark:text-yellow-400">${!isNaN(d.gb)?d.gb.toFixed(1)+'°':'N/A'}</span></li>
+                            <li><b class="text-slate-700 dark:text-slate-300">Calculated (T/B):</b> <span class="font-mono text-green-600 dark:text-green-400">${d.tb!==null?d.tb.toFixed(1)+'°':'N/A'}</span></li>
+                            <li class="border-t border-green-200 dark:border-green-700 pt-2">
+                                <b class="text-slate-700 dark:text-slate-300">Resulting G/E:</b> <span class="font-bold text-cyan-600 dark:text-cyan-400 text-lg">${d.geVal!==null?d.geVal.toFixed(1)+'° '+d.geDir : 'N/A'}</span>
+                            </li>
+                        </ul>
+                        <p class="text-xs font-mono text-center text-slate-500 dark:text-slate-400 mt-4 bg-white/50 dark:bg-slate-900/50 p-2 rounded">
+                            ${reasonTxt}
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- DRAWING FUNCTIONS (Supports Scaling for Modal) ---
+        function drawAzToTb(canvasId, prefix, suffix, azDeg, tb, isDark) {
+            const canvas = document.getElementById(canvasId);
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const cx = w/2, cy = h/2;
+            const scale = Math.min(w, h) / 280; // Baseline 280
+            const r = 90 * scale; 
+
+            ctx.clearRect(0,0,w,h);
+            let textColor = isDark ? "#cbd5e1" : "#475569";
+            let axisColor = isDark ? "#475569" : "#cbd5e1";
+
+            // Crosshairs
+            ctx.beginPath();
+            ctx.moveTo(cx, 20*scale); ctx.lineTo(cx, h-20*scale);
+            ctx.moveTo(20*scale, cy); ctx.lineTo(w-20*scale, cy);
+            ctx.strokeStyle = axisColor; 
+            ctx.lineWidth = 1.5 * scale; 
+            ctx.stroke();
+
+            // Labels
+            ctx.font = `bold ${12*scale}px Inter`; 
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('0° (N)', cx, 10*scale);
+            ctx.fillText('180° (S)', cx, h-10*scale);
+            ctx.fillText('90° (E)', w-20*scale, cy);
+            ctx.fillText('270° (W)', 25*scale, cy);
+
+            // Draw outer circle faintly
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI*2);
+            ctx.strokeStyle = isDark ? '#334155' : '#e2e8f0';
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+
+            if (tb === null || isNaN(azDeg)) return;
+
+            // Target Vector
+            let tbRad = (tb - 90) * Math.PI / 180;
+            let vx = cx + Math.cos(tbRad) * (r + 15*scale);
+            let vy = cy + Math.sin(tbRad) * (r + 15*scale);
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy); ctx.lineTo(vx, vy);
+            ctx.strokeStyle = isDark ? '#f8fafc' : '#0f172a';
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+            
+            // Dot head
+            ctx.beginPath(); ctx.arc(vx, vy, 4*scale, 0, Math.PI*2); 
+            ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a'; ctx.fill();
+
+            // Azimuth Arc (Quadrantal - Blue)
+            let startAzRad = (prefix === 'N' ? -90 : 90) * Math.PI / 180;
+            ctx.beginPath();
+            let drawCCW = (prefix === 'N' && suffix === 'W') || (prefix === 'S' && suffix === 'E');
+            ctx.arc(cx, cy, r * 0.5, startAzRad, tbRad, drawCCW);
+            ctx.strokeStyle = '#3b82f6'; // Blue
+            ctx.lineWidth = 3 * scale;
+            ctx.stroke();
+
+            // True Bearing Arc (360 - Green)
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 0.8, -Math.PI/2, tbRad, false); 
+            ctx.strokeStyle = '#10b981'; // Green
+            ctx.lineWidth = 3 * scale;
+            ctx.stroke();
+
+            // Numeric Labels on Diagram
+            ctx.font = `bold ${11*scale}px Inter`;
+            
+            // Azimuth label
+            let midAzAngle = drawCCW ? startAzRad + ((tbRad - startAzRad) < 0 ? (tbRad - startAzRad) : (tbRad - startAzRad - Math.PI*2))/2 : startAzRad + (tbRad - startAzRad)/2;
+            let azLx = cx + Math.cos(midAzAngle) * (r * 0.3);
+            let azLy = cy + Math.sin(midAzAngle) * (r * 0.3);
+            ctx.fillStyle = isDark ? '#60a5fa' : '#2563eb';
+            ctx.fillText(`${azDeg.toFixed(0)}°`, azLx, azLy);
+
+            // TB Label
+            let midTbAngle = -Math.PI/2 + (tbRad - -Math.PI/2)/2;
+            if(tb > 180) midTbAngle = -Math.PI/2 + Math.PI;
+            let tbLx = cx + Math.cos(midTbAngle) * (r + 10*scale);
+            let tbLy = cy + Math.sin(midTbAngle) * (r + 10*scale);
+            ctx.fillStyle = isDark ? '#34d399' : '#059669';
+            ctx.fillText(`${tb.toFixed(0)}°`, tbLx, tbLy);
+        }
+
+        let animationFrameId = null;
+        let timeOffset = 0;
+
+        function drawVector(ctx, cx, cy, angleDeg, length, color, labelText, value, isDashed = false, labelOffset = 25, scale = 1) {
+            let angleRad = (angleDeg - 90) * Math.PI / 180;
+            let ex = cx + Math.cos(angleRad) * length;
+            let ey = cy + Math.sin(angleRad) * length;
+            
+            ctx.beginPath();
+            if(isDashed) ctx.setLineDash([5*scale, 5*scale]);
+            else ctx.setLineDash([]);
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(ex, ey);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Arrow head
+            let arrS = 8 * scale;
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - arrS * Math.cos(angleRad - Math.PI/6), ey - arrS * Math.sin(angleRad - Math.PI/6));
+            ctx.lineTo(ex - arrS * Math.cos(angleRad + Math.PI/6), ey - arrS * Math.sin(angleRad + Math.PI/6));
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            if(labelText) {
+                let lx = cx + Math.cos(angleRad) * (length + labelOffset);
+                let ly = cy + Math.sin(angleRad) * (length + labelOffset);
+                
+                if(Math.cos(angleRad) > 0.5) ctx.textAlign = "left";
+                else if(Math.cos(angleRad) < -0.5) ctx.textAlign = "right";
+                else ctx.textAlign = "center";
+                
+                if(Math.sin(angleRad) > 0.5) ctx.textBaseline = "top";
+                else if(Math.sin(angleRad) < -0.5) ctx.textBaseline = "bottom";
+                else ctx.textBaseline = "middle";
+
+                ctx.fillStyle = color;
+                ctx.font = `bold ${11*scale}px Inter`;
+                let fullText = value !== null && value !== undefined ? `${labelText} ${value.toFixed(1)}°` : labelText;
+                ctx.fillText(fullText, lx, ly);
+            }
+        }
+
+        function drawArc(ctx, cx, cy, radius, startDeg, endDeg, color, label, scale = 1) {
+            let a1 = startDeg; let a2 = endDeg;
+            let diff = a2 - a1;
+            while(diff <= -180) diff += 360;
+            while(diff > 180) diff -= 360;
+            
+            let startRad = (a1 - 90) * Math.PI / 180;
+            let endRad = ((a1 + diff) - 90) * Math.PI / 180;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, Math.min(startRad, endRad), Math.max(startRad, endRad));
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5 * scale;
+            ctx.setLineDash([3*scale, 3*scale]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            if(label) {
+                let midRad = startRad + (endRad - startRad)/2;
+                let lx = cx + Math.cos(midRad) * (radius + 15*scale);
+                let ly = cy + Math.sin(midRad) * (radius + 15*scale);
+                ctx.fillStyle = color;
+                ctx.font = `${9*scale}px Inter`;
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(label, lx, ly);
+            }
+        }
+
+        function updateVisualizations(isDark) {
+            cancelAnimationFrame(animationFrameId);
+            const d = window.simData;
+
+            const animate = () => {
+                timeOffset += 0.02; 
+                
+                let varAngle = d.varDir === 'E' ? d.varVal : -d.varVal;
+                let geAngle = d.geVal !== null ? (d.geDir === 'E' ? d.geVal : -d.geVal) : null;
+                
+                // Draw Base thumbnails
+                drawShipCanvas('shipCanvas', d.tc, d.tb, isDark);
+                drawCompassCanvas("courseCanvas", d.tc, d.gc, d.mc, geAngle, varAngle, isDark, false);
+                drawCompassCanvas("bearingCanvas", d.tb, d.gb, null, geAngle, varAngle, isDark, true); 
+
+                // Draw Modal if open
+                if(activeModalDiagram === 'shipCanvas') drawShipCanvas('modalCanvas', d.tc, d.tb, isDark);
+                else if(activeModalDiagram === 'courseCanvas') drawCompassCanvas("modalCanvas", d.tc, d.gc, d.mc, geAngle, varAngle, isDark, false);
+                else if(activeModalDiagram === 'bearingCanvas') drawCompassCanvas("modalCanvas", d.tb, d.gb, null, geAngle, varAngle, isDark, true);
+
+                animationFrameId = requestAnimationFrame(animate);
+            };
+            
+            animate();
+        }
+
+        function drawShipCanvas(canvasId, tc, tb, isDark) {
+            const canvas = document.getElementById(canvasId);
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const scale = Math.min(w, h) / 280;
+            const cx = w/2, cy = h/2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            let ringColor = isDark ? "rgba(14, 165, 233, 0.1)" : "rgba(14, 165, 233, 0.2)";
+            ctx.strokeStyle = ringColor;
+            ctx.lineWidth = 1 * scale;
+            for(let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, (30 + i * 25 + Math.sin(timeOffset + i)*3) * scale, 0, Math.PI*2);
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, 110 * scale, 0, Math.PI*2);
+            ctx.fillStyle = isDark ? "rgba(15, 23, 42, 0.5)" : "rgba(255,255,255,0.6)";
+            ctx.fill();
+            ctx.strokeStyle = isDark ? "#475569" : "#cbd5e1";
+            ctx.stroke();
+            
+            ctx.fillStyle = isDark ? "#94a3b8" : "#94a3b8";
+            ctx.font = `${12*scale}px Inter`;
+            ctx.textAlign = "center";
+            ctx.fillText("N", cx, cy - 95*scale);
+            ctx.fillText("S", cx, cy + 105*scale);
+            ctx.fillText("E", cx + 100*scale, cy + 4*scale);
+            ctx.fillText("W", cx - 100*scale, cy + 4*scale);
+
+            if(tb !== null) {
+                let sunRad = (tb - 90) * Math.PI / 180;
+                let sunX = cx + Math.cos(sunRad) * 95 * scale;
+                let sunY = cy + Math.sin(sunRad) * 95 * scale;
+                
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(sunX, sunY);
+                ctx.setLineDash([4*scale, 4*scale]); ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 2*scale; ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.beginPath(); ctx.arc(sunX, sunY, (12 + Math.sin(timeOffset*3)*2) * scale, 0, Math.PI*2);
+                ctx.fillStyle = "#f59e0b"; ctx.shadowBlur = 15*scale; ctx.shadowColor = "#fcd34d"; ctx.fill(); ctx.shadowBlur = 0;
+            }
+
+            if(tc !== null) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate((tc - 90) * Math.PI / 180);
+                
+                ctx.beginPath();
+                ctx.moveTo(15*scale, 0); ctx.lineTo(-15*scale, 10*scale); ctx.lineTo(-15*scale, -10*scale); ctx.closePath();
+                ctx.fillStyle = isDark ? "#334155" : "#1e293b"; ctx.fill();
+                ctx.strokeStyle = isDark ? "#0f172a" : "#0f172a"; ctx.lineWidth = 2*scale; ctx.stroke();
+                
+                ctx.rotate(Math.PI/2); 
+                ctx.fillStyle = isDark ? "#f8fafc" : "#ffffff";
+                ctx.font = `${10*scale}px Inter`;
+                ctx.textAlign = "center"; ctx.fillText(tc.toFixed(0)+"°", 0, 15*scale);
+                ctx.restore();
+            }
+
+            if(canvasId === 'shipCanvas') {
+                let tcStr = tc !== null ? tc.toFixed(1) : "---.-";
+                let tbStr = tb !== null ? tb.toFixed(1) : "---.-";
+                document.getElementById('ship_status_text').innerHTML = `<b>TC:</b> ${tcStr}° &nbsp;|&nbsp; <b>TB:</b> ${tbStr}°`;
+            }
+        }
+
+        function drawCompassCanvas(canvasId, trueVal, compassVal, magVal, geAngle, varAngle, isDark, isBearing = false) {
+            const canvas = document.getElementById(canvasId);
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const scale = Math.min(w, h) / 280;
+            const cx = w/2, cy = h/2 + 10*scale; 
+
+            ctx.clearRect(0, 0, w, h);
+
+            let axisColor = isDark ? "#334155" : "#e2e8f0";
+            ctx.beginPath();
+            ctx.moveTo(cx, 10*scale); ctx.lineTo(cx, h-10*scale);
+            ctx.moveTo(10*scale, cy); ctx.lineTo(w-10*scale, cy);
+            ctx.strokeStyle = axisColor; ctx.lineWidth = 1; ctx.stroke();
+
+            let trueColor = isDark ? "#f8fafc" : "#000000";
+            let magColor = isDark ? "#60a5fa" : "#2563eb";
+            let compColor = isDark ? "#f87171" : "#dc2626";
+            let trBrgColor = isDark ? "#34d399" : "#059669"; 
+
+            let lenTN = 95 * scale;
+            drawVector(ctx, cx, cy, 0, lenTN, trueColor, "TN", null, false, 15*scale, scale);
+
+            if(varAngle !== null && !isNaN(varAngle)) {
+                let lenMN = 85 * scale;
+                drawVector(ctx, cx, cy, varAngle, lenMN, magColor, "MN", null, true, 15*scale, scale);
+                drawArc(ctx, cx, cy, 60*scale, 0, varAngle, magColor, "VAR", scale);
+            }
+
+            if(geAngle !== null && !isNaN(geAngle)) {
+                let lenCN = 75 * scale;
+                drawVector(ctx, cx, cy, geAngle, lenCN, compColor, "CN", null, true, 15*scale, scale);
+                if(varAngle !== null && !isNaN(varAngle)) drawArc(ctx, cx, cy, 45*scale, varAngle, geAngle, compColor, "DEV", scale);
+                else drawArc(ctx, cx, cy, 45*scale, 0, geAngle, compColor, "ERR", scale);
+            }
+
+            let lenTarget = 100 * scale;
+            let tLabel = isBearing ? "B" : "C";
+
+            if(trueVal !== null && !isNaN(trueVal)) {
+                drawVector(ctx, cx, cy, trueVal, lenTarget, trBrgColor, "T" + tLabel, trueVal, false, 20*scale, scale); 
+            }
+            if(!isBearing && magVal !== null && !isNaN(magVal)) {
+                let absoluteMC = magVal + (varAngle || 0);
+                drawVector(ctx, cx, cy, absoluteMC, lenTarget-15*scale, magColor, "M" + tLabel, magVal, false, 20*scale, scale); 
+            }
+            if(compassVal !== null && !isNaN(compassVal)) {
+                let absoluteCC = compassVal + (geAngle || 0);
+                drawVector(ctx, cx, cy, absoluteCC, lenTarget-30*scale, compColor, "C" + tLabel, compassVal, false, 20*scale, scale);
+            }
+
+            ctx.beginPath(); ctx.arc(cx, cy, 3*scale, 0, Math.PI*2); ctx.fillStyle = trueColor; ctx.fill();
+        }
+
+        // Boot
+        calculateAll();
+        setTimeout(calculateAll, 100);
+
+    </script>
+</body>
+</html>
