@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigation Hub | Bridge Dashboard</title>
+    <title>Navigation Hub | Advanced Bridge Dashboard</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,326 +11,408 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Inter for UI, JetBrains Mono for technical data -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            min-height: 100vh;
+        :root {
+            --bg-color-1: #050b14;
+            --bg-color-2: #0a192f;
+            --bg-color-3: #112240;
+            --accent-cyan: #64ffda;
+            --glass-border: rgba(100, 255, 218, 0.1);
+            --glass-bg: rgba(10, 25, 47, 0.7);
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color-1);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(100, 255, 218, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(2, 132, 199, 0.08) 0%, transparent 50%);
+            color: #e6f1ff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-mono-tech {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Tech Grid Background Overlay */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            pointer-events: none;
         }
 
         /* Splash Screen Animations */
         .splash-screen {
-            transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+            transition: all 0.8s cubic-bezier(0.87, 0, 0.13, 1);
         }
         
         .splash-hidden {
             opacity: 0;
             visibility: hidden;
+            transform: scale(1.05);
             pointer-events: none;
         }
 
-        .animate-fade-in-up {
-            animation: fadeInUp 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        .animate-fade-in-up-delay {
-            animation: fadeInUp 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            animation-delay: 0.8s;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Glassmorphism Effects */
+        /* Advanced Glassmorphism Cards */
         .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
         }
         
-        .glass-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 12px 40px 0 rgba(0, 238, 255, 0.15);
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-25deg);
+            transition: 0.5s;
+            pointer-events: none;
         }
+
+        .glass-card:hover::before {
+            left: 125%;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            background: rgba(17, 34, 64, 0.85);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(100, 255, 218, 0.1);
+        }
+
+        /* Dynamic Border Colors based on group hover */
+        .card-cyan:hover { border-color: rgba(34, 211, 238, 0.5); }
+        .card-emerald:hover { border-color: rgba(52, 211, 153, 0.5); }
+        .card-amber:hover { border-color: rgba(251, 191, 36, 0.5); }
+        .card-purple:hover { border-color: rgba(167, 139, 250, 0.5); }
+        .card-rose:hover { border-color: rgba(244, 63, 94, 0.5); } /* Color for Gyro Error */
+
+        /* Icon Glow Effects */
+        .icon-box {
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover .icon-box.cyan { box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
+        .glass-card:hover .icon-box.emerald { box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); }
+        .glass-card:hover .icon-box.amber { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+        .glass-card:hover .icon-box.purple { box-shadow: 0 0 15px rgba(167, 139, 250, 0.4); }
+        .glass-card:hover .icon-box.rose { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
 
         /* Protocol List Styles */
         .protocol-list li {
             position: relative;
-            padding-left: 1.5rem;
-            margin-bottom: 0.5rem;
+            padding-left: 1.75rem;
+            margin-bottom: 0.75rem;
             font-size: 0.875rem;
-            color: #d1d5db;
+            color: #8892b0;
+            transition: color 0.3s ease;
+        }
+        .protocol-list li:hover {
+            color: #ccd6f6;
         }
         .protocol-list li::before {
-            content: '•';
+            content: '\f101'; /* FontAwesome angle-double-right */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
             position: absolute;
             left: 0;
-            color: #22d3ee; /* Cyan-400 */
-            font-size: 1.25rem;
-            line-height: 1.25rem;
+            color: var(--accent-cyan);
+            font-size: 0.875rem;
         }
 
-        /* Custom Scrollbar for modern look */
-        ::-webkit-scrollbar {
-            width: 8px;
+        /* Staggered Animation classes */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            will-change: opacity, visibility;
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2); 
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: none;
         }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(34, 211, 238, 0.5); 
-            border-radius: 4px;
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color-1); }
+        ::-webkit-scrollbar-thumb { background: #233554; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64ffda; }
+
+        /* Radar Sweep Animation for Header */
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(34, 211, 238, 0.8); 
+        .radar-icon {
+            position: relative;
+        }
+        .radar-icon::after {
+            content: '';
+            position: absolute;
+            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            border-radius: 50%;
+            border: 1px solid rgba(100, 255, 218, 0.2);
+            border-top-color: rgba(100, 255, 218, 0.8);
+            animation: radar-sweep 2s linear infinite;
         }
     </style>
 </head>
-<body class="text-white overflow-x-hidden flex flex-col relative">
+<body class="flex flex-col relative antialiased">
+
+    <div class="bg-grid"></div>
 
     <!-- Splash Screen -->
-    <div id="splashScreen" class="splash-screen fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a192f]">
-        <div class="text-center px-4">
-            <i class="fa-solid fa-ship text-6xl text-cyan-400 mb-6 animate-fade-in-up"></i>
-            <h1 class="text-4xl md:text-6xl font-bold mb-4 animate-fade-in-up text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500">
-                Hello Navigating Officers!!!
+    <div id="splashScreen" class="splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#020617] backdrop-blur-md">
+        <div class="text-center px-4 relative">
+            <div class="absolute inset-0 bg-cyan-500/10 blur-[100px] rounded-full"></div>
+            <i class="fa-solid fa-ship text-7xl text-cyan-400 mb-8 animate-pulse relative z-10 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]"></i>
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 text-white tracking-tight relative z-10">
+                SYSTEM <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">INIT</span>
             </h1>
-            <h2 class="text-2xl md:text-3xl font-light text-gray-300 animate-fade-in-up-delay">
-                Welcome on board.
-            </h2>
+            <p class="text-cyan-200/60 font-mono-tech text-sm tracking-[0.2em] uppercase animate-pulse">Establishing Uplink...</p>
         </div>
     </div>
 
-    <!-- Notification Toast (Hidden by default) -->
-    <div id="toast" class="fixed top-20 right-4 z-50 transform transition-all duration-300 translate-x-full opacity-0">
-        <div class="bg-cyan-900/90 backdrop-blur border border-cyan-500/50 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3">
-            <i class="fa-solid fa-circle-info text-cyan-400"></i>
-            <span id="toastMessage" class="text-sm font-medium">Notification</span>
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-24 right-4 z-50 transform transition-all duration-400 translate-x-[120%] opacity-0">
+        <div class="bg-[#112240] border border-cyan-500/30 text-white px-5 py-4 rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)] flex items-center space-x-4">
+            <div class="w-8 h-8 rounded-full bg-cyan-900/50 flex items-center justify-center text-cyan-400">
+                <i class="fa-solid fa-satellite-dish animate-pulse"></i>
+            </div>
+            <span id="toastMessage" class="text-sm font-medium font-mono-tech text-cyan-50">Notification</span>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <main class="flex-grow container mx-auto px-4 py-8 md:py-12 max-w-7xl opacity-0 transition-opacity duration-1000 ease-in" id="mainContent">
+    <main class="flex-grow container mx-auto px-4 py-8 md:py-12 max-w-7xl opacity-0 transition-opacity duration-1000 ease-in relative z-10" id="mainContent">
         
         <!-- Language Selector -->
-        <div class="absolute top-6 right-6 flex space-x-3 z-40">
-            <button onclick="changeLanguage('English')" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-xl transition-all shadow-lg" title="English">🇬🇧</button>
-            <button onclick="changeLanguage('Chinese')" class="w-10 h-10 rounded-full bg-black/20 hover:bg-white/20 border border-transparent flex items-center justify-center text-xl transition-all opacity-60 hover:opacity-100 grayscale hover:grayscale-0" title="中文">🇨🇳</button>
-            <button onclick="changeLanguage('Indonesian')" class="w-10 h-10 rounded-full bg-black/20 hover:bg-white/20 border border-transparent flex items-center justify-center text-xl transition-all opacity-60 hover:opacity-100 grayscale hover:grayscale-0" title="Bahasa Indonesia">🇮🇩</button>
-            <button onclick="changeLanguage('Spanish')" class="w-10 h-10 rounded-full bg-black/20 hover:bg-white/20 border border-transparent flex items-center justify-center text-xl transition-all opacity-60 hover:opacity-100 grayscale hover:grayscale-0" title="Español">🇪🇸</button>
+        <div class="absolute top-4 right-4 md:top-8 md:right-8 flex space-x-2 z-40 bg-[#112240]/80 backdrop-blur rounded-full p-1 border border-white/5">
+            <button onclick="changeLanguage('English')" class="w-9 h-9 rounded-full bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 flex items-center justify-center text-lg transition-all shadow-lg" title="English">🇬🇧</button>
+            <button onclick="changeLanguage('Chinese')" class="w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0" title="中文">🇨🇳</button>
+            <button onclick="changeLanguage('Indonesian')" class="w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0" title="Bahasa Indonesia">🇮🇩</button>
         </div>
 
         <!-- Header -->
-        <header class="text-center mb-12 mt-8 md:mt-4">
-            <div class="inline-block p-4 rounded-full bg-cyan-900/50 border border-cyan-500/30 mb-4 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
-                <i class="fa-solid fa-compass text-4xl text-cyan-400"></i>
+        <header class="text-center mb-16 mt-12 md:mt-8 fade-in-section">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#112240] border border-cyan-500/20 mb-6 shadow-[0_0_30px_rgba(100,255,218,0.1)] radar-icon">
+                <i class="fa-solid fa-crosshairs text-3xl text-[#64ffda]"></i>
             </div>
-            <h1 class="text-3xl md:text-5xl font-bold tracking-wider mb-2">BRIDGE DASHBOARD</h1>
-            <p class="text-cyan-200 text-sm md:text-base font-light tracking-widest uppercase">Maritime Communications & Navigation Hub</p>
-            <div class="w-24 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mt-6"></div>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-3 text-slate-200">Bridge <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Dashboard</span></h1>
+            <p class="text-slate-400 text-sm md:text-base font-mono-tech tracking-widest uppercase">Tactical Navigation & Comms Hub</p>
         </header>
 
         <!-- Primary Tools Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8 mb-20">
             
             <!-- Card 1: Navtex Tracker -->
-            <a href="https://rcwpt.github.io/Navigation/navtex.html" target="_blank" class="glass-card rounded-2xl p-6 transition-all duration-300 group cursor-pointer flex flex-col h-full hover:-translate-y-2">
-                <div class="flex items-center space-x-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/40 transition-all">
-                        <i class="fa-solid fa-satellite-dish text-xl text-blue-400"></i>
+            <a href="https://rcwpt.github.io/Navigation/navtex.html" target="_blank" class="glass-card card-cyan p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 100ms;">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="icon-box cyan w-14 h-14 rounded-xl bg-cyan-950/50 border border-cyan-900 flex items-center justify-center text-cyan-400">
+                        <i class="fa-solid fa-satellite-dish text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold group-hover:text-cyan-300 transition-colors">Navtex Tracker</h3>
+                    <span class="text-[10px] font-mono-tech text-cyan-500/50 border border-cyan-500/20 px-2 py-1 rounded">COMMS</span>
                 </div>
-                <p class="text-gray-300 mb-6 flex-grow text-sm leading-relaxed">
-                    Access and monitor NAVTEX (Navigation Telex) messages for crucial meteorological warnings, navigational alerts, and maritime safety information.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors mb-3">Navtex Tracker</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                    Monitor MSI (Maritime Safety Information), meteorological warnings, and navigational alerts broadcasted via Navigation Telex.
                 </p>
-                <div class="flex items-center text-cyan-400 text-sm font-medium">
-                    <span>Access Tool</span>
-                    <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                <div class="flex items-center text-cyan-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-cyan-300">
+                    <span>INITIALIZE</span>
+                    <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
 
             <!-- Card 2: DSC Finder -->
-            <a href="https://rcwpt.github.io/Navigation/dscfinder.html" target="_blank" class="glass-card rounded-2xl p-6 transition-all duration-300 group cursor-pointer flex flex-col h-full hover:-translate-y-2">
-                <div class="flex items-center space-x-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/40 transition-all">
-                        <i class="fa-solid fa-tower-broadcast text-xl text-emerald-400"></i>
+            <a href="https://rcwpt.github.io/Navigation/dscfinder.html" target="_blank" class="glass-card card-emerald p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 200ms;">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="icon-box emerald w-14 h-14 rounded-xl bg-emerald-950/50 border border-emerald-900 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-tower-broadcast text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold group-hover:text-emerald-300 transition-colors">DSC Finder</h3>
+                    <span class="text-[10px] font-mono-tech text-emerald-500/50 border border-emerald-500/20 px-2 py-1 rounded">GMDSS</span>
                 </div>
-                <p class="text-gray-300 mb-6 flex-grow text-sm leading-relaxed">
-                    Quickly identify Coast Radio Stations worldwide and their designated Digital Selective Calling (DSC) frequencies for GMDSS compliance testing.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors mb-3">DSC Directory</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                    Database lookup for Coast Radio Stations worldwide and designated Digital Selective Calling frequencies for routine/distress comms.
                 </p>
-                <div class="flex items-center text-emerald-400 text-sm font-medium">
-                    <span>Access Tool</span>
-                    <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                <div class="flex items-center text-emerald-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-emerald-300">
+                    <span>SEARCH DB</span>
+                    <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
 
-            <!-- Card 3: Marine Weather (Meteo) -->
-            <a href="https://rcwpt.github.io/Navigation/meteo.html" target="_blank" class="glass-card rounded-2xl p-6 transition-all duration-300 group cursor-pointer flex flex-col h-full hover:-translate-y-2">
-                <div class="flex items-center space-x-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center group-hover:bg-amber-500/40 transition-all">
-                        <i class="fa-solid fa-cloud-sun-rain text-xl text-amber-400"></i>
+            <!-- Card 3: Marine Meteo -->
+            <a href="https://rcwpt.github.io/Navigation/meteo.html" target="_blank" class="glass-card card-amber p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 300ms;">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="icon-box amber w-14 h-14 rounded-xl bg-amber-950/50 border border-amber-900 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-cloud-bolt text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold group-hover:text-amber-300 transition-colors">Marine Meteo</h3>
+                    <span class="text-[10px] font-mono-tech text-amber-500/50 border border-amber-500/20 px-2 py-1 rounded">ENV</span>
                 </div>
-                <p class="text-gray-300 mb-6 flex-grow text-sm leading-relaxed">
-                    Access real-time meteorological data, marine weather forecasts, and oceanographic conditions for optimal route planning.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-amber-400 transition-colors mb-3">Marine Meteo</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                    Real-time meteorological telemetry, synoptic charts, and oceanographic conditions critical for safe route planning.
                 </p>
-                <div class="flex items-center text-amber-400 text-sm font-medium">
-                    <span>Access Tool</span>
-                    <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                <div class="flex items-center text-amber-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-amber-300">
+                    <span>VIEW DATA</span>
+                    <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
 
             <!-- Card 4: Celestial Calc -->
-            <a href="https://rcwpt.github.io/Navigation/celestial.html" target="_blank" class="glass-card rounded-2xl p-6 transition-all duration-300 group cursor-pointer flex flex-col h-full hover:-translate-y-2">
-                <div class="flex items-center space-x-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/40 transition-all">
-                        <i class="fa-solid fa-star text-xl text-purple-400"></i>
+            <a href="https://rcwpt.github.io/Navigation/celestial.html" target="_blank" class="glass-card card-purple p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 400ms;">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="icon-box purple w-14 h-14 rounded-xl bg-purple-950/50 border border-purple-900 flex items-center justify-center text-purple-400">
+                        <i class="fa-solid fa-star-half-stroke text-2xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold group-hover:text-purple-300 transition-colors">Celestial Calc</h3>
+                    <span class="text-[10px] font-mono-tech text-purple-500/50 border border-purple-500/20 px-2 py-1 rounded">ASTRO</span>
                 </div>
-                <p class="text-gray-300 mb-6 flex-grow text-sm leading-relaxed">
-                    Perform celestial navigation calculations including sight reduction and azimuth for traditional position fixing and compass error verification.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-purple-400 transition-colors mb-3">Celestial Calc</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                    Automated sight reduction algorithms for traditional position fixing using Sun, Moon, Planets, and Navigational Stars.
                 </p>
-                <div class="flex items-center text-purple-400 text-sm font-medium">
-                    <span>Access Tool</span>
-                    <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                <div class="flex items-center text-purple-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-purple-300">
+                    <span>CALCULATE</span>
+                    <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
             </a>
 
-            <!-- Card 5: Expansion Module -->
-            <div class="glass-card rounded-2xl p-6 border-dashed border-2 border-white/20 flex flex-col items-center justify-center text-center h-full opacity-70">
-                <div class="w-12 h-12 rounded-full bg-gray-600/30 flex items-center justify-center mb-3">
-                    <i class="fa-solid fa-server text-lg text-gray-400"></i>
+            <!-- Card 5: NEW MODUL - Gyro Error ABC -->
+            <a href="https://rcwpt.github.io/Navigation/gyroerror.html" target="_blank" class="glass-card card-rose p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 500ms;">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="icon-box rose w-14 h-14 rounded-xl bg-rose-950/50 border border-rose-900 flex items-center justify-center text-rose-400 relative overflow-hidden">
+                        <!-- Compass animated element inside icon box -->
+                        <i class="fa-solid fa-compass-drafting text-2xl relative z-10"></i>
+                        <div class="absolute inset-0 border-[2px] border-dashed border-rose-500/30 rounded-full animate-[spin_10s_linear_infinite] scale-150"></div>
+                    </div>
+                    <span class="text-[10px] font-mono-tech text-rose-500/50 border border-rose-500/20 px-2 py-1 rounded shadow-[0_0_10px_rgba(244,63,94,0.2)]">NAV</span>
                 </div>
-                <h3 class="text-lg font-medium text-gray-300 mb-2">Expansion Module</h3>
-                <p class="text-gray-400 text-xs px-4">
-                    Reserved slot for future maritime databases or bridge integration tools.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-rose-400 transition-colors mb-3">Gyro Error (ABC)</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed">
+                    Hitung dan verifikasi kesalahan kompas Gyro (Gyro Error) menggunakan metode tabel A, B, C berdasarkan azimuth benda angkasa. Esensial untuk akurasi haluan.
                 </p>
-                <span class="mt-4 px-3 py-1 bg-gray-800/50 rounded-full text-xs text-gray-400 border border-gray-600">Coming Soon</span>
+                <div class="flex items-center text-rose-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-rose-300">
+                    <span>EXECUTE</span>
+                    <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
+                </div>
+            </a>
+
+            <!-- Card 6: Expansion Slot (Disabled State) -->
+            <div class="glass-card p-7 border-dashed border-2 border-[#233554] bg-transparent hover:bg-[#112240]/30 hover:transform-none hover:shadow-none flex flex-col items-center justify-center text-center h-full opacity-60 fade-in-section" style="transition-delay: 600ms;">
+                <div class="w-12 h-12 rounded-full bg-[#233554]/50 flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-lock text-lg text-slate-500"></i>
+                </div>
+                <h3 class="text-lg font-medium text-slate-400 mb-2 font-mono-tech">SLOT_06 [EMPTY]</h3>
+                <p class="text-slate-500 text-xs px-4">
+                    Expansion bay offline. Awaiting payload for future bridge integration tools.
+                </p>
             </div>
         </div>
 
         <!-- Section Divider -->
-        <div class="flex items-center justify-center space-x-4 mb-10 opacity-70">
-            <div class="h-px bg-gradient-to-r from-transparent to-cyan-500/50 w-full max-w-xs"></div>
-            <i class="fa-solid fa-shield-halved text-cyan-400"></i>
-            <div class="h-px bg-gradient-to-l from-transparent to-cyan-500/50 w-full max-w-xs"></div>
+        <div class="flex items-center justify-center space-x-6 mb-16 fade-in-section">
+            <div class="h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent w-full max-w-sm"></div>
+            <div class="px-4 py-1 border border-cyan-500/20 rounded bg-[#112240] text-cyan-400 text-xs font-mono-tech tracking-widest">PROTOCOLS</div>
+            <div class="h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent w-full max-w-sm"></div>
         </div>
 
         <!-- GMDSS Testing Protocols Section -->
-        <section class="mb-8">
-            <div class="mb-8 text-center">
-                <h2 class="text-2xl md:text-3xl font-semibold tracking-wide text-white mb-2">Standardized GMDSS Testing Protocols</h2>
-                <p class="text-sm text-gray-400 max-w-2xl mx-auto">Mandatory routine maintenance and operational verification procedures for critical maritime communication equipment to ensure safety of life at sea.</p>
+        <section class="mb-12 fade-in-section">
+            <div class="mb-10 text-center">
+                <h2 class="text-2xl md:text-3xl font-semibold text-slate-200 mb-3">GMDSS Maintenance Directives</h2>
+                <p class="text-sm text-slate-400 max-w-2xl mx-auto">Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                 
                 <!-- Daily Tests -->
-                <div class="glass-card rounded-xl p-6 border-t-4 border-t-blue-400">
-                    <div class="flex items-center space-x-3 mb-4 border-b border-white/10 pb-3">
-                        <i class="fa-solid fa-calendar-day text-blue-400 text-xl"></i>
-                        <h3 class="text-lg font-semibold text-white">Daily Tests</h3>
+                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-cyan-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-cyan-900/50">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-semibold text-slate-200">Daily</h3>
+                        <i class="fa-solid fa-clock text-cyan-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Verify internal connections, display, and power output of VHF DSC. Run built-in test (no signal transmission).</li>
-                        <li>Execute built-in diagnostic on MF/HF DSC without external transmission.</li>
-                        <li>Confirm proper INMARSAT-C login status to the correct Ocean Region.</li>
-                        <li>Check reserve battery charge status and verify printer paper availability.</li>
+                        <li>Verify VHF DSC internal connections & display via built-in test.</li>
+                        <li>Execute MF/HF DSC internal diagnostic (no external transmission).</li>
+                        <li>Confirm INMARSAT-C login status to appropriate Ocean Region.</li>
+                        <li>Check reserve source of energy (batteries) status & printer paper.</li>
                     </ul>
                 </div>
 
                 <!-- Weekly Tests -->
-                <div class="glass-card rounded-xl p-6 border-t-4 border-t-emerald-400">
-                    <div class="flex items-center space-x-3 mb-4 border-b border-white/10 pb-3">
-                        <i class="fa-solid fa-calendar-week text-emerald-400 text-xl"></i>
-                        <h3 class="text-lg font-semibold text-white">Weekly Tests</h3>
+                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-emerald-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-emerald-900/50">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-semibold text-slate-200">Weekly</h3>
+                        <i class="fa-solid fa-calendar-week text-emerald-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Conduct DSC test call on approved HF channels to Coast Stations.</li>
-                        <li>Verify internal selective calling between duplicate VHF sets (low power).</li>
-                        <li>Manually switch off main supply to verify operation on reserve test batteries (if applicable).</li>
-                        <li>If no coast station acknowledges, document a vessel-to-vessel test call.</li>
+                        <li>Transmit DSC test call to Coast Station (MF/HF).</li>
+                        <li>Verify internal comms between duplicate VHF sets.</li>
+                        <li>Operate equipment from reserve source of energy (if applicable).</li>
+                        <li>Log vessel-to-vessel test if coast station test fails.</li>
                     </ul>
                 </div>
 
                 <!-- Monthly Tests -->
-                <div class="glass-card rounded-xl p-6 border-t-4 border-t-orange-400">
-                    <div class="flex items-center space-x-3 mb-4 border-b border-white/10 pb-3">
-                        <i class="fa-solid fa-calendar-check text-orange-400 text-xl"></i>
-                        <h3 class="text-lg font-semibold text-white">Monthly Tests</h3>
+                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-amber-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-amber-900/50">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-semibold text-slate-200">Monthly</h3>
+                        <i class="fa-regular fa-calendar-days text-amber-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Run INMARSAT-C Performance Verification (PV) and test SSAS protocols.</li>
-                        <li>Perform EPIRB self-test (without breaking seal) and inspect HRU conditions.</li>
-                        <li>Visually examine AIS/X-Band SARTs. Conduct live test avoiding interference with port operations.</li>
-                        <li>Examine emergency battery cells thoroughly and check handheld VHF batteries.</li>
+                        <li>INMARSAT-C Performance Verification (PV).</li>
+                        <li>EPIRB self-test (check physical condition & HRU expiry).</li>
+                        <li>SARTs visual check & live radar test (avoid port interference).</li>
+                        <li>Detailed inspection of emergency batteries & connections.</li>
                     </ul>
                 </div>
 
-                <!-- Annual / Logs -->
-                <div class="glass-card rounded-xl p-6 border-t-4 border-t-purple-400">
-                    <div class="flex items-center space-x-3 mb-4 border-b border-white/10 pb-3">
-                        <i class="fa-solid fa-book-journal-whills text-purple-400 text-xl"></i>
-                        <h3 class="text-lg font-semibold text-white">Annual & Logbook</h3>
+                <!-- Logbook Rules -->
+                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-rose-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-rose-900/50">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-lg font-semibold text-slate-200">Radio Log</h3>
+                        <i class="fa-solid fa-book-bookmark text-rose-400/50"></i>
                     </div>
                     <ul class="protocol-list">
-                        <li>Comprehensive Annual Inspection conducted by certified radio surveyors.</li>
-                        <li><span class="text-purple-300 font-medium">Logbook Rule:</span> Every entry must include precise vessel position (Lat/Long).</li>
-                        <li>Record both Local and UTC time for all tests, failures, and repairs.</li>
-                        <li>Primary responsibility for testing typically falls to the designated radio officer (often 2nd Officer).</li>
+                        <li>Record exact vessel position (Lat/Long) daily.</li>
+                        <li>Log all distress, urgency, and safety communications.</li>
+                        <li>Record details of all maintenance and testing (Pass/Fail).</li>
+                        <li>Master must review and sign the logbook daily.</li>
                     </ul>
                 </div>
 
-            </div>
-            
-            <!-- Best Practices Banner -->
-            <div class="mt-6 glass-card rounded-lg p-4 bg-cyan-900/20 flex flex-col md:flex-row items-start md:items-center justify-between">
-                <div class="flex items-center space-x-3 mb-3 md:mb-0">
-                    <i class="fa-solid fa-lightbulb text-yellow-400 text-xl"></i>
-                    <div>
-                        <h4 class="font-medium text-white text-sm">Testing Best Practice</h4>
-                        <p class="text-xs text-gray-400">For distant stations, conduct MF/HF tests post-sunset or pre-sunrise to capitalize on optimal ionospheric wave propagation.</p>
-                    </div>
-                </div>
             </div>
         </section>
 
     </main>
 
     <!-- Footer -->
-    <footer class="mt-auto py-6 border-t border-white/10 bg-black/40 backdrop-blur-md">
-        <div class="container mx-auto px-4 flex justify-center">
-            <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-2 text-gray-400 hover:text-white transition-colors duration-300">
-                <span class="text-sm">Page created by</span>
-                <span class="font-medium text-cyan-400 group-hover:text-pink-400 transition-colors duration-300">@c.wijaya.t</span>
-                <i class="fa-brands fa-instagram text-lg group-hover:text-pink-500 transition-colors duration-300"></i>
+    <footer class="mt-auto py-6 border-t border-[#233554] bg-[#050b14]/80 backdrop-blur-md relative z-10">
+        <div class="container mx-auto px-4 flex justify-center items-center">
+            <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-3 text-slate-400 hover:text-slate-200 transition-colors duration-300 bg-[#112240] px-4 py-2 rounded-full border border-white/5">
+                <span class="text-xs font-mono-tech">SYSTEM.AUTHOR</span>
+                <span class="w-1 h-1 bg-cyan-400 rounded-full group-hover:scale-150 transition-transform"></span>
+                <span class="font-medium text-cyan-400 group-hover:text-[#64ffda] transition-colors duration-300">@c.wijaya.t</span>
+                <i class="fa-brands fa-instagram text-lg group-hover:text-pink-500 transition-colors duration-300 ml-1"></i>
             </a>
         </div>
     </footer>
@@ -339,7 +421,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Splash Screen Logic
-            const splashDuration = 3500; 
+            const splashDuration = 2000; // Dikurangi agar tidak terlalu lama menunggu
 
             setTimeout(() => {
                 const splashScreen = document.getElementById('splashScreen');
@@ -350,27 +432,51 @@
                 setTimeout(() => {
                     mainContent.classList.remove('opacity-0');
                     mainContent.classList.add('opacity-100');
-                }, 500); 
+                    
+                    // Trigger scroll animations after splash
+                    setupIntersectionObserver();
+                }, 600); 
 
             }, splashDuration);
         });
 
+        // Scroll Animation Logic (Fade in elements as they appear)
+        function setupIntersectionObserver() {
+            const sections = document.querySelectorAll('.fade-in-section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        // Optional: stop observing once visible
+                        // observer.unobserve(entry.target); 
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+
         // Language Toast Notification Logic
         function changeLanguage(lang) {
-            if (lang === 'English') return; // Already in English
+            if (lang === 'English') return;
 
             const toast = document.getElementById('toast');
             const message = document.getElementById('toastMessage');
             
-            message.innerText = `${lang} translation module will be deployed in the next update.`;
+            message.innerHTML = `MODULE <span class="text-white">${lang.toUpperCase()}</span> NOT FOUND.<br><span class="text-xs text-slate-400">Scheduled for patch v2.0</span>`;
             
             // Show toast
-            toast.classList.remove('translate-x-full', 'opacity-0');
+            toast.classList.remove('translate-x-[120%]', 'opacity-0');
             
-            // Hide toast after 3 seconds
+            // Hide toast after delay
             setTimeout(() => {
-                toast.classList.add('translate-x-full', 'opacity-0');
-            }, 3000);
+                toast.classList.add('translate-x-[120%]', 'opacity-0');
+            }, 3500);
         }
     </script>
 </body>
