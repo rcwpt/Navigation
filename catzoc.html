@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATZOC Calculator (Category of Zone of Confidence)</title>
+    <!-- Tailwind for rapid styling (requires internet on first load, cached afterwards) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        marine: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Fallback and Custom Styles */
+        body {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#bae6fd 1px, transparent 1px);
+            background-size: 24px 24px;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .catzoc-table th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .catzoc-table td {
+            vertical-align: middle;
+        }
+        @keyframes highlight {
+            0% { background-color: #eff6ff; }
+            50% { background-color: #dbeafe; }
+            100% { background-color: transparent; }
+        }
+        .highlight-row {
+            animation: highlight 1.5s ease-out;
+        }
+        
+        /* Bar Chart Animations */
+        .bar-transition {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Tooltip styling */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: max-content;
+            background-color: #334155;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased p-4 md:p-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Header -->
+        <div class="lg:col-span-12 mb-2 text-center lg:text-left flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-6">
+            <div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                <div class="bg-marine-600 p-3 rounded-2xl shadow-lg shrink-0">
+                    <!-- Ship Icon SVG (Offline) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                        <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/>
+                        <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/>
+                        <path d="M12 10v4"/>
+                        <path d="M12 2v3"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-1">
+                        CATZOC Calculator
+                    </h1>
+                    <p class="text-slate-500 font-medium">Category of Zone of Confidence - ECDIS Position & Depth Accuracy Evaluator</p>
+                </div>
+            </div>
+            
+            <!-- Back to Home Button -->
+            <a href="https://rcwpt.github.io/Navigation/" class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-slate-700 hover:text-marine-700 font-semibold px-4 py-2.5 rounded-xl border border-slate-300 shadow-sm transition-all duration-200 hover:shadow active:scale-95 shrink-0 text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m12 19-7-7 7-7"/>
+                    <path d="M19 12H5"/>
+                </svg>
+                <span>Back to Home</span>
+            </a>
+        </div>
+
+        <!-- Left Column: Input & Info -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Calculator Input Panel -->
+            <div class="glass-panel rounded-2xl p-6 relative overflow-hidden group border-t-4 border-t-marine-500">
+                <div class="absolute -top-4 -right-4 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform rotate-12 scale-150">
+                    <!-- Calculator Icon SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-marine-600"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16.01" y1="14" y2="14"/><line x1="16" x2="16.01" y1="18" y2="18"/><line x1="8" x2="8.01" y1="10" y2="10"/><line x1="12" x2="12.01" y1="10" y2="10"/><line x1="16" x2="16.01" y1="10" y2="10"/><line x1="8" x2="8.01" y1="14" y2="14"/><line x1="12" x2="12.01" y1="14" y2="14"/><line x1="8" x2="8.01" y1="18" y2="18"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg>
+                </div>
+                
+                <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <!-- Ruler Icon SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-marine-500"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+                    Input Parameters
+                </h2>
+                
+                <div class="mb-6">
+                    <label for="depthInput" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Charted Depth (Meters)
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <!-- Water/Waves Icon SVG -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+                        </div>
+                        <input type="number" id="depthInput" min="0" step="0.1" placeholder="e.g., 25.5" 
+                            class="pl-10 w-full rounded-xl border-slate-300 shadow-sm focus:border-marine-500 focus:ring focus:ring-marine-200 focus:ring-opacity-50 bg-white border py-3 px-4 text-lg transition-all outline-none font-semibold text-slate-700">
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-500 font-bold">
+                            m
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="calculateDepthAccuracy()" class="w-full bg-slate-800 hover:bg-marine-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+                    <!-- Bolt Icon SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>
+                    Calculate Accuracy
+                </button>
+            </div>
+
+            <!-- Visual Illustration Panel -->
+            <div id="illustrationPanel" class="glass-panel rounded-2xl p-6 hidden">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <!-- Bar Chart Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-marine-600"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+                    Depth Error Comparison
+                </h3>
+                
+                <div class="text-sm text-slate-500 mb-4 font-medium flex justify-between">
+                    <span>At Depth: <strong id="chartDepthVal" class="text-slate-800">-- m</strong></span>
+                    <span>Scale: Error Margin (&plusmn;m)</span>
+                </div>
+                
+                <!-- Chart Container -->
+                <div class="space-y-4" id="chartBarsContainer">
+                    <!-- Bars injected by JS -->
+                </div>
+                
+                <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 flex items-start gap-1">
+                    <!-- Info Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    Visual representation of potential depth error. Shorter bars indicate higher confidence/accuracy. Zones D & U are conceptually unbounded.
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="glass-panel rounded-2xl p-6 bg-slate-50 border-none shadow-inner">
+                <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                    <!-- Lightbulb Icon SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    Understanding CATZOC
+                </h3>
+                <p class="text-sm text-slate-600 mb-3 leading-relaxed">
+                    CATZOC highlights the reliability of bathymetric data within an ENC. It affects your Under Keel Clearance (UKC) calculations.
+                </p>
+                <ul class="text-sm text-slate-700 space-y-3">
+                    <li class="flex items-start gap-3 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                        <div class="bg-green-100 p-1 rounded mt-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <span><strong>A1 & A2:</strong> High accuracy. Recent, full-bottom search surveys.</span>
+                    </li>
+                    <li class="flex items-start gap-3 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                        <div class="bg-yellow-100 p-1 rounded mt-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        </div>
+                        <span><strong>B & C:</strong> Moderate. Older surveys, possible uncharted hazards.</span>
+                    </li>
+                    <li class="flex items-start gap-3 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                        <div class="bg-red-100 p-1 rounded mt-0.5">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-600"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        </div>
+                        <span><strong>D & U:</strong> Poor or Unassessed. Large errors expected; navigate with extreme caution.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Column: Results Table -->
+        <div class="lg:col-span-8 flex flex-col">
+            <div class="glass-panel rounded-2xl overflow-hidden shadow-xl border border-slate-200 flex-grow flex flex-col">
+                
+                <div class="bg-white px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Reference & Calculation Results</h2>
+                        <p class="text-xs text-slate-500 mt-1">Limits of error according to IHO S-57 Appendix A</p>
+                    </div>
+                    <div class="text-sm text-slate-600 font-semibold bg-marine-50 border border-marine-100 px-4 py-2 rounded-xl shadow-sm flex items-center gap-2" id="currentDepthDisplay">
+                        Current Depth: <span class="font-bold text-marine-700 text-lg">--</span> m
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto flex-grow bg-white">
+                    <table class="w-full text-left border-collapse catzoc-table h-full">
+                        <thead>
+                            <tr>
+                                <th class="py-4 px-4 border-b text-center w-20">Zone</th>
+                                <th class="py-4 px-4 border-b w-40 text-center">ECDIS Symbol</th>
+                                <th class="py-4 px-5 border-b">Position Accuracy</th>
+                                <th class="py-4 px-5 border-b">
+                                    Depth Accuracy Formula<br>
+                                    <span class="text-[10px] font-normal normal-case text-slate-500">Allowed error margin</span>
+                                </th>
+                                <th class="py-4 px-5 border-b bg-marine-50 text-marine-900 text-center border-l border-marine-100">
+                                    Calculated Error<br>
+                                    <span class="text-[10px] font-normal normal-case text-marine-600">Based on Input Depth</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="catzocTableBody" class="divide-y divide-slate-100">
+                            <!-- Rows generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Data Definition - ENHANCED SVG SIZES (Made significantly larger and clearer)
+        const catzocData = [
+            {
+                id: 'A1',
+                // Increased viewBox and stroke width for larger, clearer symbols
+                symbol: `<svg width="80" height="80" viewBox="0 0 100 100" class="mx-auto drop-shadow-sm"><polygon points="10,20 90,20 50,90" fill="#f8fafc" stroke="#334155" stroke-width="2.5"/><text x="50" y="45" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">* * *</text><text x="50" y="65" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">* *</text><text x="50" y="85" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">*</text></svg>`,
+                positionAcc: '5 Meters',
+                depthFormulaStr: '0.5 Meters + 1% of Depth',
+                baseDepthErr: 0.5,
+                depthMultiplier: 0.01,
+                color: 'text-emerald-700',
+                bgColor: 'bg-emerald-50',
+                borderColor: 'border-emerald-200',
+                isWorseThan: false
+            },
+            {
+                id: 'A2',
+                symbol: `<svg width="80" height="80" viewBox="0 0 100 100" class="mx-auto drop-shadow-sm"><polygon points="15,25 85,25 50,85" fill="#f8fafc" stroke="#334155" stroke-width="2.5"/><text x="50" y="50" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">* * *</text><text x="50" y="70" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">* *</text></svg>`,
+                positionAcc: '20 Meters',
+                depthFormulaStr: '1.0 Meters + 2% of Depth',
+                baseDepthErr: 1.0,
+                depthMultiplier: 0.02,
+                color: 'text-green-600',
+                bgColor: 'bg-green-50',
+                borderColor: 'border-green-200',
+                isWorseThan: false
+            },
+            {
+                id: 'B',
+                symbol: `<svg width="80" height="80" viewBox="0 0 100 100" class="mx-auto drop-shadow-sm"><polygon points="20,30 80,30 50,80" fill="#f8fafc" stroke="#334155" stroke-width="2.5"/><text x="50" y="55" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">* * *</text><text x="50" y="75" font-size="20" text-anchor="middle" fill="#334155" font-family="sans-serif">*</text></svg>`,
+                positionAcc: '50 Meters',
+                depthFormulaStr: '1.0 Meters + 2% of Depth',
+                baseDepthErr: 1.0,
+                depthMultiplier: 0.02,
+                color: 'text-blue-600',
+                bgColor: 'bg-blue-50',
+                borderColor: 'border-blue-200',
+                isWorseThan: false
+            },
+            {
+                id: 'C',
+                symbol: `<svg width="100" height="50" viewBox="0 0 120 50" class="mx-auto drop-shadow-sm"><rect x="10" y="5" width="100" height="40" rx="20" fill="#f8fafc" stroke="#334155" stroke-width="2.5"/><text x="60" y="32" font-size="24" text-anchor="middle" fill="#334155" font-family="sans-serif">* * *</text></svg>`,
+                positionAcc: '500 Meters',
+                depthFormulaStr: '2.0 Meters + 5% of Depth',
+                baseDepthErr: 2.0,
+                depthMultiplier: 0.05,
+                color: 'text-amber-600',
+                bgColor: 'bg-amber-50',
+                borderColor: 'border-amber-200',
+                isWorseThan: false
+            },
+            {
+                id: 'D',
+                symbol: `<svg width="100" height="50" viewBox="0 0 120 50" class="mx-auto drop-shadow-sm"><rect x="10" y="5" width="100" height="40" rx="20" fill="#f8fafc" stroke="#334155" stroke-width="2.5"/><text x="60" y="34" font-size="28" text-anchor="middle" fill="#334155" font-family="sans-serif">* *</text></svg>`,
+                positionAcc: 'More than 500 Meters',
+                depthFormulaStr: '<span class="font-semibold">Worse than</span><br>2.0 Meters + 5% of Depth',
+                baseDepthErr: 2.0,
+                depthMultiplier: 0.05,
+                isWorseThan: true,
+                color: 'text-orange-600',
+                bgColor: 'bg-orange-50',
+                borderColor: 'border-orange-200'
+            },
+            {
+                id: 'U',
+                symbol: `<svg width="100" height="50" viewBox="0 0 120 50" class="mx-auto drop-shadow-sm"><rect x="10" y="5" width="100" height="40" rx="20" fill="#f8fafc" stroke="#334155" stroke-width="2.5"/><text x="60" y="34" font-size="24" text-anchor="middle" fill="#334155" font-weight="bold" font-family="sans-serif">U</text></svg>`,
+                positionAcc: 'Not Assessed',
+                depthFormulaStr: 'Not Assessed',
+                baseDepthErr: null,
+                depthMultiplier: null,
+                color: 'text-rose-600',
+                bgColor: 'bg-rose-50',
+                borderColor: 'border-rose-200',
+                isWorseThan: false
+            }
+        ];
+
+        const tableBody = document.getElementById('catzocTableBody');
+        const depthInput = document.getElementById('depthInput');
+        const currentDepthDisplay = document.getElementById('currentDepthDisplay');
+        const illustrationPanel = document.getElementById('illustrationPanel');
+        const chartBarsContainer = document.getElementById('chartBarsContainer');
+        const chartDepthVal = document.getElementById('chartDepthVal');
+
+        function renderTable(depthValue = null) {
+            tableBody.innerHTML = '';
+            
+            catzocData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-50 transition-colors ${depthValue !== null ? 'highlight-row' : ''}`;
+                
+                let calcResultHtml = `<span class="text-slate-400 italic text-sm">Awaiting input...</span>`;
+                let errorMargin = null;
+                
+                if (depthValue !== null) {
+                    if (row.baseDepthErr !== null) {
+                        errorMargin = row.baseDepthErr + (row.depthMultiplier * depthValue);
+                        const prefix = row.isWorseThan ? '<span class="text-xs mr-1 text-slate-500">worse than</span> &plusmn;' : '&plusmn;';
+                        
+                        // Calculate Depth Range
+                        const minDepth = (depthValue - errorMargin).toFixed(1);
+                        const maxDepth = (depthValue + errorMargin).toFixed(1);
+                        
+                        calcResultHtml = `
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="font-bold text-xl ${row.color} flex items-baseline">
+                                    ${prefix} ${errorMargin.toFixed(2)}<span class="text-sm ml-1 font-normal">m</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-1.5 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm w-full text-center tooltip">
+                                    Range: <span class="font-mono font-medium">${minDepth}m &rarr; ${maxDepth}m</span>
+                                    <span class="tooltiptext">Actual depth could be anywhere between ${minDepth} and ${maxDepth} meters.</span>
+                                </div>
+                            </div>`;
+                    } else {
+                        calcResultHtml = `
+                            <div class="flex flex-col items-center">
+                                <span class="text-rose-500 font-bold text-sm bg-rose-50 px-3 py-1 rounded-full border border-rose-100">Unknown Error</span>
+                                <span class="text-[10px] text-slate-400 mt-1">Data not assessed</span>
+                            </div>`;
+                    }
+                }
+
+                // Map/Target icon SVG inline
+                const targetIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/><line x1="12" x2="12" y1="2" y2="22"/><line x1="2" x2="22" y1="12" y2="12"/></svg>`;
+
+                tr.innerHTML = `
+                    <td class="py-4 px-4 border-b text-center">
+                        <span class="inline-flex w-12 h-12 items-center justify-center font-bold text-lg rounded-xl ${row.bgColor} ${row.color} border ${row.borderColor} shadow-sm">
+                            ${row.id}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4 border-b text-center">
+                        <div class="flex justify-center items-center py-2">
+                            ${row.symbol}
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 border-b">
+                        <div class="flex items-center gap-2">
+                            ${targetIcon}
+                            <span class="font-medium text-slate-700">${row.positionAcc}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 border-b">
+                        <div class="text-slate-600 text-sm leading-relaxed">
+                            ${row.depthFormulaStr}
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 border-b bg-marine-50/30 text-center align-middle border-l border-slate-100">
+                        ${calcResultHtml}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+            
+            setTimeout(() => {
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach(r => r.classList.remove('highlight-row'));
+            }, 1500);
+        }
+
+        function renderIllustration(depthValue) {
+            illustrationPanel.classList.remove('hidden');
+            chartDepthVal.innerText = `${depthValue} m`;
+            chartBarsContainer.innerHTML = '';
+            
+            // Find max error for scaling (excluding D and U for baseline, but capping D)
+            let errors = [];
+            catzocData.forEach(row => {
+                if(row.baseDepthErr !== null && row.id !== 'D') {
+                    errors.push(row.baseDepthErr + (row.depthMultiplier * depthValue));
+                }
+            });
+            const maxError = Math.max(...errors);
+            
+            // Generate Bars
+            catzocData.forEach(row => {
+                // Skip U as it has no formula
+                if(row.id === 'U') return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center gap-3';
+                
+                let errorVal = 0;
+                let widthPercent = 0;
+                let displayVal = '';
+                let isD = row.id === 'D';
+
+                if (row.baseDepthErr !== null) {
+                    errorVal = row.baseDepthErr + (row.depthMultiplier * depthValue);
+                    
+                    // Cap width at 100%, D might go beyond conceptually
+                    widthPercent = (errorVal / maxError) * 100;
+                    if(widthPercent > 100) widthPercent = 100; 
+                    
+                    displayVal = `± ${errorVal.toFixed(2)}m`;
+                    if (isD) displayVal = `> ${displayVal}`;
+                }
+
+                // Determine bar color based on row ID
+                let barColor = 'bg-slate-300';
+                if(row.id.includes('A')) barColor = 'bg-emerald-500';
+                else if(row.id === 'B') barColor = 'bg-blue-500';
+                else if(row.id === 'C') barColor = 'bg-amber-500';
+                else if(row.id === 'D') barColor = 'bg-orange-500';
+
+                wrapper.innerHTML = `
+                    <div class="w-8 font-bold text-sm text-slate-600 text-right shrink-0">${row.id}</div>
+                    <div class="flex-grow bg-slate-100 rounded-full h-5 relative overflow-hidden flex items-center border border-slate-200">
+                        <div class="${barColor} h-full bar-transition rounded-full relative" style="width: 0%;" data-target-width="${widthPercent}%">
+                            ${isD ? '<div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-slate-100"></div>' : ''}
+                        </div>
+                    </div>
+                    <div class="w-20 text-xs font-semibold text-slate-700 text-left shrink-0">${displayVal}</div>
+                `;
+                chartBarsContainer.appendChild(wrapper);
+                
+                // Animate bar width after small delay
+                setTimeout(() => {
+                    const bar = wrapper.querySelector('.bar-transition');
+                    bar.style.width = bar.getAttribute('data-target-width');
+                }, 50);
+            });
+        }
+
+        function calculateDepthAccuracy() {
+            const depth = parseFloat(depthInput.value);
+            
+            if (isNaN(depth) || depth < 0) {
+                // Shake animation for invalid input
+                depthInput.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+                depthInput.classList.add('animate-[shake_0.4s_ease-in-out]');
+                
+                setTimeout(() => {
+                    depthInput.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500', 'animate-[shake_0.4s_ease-in-out]');
+                }, 400);
+                
+                return;
+            }
+
+            // Update display
+            currentDepthDisplay.innerHTML = `Current Depth: <span class="font-bold text-marine-700 text-lg">${depth}</span> m`;
+            
+            // Re-render components
+            renderTable(depth);
+            renderIllustration(depth);
+        }
+
+        // Add CSS for shake animation dynamically
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                20%, 60% { transform: translateX(-4px); }
+                40%, 80% { transform: translateX(4px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Allow 'Enter' key
+        depthInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                calculateDepthAccuracy();
+            }
+        });
+
+        // Initial render (empty state)
+        renderTable();
+
+    </script>
+</body>
+</html>
