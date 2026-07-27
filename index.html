@@ -106,7 +106,8 @@
         .card-emerald:hover { border-color: rgba(52, 211, 153, 0.5); }
         .card-amber:hover { border-color: rgba(251, 191, 36, 0.5); }
         .card-purple:hover { border-color: rgba(167, 139, 250, 0.5); }
-        .card-rose:hover { border-color: rgba(244, 63, 94, 0.5); } /* Color for Gyro Error */
+        .card-rose:hover { border-color: rgba(244, 63, 94, 0.5); }
+        .card-indigo:hover { border-color: rgba(99, 102, 241, 0.5); } /* Color for CATZOC */
 
         /* Icon Glow Effects */
         .icon-box {
@@ -117,6 +118,7 @@
         .glass-card:hover .icon-box.amber { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
         .glass-card:hover .icon-box.purple { box-shadow: 0 0 15px rgba(167, 139, 250, 0.4); }
         .glass-card:hover .icon-box.rose { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
+        .glass-card:hover .icon-box.indigo { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
 
         /* Protocol List Styles */
         .protocol-list li {
@@ -315,16 +317,23 @@
                 </div>
             </a>
 
-            <!-- Card 6: Expansion Slot (Disabled State) -->
-            <div class="glass-card p-7 border-dashed border-2 border-[#233554] bg-transparent hover:bg-[#112240]/30 hover:transform-none hover:shadow-none flex flex-col items-center justify-center text-center h-full opacity-60 fade-in-section" style="transition-delay: 600ms;">
-                <div class="w-12 h-12 rounded-full bg-[#233554]/50 flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-lock text-lg text-slate-500"></i>
+            <!-- Card 6: CATZOC Calculator -->
+            <a href="https://rcwpt.github.io/Navigation/catzoc.html" target="_blank" class="glass-card card-indigo p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 600ms;">
+                <div class="flex items-start justify-between mb-6">
+                    <div class="icon-box indigo w-14 h-14 rounded-xl bg-indigo-950/50 border border-indigo-900 flex items-center justify-center text-indigo-400">
+                        <i class="fa-solid fa-map-location-dot text-2xl"></i>
+                    </div>
+                    <span class="text-[10px] font-mono-tech text-indigo-500/50 border border-indigo-500/20 px-2 py-1 rounded" data-i18n="badge_enc">ENC</span>
                 </div>
-                <h3 class="text-lg font-medium text-slate-400 mb-2 font-mono-tech" data-i18n="card6_title">SLOT_06 [EMPTY]</h3>
-                <p class="text-slate-500 text-xs px-4" data-i18n="card6_desc">
-                    Expansion bay offline. Awaiting payload for future bridge integration tools.
+                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors mb-3" data-i18n="card6_title">CATZOC Calculator</h3>
+                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card6_desc">
+                    Assess the accuracy and reliability of bathymetric data on Electronic Navigational Charts (ENC) using the Category of Zones of Confidence (CATZOC) criteria.
                 </p>
-            </div>
+                <div class="flex items-center text-indigo-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-indigo-300">
+                    <span data-i18n="btn_assess">ASSESS</span>
+                    <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
+                </div>
+            </a>
         </div>
 
         <!-- Section Divider -->
@@ -425,7 +434,7 @@
                 splash_subtitle: 'Establishing Uplink...',
                 header_title: 'Bridge <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Dashboard</span>',
                 header_subtitle: 'Tactical Navigation & Comms Hub',
-                badge_comms: 'COMMS', badge_gmdss: 'GMDSS', badge_env: 'ENV', badge_astro: 'ASTRO', badge_nav: 'NAV',
+                badge_comms: 'COMMS', badge_gmdss: 'GMDSS', badge_env: 'ENV', badge_astro: 'ASTRO', badge_nav: 'NAV', badge_enc: 'ENC',
                 card1_title: 'Navtex Tracker',
                 card1_desc: 'Monitor MSI (Maritime Safety Information), meteorological warnings, and navigational alerts broadcasted via Navigation Telex.',
                 btn_init: 'INITIALIZE',
@@ -441,8 +450,9 @@
                 card5_title: 'Gyro Error (ABC)',
                 card5_desc: 'Calculate and verify Gyro compass error using ABC tables based on celestial azimuths. Essential for precise heading accuracy.',
                 btn_exec: 'EXECUTE',
-                card6_title: 'SLOT_06 [EMPTY]',
-                card6_desc: 'Expansion bay offline. Awaiting payload for future bridge integration tools.',
+                card6_title: 'CATZOC Calculator',
+                card6_desc: 'Assess the accuracy and reliability of bathymetric data on Electronic Navigational Charts (ENC) using the Category of Zones of Confidence (CATZOC) criteria.',
+                btn_assess: 'ASSESS',
                 proto_badge: 'PROTOCOLS',
                 proto_title: 'GMDSS Maintenance Directives',
                 proto_desc: 'Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.',
@@ -473,7 +483,7 @@
                 splash_subtitle: '建立连接中...',
                 header_title: '驾驶台 <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">仪表板</span>',
                 header_subtitle: '战术导航与通信中心',
-                badge_comms: '通信', badge_gmdss: '全球海上遇险', badge_env: '环境', badge_astro: '天文', badge_nav: '导航',
+                badge_comms: '通信', badge_gmdss: '全球海上遇险', badge_env: '环境', badge_astro: '天文', badge_nav: '导航', badge_enc: '海图',
                 card1_title: '航行警告追踪器',
                 card1_desc: '监控通过航行警告电传播发的海上安全信息（MSI）、气象警告和导航警报。',
                 btn_init: '初始化',
@@ -489,8 +499,9 @@
                 card5_title: '电罗经误差 (ABC)',
                 card5_desc: '基于天体方位使用 ABC 表计算和验证电罗经误差。对精确航向至关重要。',
                 btn_exec: '执行',
-                card6_title: '插槽_06 [空]',
-                card6_desc: '扩展托架离线。等待未来驾驶台集成工具的有效载荷。',
+                card6_title: 'CATZOC 计算器',
+                card6_desc: '使用信心区类别 (CATZOC) 标准评估电子导航图 (ENC) 上测深数据的准确性和可靠性。',
+                btn_assess: '评估',
                 proto_badge: '协议',
                 proto_title: 'GMDSS 维护指令',
                 proto_desc: '符合 SOLAS 第 IV 章规定的强制性日常维护和操作验证程序。',
@@ -521,7 +532,7 @@
                 splash_subtitle: 'Membangun Koneksi...',
                 header_title: 'Dasbor <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Anjungan</span>',
                 header_subtitle: 'Pusat Navigasi Taktis & Komunikasi',
-                badge_comms: 'KOMUNIKASI', badge_gmdss: 'GMDSS', badge_env: 'LINGKUNGAN', badge_astro: 'ASTRO', badge_nav: 'NAVIGASI',
+                badge_comms: 'KOMUNIKASI', badge_gmdss: 'GMDSS', badge_env: 'LINGKUNGAN', badge_astro: 'ASTRO', badge_nav: 'NAVIGASI', badge_enc: 'ENC',
                 card1_title: 'Pelacak Navtex',
                 card1_desc: 'Pantau MSI (Informasi Keselamatan Maritim), peringatan meteorologi, dan peringatan navigasi yang disiarkan melalui Navtex.',
                 btn_init: 'INISIALISASI',
@@ -537,8 +548,9 @@
                 card5_title: 'Kesalahan Gyro (ABC)',
                 card5_desc: 'Hitung dan verifikasi kesalahan kompas Gyro menggunakan tabel ABC berdasarkan azimuth benda angkasa. Esensial untuk akurasi haluan.',
                 btn_exec: 'EKSEKUSI',
-                card6_title: 'SLOT_06 [KOSONG]',
-                card6_desc: 'Slot ekspansi offline. Menunggu modul untuk alat integrasi anjungan masa depan.',
+                card6_title: 'Kalkulator CATZOC',
+                card6_desc: 'Nilai akurasi dan keandalan data batimetri pada Peta Navigasi Elektronik (ENC) menggunakan kriteria Kategori Zona Kepercayaan (CATZOC).',
+                btn_assess: 'EVALUASI',
                 proto_badge: 'PROTOKOL',
                 proto_title: 'Arahan Pemeliharaan GMDSS',
                 proto_desc: 'Prosedur pemeliharaan rutin dan verifikasi operasional wajib yang sesuai dengan peraturan SOLAS Bab IV.',
