@@ -7,6 +7,11 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable class-based dark mode
+        }
+    </script>
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,23 +21,79 @@
     
     <style>
         :root {
+            /* Light Theme Variables (Default) */
+            --bg-color-1: #f0f4f8;
+            --bg-color-2: #e2e8f0;
+            --bg-color-3: #cbd5e1;
+            
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-accent: #0284c7; /* A darker blue for light theme */
+            
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(148, 163, 184, 0.3);
+            --glass-hover-bg: rgba(255, 255, 255, 0.95);
+            --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+            
+            --accent-cyan: #0284c7; /* Using blue as cyan is hard to read on white */
+            --gradient-1: #0ea5e9;
+            --gradient-2: #3b82f6;
+
+            --bg-grid-color: rgba(0, 0, 0, 0.05);
+            --bg-radial-1: rgba(14, 165, 233, 0.1);
+            --bg-radial-2: rgba(59, 130, 246, 0.1);
+            
+            /* Card Icon Backgrounds - Light */
+            --icon-bg-cyan: rgba(14, 165, 233, 0.1);
+            --icon-bg-emerald: rgba(16, 185, 129, 0.1);
+            --icon-bg-amber: rgba(245, 158, 11, 0.1);
+            --icon-bg-purple: rgba(139, 92, 246, 0.1);
+            --icon-bg-rose: rgba(244, 63, 94, 0.1);
+            --icon-bg-indigo: rgba(99, 102, 241, 0.1);
+        }
+
+        .dark {
+            /* Dark Theme Variables */
             --bg-color-1: #050b14;
             --bg-color-2: #0a192f;
             --bg-color-3: #112240;
-            --accent-cyan: #64ffda;
-            --glass-border: rgba(100, 255, 218, 0.1);
+            
+            --text-primary: #e6f1ff;
+            --text-secondary: #8892b0;
+            --text-accent: #64ffda;
+            
             --glass-bg: rgba(10, 25, 47, 0.7);
+            --glass-border: rgba(100, 255, 218, 0.1);
+            --glass-hover-bg: rgba(17, 34, 64, 0.85);
+            --glass-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(100, 255, 218, 0.1);
+            
+            --accent-cyan: #64ffda;
+            --gradient-1: #22d3ee; /* cyan-400 */
+            --gradient-2: #3b82f6; /* blue-500 */
+
+            --bg-grid-color: rgba(255, 255, 255, 0.02);
+            --bg-radial-1: rgba(100, 255, 218, 0.05);
+            --bg-radial-2: rgba(2, 132, 199, 0.08);
+
+            /* Card Icon Backgrounds - Dark */
+            --icon-bg-cyan: rgba(8, 51, 68, 0.5); /* cyan-950/50 approx */
+            --icon-bg-emerald: rgba(2, 44, 34, 0.5);
+            --icon-bg-amber: rgba(69, 26, 3, 0.5);
+            --icon-bg-purple: rgba(59, 7, 100, 0.5);
+            --icon-bg-rose: rgba(76, 5, 25, 0.5);
+            --icon-bg-indigo: rgba(30, 27, 75, 0.5);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color-1);
             background-image: 
-                radial-gradient(circle at 15% 50%, rgba(100, 255, 218, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(2, 132, 199, 0.08) 0%, transparent 50%);
-            color: #e6f1ff;
+                radial-gradient(circle at 15% 50%, var(--bg-radial-1) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, var(--bg-radial-2) 0%, transparent 50%);
+            color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
 
         .font-mono-tech {
@@ -47,11 +108,12 @@
             width: 100%;
             height: 100%;
             background-image: 
-                linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+                linear-gradient(to right, var(--bg-grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--bg-grid-color) 1px, transparent 1px);
             background-size: 40px 40px;
             z-index: -1;
             pointer-events: none;
+            transition: background-image 0.5s ease;
         }
 
         /* Splash Screen Animations */
@@ -97,8 +159,8 @@
 
         .glass-card:hover {
             transform: translateY(-8px);
-            background: rgba(17, 34, 64, 0.85);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(100, 255, 218, 0.1);
+            background: var(--glass-hover-bg);
+            box-shadow: var(--glass-shadow);
         }
 
         /* Dynamic Border Colors based on group hover */
@@ -107,12 +169,20 @@
         .card-amber:hover { border-color: rgba(251, 191, 36, 0.5); }
         .card-purple:hover { border-color: rgba(167, 139, 250, 0.5); }
         .card-rose:hover { border-color: rgba(244, 63, 94, 0.5); }
-        .card-indigo:hover { border-color: rgba(99, 102, 241, 0.5); } /* Color for CATZOC */
+        .card-indigo:hover { border-color: rgba(99, 102, 241, 0.5); }
 
         /* Icon Glow Effects */
         .icon-box {
             transition: all 0.3s ease;
+            background-color: var(--icon-bg-cyan); /* Default fallback */
         }
+        .icon-box.cyan { background-color: var(--icon-bg-cyan); }
+        .icon-box.emerald { background-color: var(--icon-bg-emerald); }
+        .icon-box.amber { background-color: var(--icon-bg-amber); }
+        .icon-box.purple { background-color: var(--icon-bg-purple); }
+        .icon-box.rose { background-color: var(--icon-bg-rose); }
+        .icon-box.indigo { background-color: var(--icon-bg-indigo); }
+
         .glass-card:hover .icon-box.cyan { box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
         .glass-card:hover .icon-box.emerald { box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); }
         .glass-card:hover .icon-box.amber { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
@@ -126,11 +196,11 @@
             padding-left: 1.75rem;
             margin-bottom: 0.75rem;
             font-size: 0.875rem;
-            color: #8892b0;
+            color: var(--text-secondary);
             transition: color 0.3s ease;
         }
         .protocol-list li:hover {
-            color: #ccd6f6;
+            color: var(--text-primary);
         }
         .protocol-list li::before {
             content: '\f101'; /* FontAwesome angle-double-right */
@@ -157,8 +227,8 @@
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-color-1); }
-        ::-webkit-scrollbar-thumb { background: #233554; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64ffda; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-color-3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
 
         /* Radar Sweep Animation for Header */
         @keyframes radar-sweep {
@@ -173,23 +243,32 @@
             position: absolute;
             top: -10px; left: -10px; right: -10px; bottom: -10px;
             border-radius: 50%;
-            border: 1px solid rgba(100, 255, 218, 0.2);
-            border-top-color: rgba(100, 255, 218, 0.8);
+            border: 1px solid var(--glass-border);
+            border-top-color: var(--accent-cyan);
             animation: radar-sweep 2s linear infinite;
+        }
+        
+        /* Text Gradients */
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, var(--gradient-1), var(--gradient-2));
         }
     </style>
 </head>
-<body class="flex flex-col relative antialiased">
+<body class="flex flex-col relative antialiased transition-colors duration-500 dark">
+    <!-- Note: Added 'dark' class to body as default -->
 
     <div class="bg-grid"></div>
 
     <!-- Splash Screen -->
-    <div id="splashScreen" class="splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#020617] backdrop-blur-md">
+    <div id="splashScreen" class="splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 dark:bg-[#020617] backdrop-blur-md">
         <div class="text-center px-4 relative">
             <div class="absolute inset-0 bg-cyan-500/10 blur-[100px] rounded-full"></div>
             <i class="fa-solid fa-ship text-7xl text-cyan-400 mb-8 animate-pulse relative z-10 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]"></i>
             <h1 class="text-4xl md:text-6xl font-bold mb-4 text-white tracking-tight relative z-10" data-i18n="splash_title">
-                SYSTEM <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">INIT</span>
+                SYSTEM <span class="text-gradient">INIT</span>
             </h1>
             <p class="text-cyan-200/60 font-mono-tech text-sm tracking-[0.2em] uppercase animate-pulse" data-i18n="splash_subtitle">Establishing Uplink...</p>
         </div>
@@ -197,30 +276,39 @@
 
     <!-- Notification Toast -->
     <div id="toast" class="fixed top-24 right-4 z-50 transform transition-all duration-400 translate-x-[120%] opacity-0">
-        <div class="bg-[#112240] border border-cyan-500/30 text-white px-5 py-4 rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)] flex items-center space-x-4">
-            <div class="w-8 h-8 rounded-full bg-cyan-900/50 flex items-center justify-center text-cyan-400">
+        <div class="bg-white/90 dark:bg-[#112240] border border-slate-200 dark:border-cyan-500/30 text-slate-800 dark:text-white px-5 py-4 rounded-lg shadow-xl dark:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.7)] flex items-center space-x-4 backdrop-blur-md">
+            <div class="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                 <i class="fa-solid fa-satellite-dish animate-pulse"></i>
             </div>
-            <span id="toastMessage" class="text-sm font-medium font-mono-tech text-cyan-50">Notification</span>
+            <span id="toastMessage" class="text-sm font-medium font-mono-tech">Notification</span>
         </div>
     </div>
 
     <main class="flex-grow container mx-auto px-4 py-8 md:py-12 max-w-7xl opacity-0 transition-opacity duration-1000 ease-in relative z-10" id="mainContent">
         
-        <!-- Language Selector -->
-        <div class="absolute top-4 right-4 md:top-8 md:right-8 flex space-x-2 z-40 bg-[#112240]/80 backdrop-blur rounded-full p-1 border border-white/5">
-            <button id="btn-lang-en" onclick="setLanguage('en')" class="lang-btn w-9 h-9 rounded-full bg-cyan-900/40 hover:bg-cyan-800/60 border border-cyan-500/30 flex items-center justify-center text-lg transition-all shadow-lg opacity-100 grayscale-0" title="English">🇬🇧</button>
-            <button id="btn-lang-zh" onclick="setLanguage('zh')" class="lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0 border border-transparent" title="中文">🇨🇳</button>
-            <button id="btn-lang-id" onclick="setLanguage('id')" class="lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-white/10 flex items-center justify-center text-lg transition-all opacity-40 hover:opacity-100 grayscale hover:grayscale-0 border border-transparent" title="Bahasa Indonesia">🇮🇩</button>
+        <!-- Controls (Language + Theme) -->
+        <div class="absolute top-4 right-4 md:top-8 md:right-8 flex space-x-3 z-40">
+            <!-- Theme Selector -->
+            <button id="themeToggle" class="w-10 h-10 rounded-full bg-white/50 dark:bg-[#112240]/80 backdrop-blur border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-yellow-300 transition-all shadow-md hover:scale-110 hover:bg-white dark:hover:bg-[#112240]" title="Toggle Theme">
+                <i class="fa-solid fa-sun dark:hidden"></i>
+                <i class="fa-solid fa-moon hidden dark:block text-slate-200"></i>
+            </button>
+
+            <!-- Language Selector -->
+            <div class="flex space-x-1 bg-white/50 dark:bg-[#112240]/80 backdrop-blur rounded-full p-1 border border-slate-300 dark:border-white/5 shadow-md">
+                <button id="btn-lang-en" onclick="setLanguage('en')" class="lang-btn w-9 h-9 rounded-full bg-slate-200 dark:bg-cyan-900/40 hover:bg-slate-300 dark:hover:bg-cyan-800/60 border border-slate-400 dark:border-cyan-500/30 flex items-center justify-center text-sm font-bold text-slate-800 dark:text-cyan-400 transition-all shadow-sm" title="English">EN</button>
+                <button id="btn-lang-zh" onclick="setLanguage('zh')" class="lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-slate-200 dark:hover:bg-white/10 flex items-center justify-center text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all border border-transparent" title="中文">ZH</button>
+                <button id="btn-lang-id" onclick="setLanguage('id')" class="lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-slate-200 dark:hover:bg-white/10 flex items-center justify-center text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all border border-transparent" title="Bahasa Indonesia">ID</button>
+            </div>
         </div>
 
         <!-- Header -->
-        <header class="text-center mb-16 mt-12 md:mt-8 fade-in-section">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#112240] border border-cyan-500/20 mb-6 shadow-[0_0_30px_rgba(100,255,218,0.1)] radar-icon">
-                <i class="fa-solid fa-crosshairs text-3xl text-[#64ffda]"></i>
+        <header class="text-center mb-16 mt-16 md:mt-8 fade-in-section">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white dark:bg-[#112240] border border-slate-200 dark:border-cyan-500/20 mb-6 shadow-lg dark:shadow-[0_0_30px_rgba(100,255,218,0.1)] radar-icon">
+                <i class="fa-solid fa-crosshairs text-3xl text-sky-500 dark:text-[#64ffda]"></i>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-3 text-slate-200" data-i18n="header_title">Bridge <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Dashboard</span></h1>
-            <p class="text-slate-400 text-sm md:text-base font-mono-tech tracking-widest uppercase" data-i18n="header_subtitle">Tactical Navigation & Comms Hub</p>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-3 text-slate-800 dark:text-slate-200" data-i18n="header_title">Bridge <span class="text-gradient">Dashboard</span></h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm md:text-base font-mono-tech tracking-widest uppercase" data-i18n="header_subtitle">Tactical Navigation & Comms Hub</p>
         </header>
 
         <!-- Primary Tools Grid -->
@@ -229,16 +317,16 @@
             <!-- Card 1: Navtex Tracker -->
             <a href="https://rcwpt.github.io/Navigation/navtex.html" target="_blank" class="glass-card card-cyan p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 100ms;">
                 <div class="flex items-start justify-between mb-6">
-                    <div class="icon-box cyan w-14 h-14 rounded-xl bg-cyan-950/50 border border-cyan-900 flex items-center justify-center text-cyan-400">
+                    <div class="icon-box cyan w-14 h-14 rounded-xl border border-sky-200 dark:border-cyan-900 flex items-center justify-center text-sky-600 dark:text-cyan-400">
                         <i class="fa-solid fa-satellite-dish text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-cyan-500/50 border border-cyan-500/20 px-2 py-1 rounded" data-i18n="badge_comms">COMMS</span>
+                    <span class="text-[10px] font-mono-tech text-sky-600 dark:text-cyan-500/50 border border-sky-300 dark:border-cyan-500/20 px-2 py-1 rounded" data-i18n="badge_comms">COMMS</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors mb-3" data-i18n="card1_title">Navtex Tracker</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card1_desc">
+                <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-cyan-400 transition-colors mb-3" data-i18n="card1_title">Navtex Tracker</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card1_desc">
                     Monitor MSI (Maritime Safety Information), meteorological warnings, and navigational alerts broadcasted via Navigation Telex.
                 </p>
-                <div class="flex items-center text-cyan-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-cyan-300">
+                <div class="flex items-center text-sky-600 dark:text-cyan-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-sky-500 dark:group-hover:text-cyan-300">
                     <span data-i18n="btn_init">INITIALIZE</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
@@ -247,16 +335,16 @@
             <!-- Card 2: DSC Finder -->
             <a href="https://rcwpt.github.io/Navigation/dscfinder.html" target="_blank" class="glass-card card-emerald p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 200ms;">
                 <div class="flex items-start justify-between mb-6">
-                    <div class="icon-box emerald w-14 h-14 rounded-xl bg-emerald-950/50 border border-emerald-900 flex items-center justify-center text-emerald-400">
+                    <div class="icon-box emerald w-14 h-14 rounded-xl border border-emerald-200 dark:border-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                         <i class="fa-solid fa-tower-broadcast text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-emerald-500/50 border border-emerald-500/20 px-2 py-1 rounded" data-i18n="badge_gmdss">GMDSS</span>
+                    <span class="text-[10px] font-mono-tech text-emerald-600 dark:text-emerald-500/50 border border-emerald-300 dark:border-emerald-500/20 px-2 py-1 rounded" data-i18n="badge_gmdss">GMDSS</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors mb-3" data-i18n="card2_title">DSC Directory</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card2_desc">
+                <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors mb-3" data-i18n="card2_title">DSC Directory</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card2_desc">
                     Database lookup for Coast Radio Stations worldwide and designated Digital Selective Calling frequencies for routine/distress comms.
                 </p>
-                <div class="flex items-center text-emerald-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-emerald-300">
+                <div class="flex items-center text-emerald-600 dark:text-emerald-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-emerald-500 dark:group-hover:text-emerald-300">
                     <span data-i18n="btn_search">SEARCH DB</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
@@ -265,16 +353,16 @@
             <!-- Card 3: Marine Meteo -->
             <a href="https://rcwpt.github.io/Navigation/meteo.html" target="_blank" class="glass-card card-amber p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 300ms;">
                 <div class="flex items-start justify-between mb-6">
-                    <div class="icon-box amber w-14 h-14 rounded-xl bg-amber-950/50 border border-amber-900 flex items-center justify-center text-amber-400">
+                    <div class="icon-box amber w-14 h-14 rounded-xl border border-amber-200 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400">
                         <i class="fa-solid fa-cloud-bolt text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-amber-500/50 border border-amber-500/20 px-2 py-1 rounded" data-i18n="badge_env">ENV</span>
+                    <span class="text-[10px] font-mono-tech text-amber-600 dark:text-amber-500/50 border border-amber-300 dark:border-amber-500/20 px-2 py-1 rounded" data-i18n="badge_env">ENV</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-amber-400 transition-colors mb-3" data-i18n="card3_title">Marine Meteo</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card3_desc">
+                <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors mb-3" data-i18n="card3_title">Marine Meteo</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card3_desc">
                     Real-time meteorological telemetry, synoptic charts, and oceanographic conditions critical for safe route planning.
                 </p>
-                <div class="flex items-center text-amber-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-amber-300">
+                <div class="flex items-center text-amber-600 dark:text-amber-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-amber-500 dark:group-hover:text-amber-300">
                     <span data-i18n="btn_view">VIEW DATA</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
@@ -283,16 +371,16 @@
             <!-- Card 4: Celestial Calc -->
             <a href="https://rcwpt.github.io/Navigation/celestial.html" target="_blank" class="glass-card card-purple p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 400ms;">
                 <div class="flex items-start justify-between mb-6">
-                    <div class="icon-box purple w-14 h-14 rounded-xl bg-purple-950/50 border border-purple-900 flex items-center justify-center text-purple-400">
+                    <div class="icon-box purple w-14 h-14 rounded-xl border border-purple-200 dark:border-purple-900 flex items-center justify-center text-purple-600 dark:text-purple-400">
                         <i class="fa-solid fa-star-half-stroke text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-purple-500/50 border border-purple-500/20 px-2 py-1 rounded" data-i18n="badge_astro">ASTRO</span>
+                    <span class="text-[10px] font-mono-tech text-purple-600 dark:text-purple-500/50 border border-purple-300 dark:border-purple-500/20 px-2 py-1 rounded" data-i18n="badge_astro">ASTRO</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-purple-400 transition-colors mb-3" data-i18n="card4_title">Celestial Calc</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card4_desc">
+                <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors mb-3" data-i18n="card4_title">Celestial Calc</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card4_desc">
                     Automated sight reduction algorithms for traditional position fixing using Sun, Moon, Planets, and Navigational Stars.
                 </p>
-                <div class="flex items-center text-purple-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-purple-300">
+                <div class="flex items-center text-purple-600 dark:text-purple-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-purple-500 dark:group-hover:text-purple-300">
                     <span data-i18n="btn_calc">CALCULATE</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
@@ -301,17 +389,17 @@
             <!-- Card 5: Gyro Error ABC -->
             <a href="https://rcwpt.github.io/Navigation/gyroerror.html" target="_blank" class="glass-card card-rose p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 500ms;">
                 <div class="flex items-start justify-between mb-6">
-                    <div class="icon-box rose w-14 h-14 rounded-xl bg-rose-950/50 border border-rose-900 flex items-center justify-center text-rose-400 relative overflow-hidden">
+                    <div class="icon-box rose w-14 h-14 rounded-xl border border-rose-200 dark:border-rose-900 flex items-center justify-center text-rose-600 dark:text-rose-400 relative overflow-hidden">
                         <i class="fa-solid fa-compass-drafting text-2xl relative z-10"></i>
-                        <div class="absolute inset-0 border-[2px] border-dashed border-rose-500/30 rounded-full animate-[spin_10s_linear_infinite] scale-150"></div>
+                        <div class="absolute inset-0 border-[2px] border-dashed border-rose-400/50 dark:border-rose-500/30 rounded-full animate-[spin_10s_linear_infinite] scale-150"></div>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-rose-500/50 border border-rose-500/20 px-2 py-1 rounded shadow-[0_0_10px_rgba(244,63,94,0.2)]" data-i18n="badge_nav">NAV</span>
+                    <span class="text-[10px] font-mono-tech text-rose-600 dark:text-rose-500/50 border border-rose-300 dark:border-rose-500/20 px-2 py-1 rounded shadow-sm dark:shadow-[0_0_10px_rgba(244,63,94,0.2)]" data-i18n="badge_nav">NAV</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-rose-400 transition-colors mb-3" data-i18n="card5_title">Gyro Error (ABC)</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card5_desc">
+                <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors mb-3" data-i18n="card5_title">Gyro Error (ABC)</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card5_desc">
                     Calculate and verify Gyro compass error using ABC tables based on celestial azimuths. Essential for precise heading accuracy.
                 </p>
-                <div class="flex items-center text-rose-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-rose-300">
+                <div class="flex items-center text-rose-600 dark:text-rose-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-rose-500 dark:group-hover:text-rose-300">
                     <span data-i18n="btn_exec">EXECUTE</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
@@ -320,16 +408,16 @@
             <!-- Card 6: CATZOC Calculator -->
             <a href="https://rcwpt.github.io/Navigation/catzoc.html" target="_blank" class="glass-card card-indigo p-7 group cursor-pointer flex flex-col h-full fade-in-section" style="transition-delay: 600ms;">
                 <div class="flex items-start justify-between mb-6">
-                    <div class="icon-box indigo w-14 h-14 rounded-xl bg-indigo-950/50 border border-indigo-900 flex items-center justify-center text-indigo-400">
+                    <div class="icon-box indigo w-14 h-14 rounded-xl border border-indigo-200 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                         <i class="fa-solid fa-map-location-dot text-2xl"></i>
                     </div>
-                    <span class="text-[10px] font-mono-tech text-indigo-500/50 border border-indigo-500/20 px-2 py-1 rounded" data-i18n="badge_enc">ENC</span>
+                    <span class="text-[10px] font-mono-tech text-indigo-600 dark:text-indigo-500/50 border border-indigo-300 dark:border-indigo-500/20 px-2 py-1 rounded" data-i18n="badge_enc">ENC</span>
                 </div>
-                <h3 class="text-xl font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors mb-3" data-i18n="card6_title">CATZOC Calculator</h3>
-                <p class="text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card6_desc">
+                <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-3" data-i18n="card6_title">CATZOC Calculator</h3>
+                <p class="text-slate-600 dark:text-slate-400 mb-8 flex-grow text-sm leading-relaxed" data-i18n="card6_desc">
                     Assess the accuracy and reliability of bathymetric data on Electronic Navigational Charts (ENC) using the Category of Zones of Confidence (CATZOC) criteria.
                 </p>
-                <div class="flex items-center text-indigo-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-indigo-300">
+                <div class="flex items-center text-indigo-600 dark:text-indigo-400/80 text-sm font-mono-tech font-medium mt-auto group-hover:text-indigo-500 dark:group-hover:text-indigo-300">
                     <span data-i18n="btn_assess">ASSESS</span>
                     <i class="fa-solid fa-arrow-right-long ml-3 transform group-hover:translate-x-2 transition-transform"></i>
                 </div>
@@ -338,25 +426,25 @@
 
         <!-- Section Divider -->
         <div class="flex items-center justify-center space-x-6 mb-16 fade-in-section">
-            <div class="h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent w-full max-w-sm"></div>
-            <div class="px-4 py-1 border border-cyan-500/20 rounded bg-[#112240] text-cyan-400 text-xs font-mono-tech tracking-widest" data-i18n="proto_badge">PROTOCOLS</div>
-            <div class="h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent w-full max-w-sm"></div>
+            <div class="h-[1px] bg-gradient-to-r from-transparent via-slate-300 dark:via-cyan-500/30 to-transparent w-full max-w-sm"></div>
+            <div class="px-4 py-1 border border-slate-300 dark:border-cyan-500/20 rounded bg-white/50 dark:bg-[#112240] text-sky-600 dark:text-cyan-400 text-xs font-mono-tech tracking-widest" data-i18n="proto_badge">PROTOCOLS</div>
+            <div class="h-[1px] bg-gradient-to-r from-transparent via-slate-300 dark:via-cyan-500/30 to-transparent w-full max-w-sm"></div>
         </div>
 
         <!-- GMDSS Testing Protocols Section -->
         <section class="mb-12 fade-in-section">
             <div class="mb-10 text-center">
-                <h2 class="text-2xl md:text-3xl font-semibold text-slate-200 mb-3" data-i18n="proto_title">GMDSS Maintenance Directives</h2>
-                <p class="text-sm text-slate-400 max-w-2xl mx-auto" data-i18n="proto_desc">Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.</p>
+                <h2 class="text-2xl md:text-3xl font-semibold text-slate-800 dark:text-slate-200 mb-3" data-i18n="proto_title">GMDSS Maintenance Directives</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto" data-i18n="proto_desc">Mandatory routine maintenance and operational verification procedures compliant with SOLAS Chapter IV regulations.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                 
                 <!-- Daily Tests -->
-                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-cyan-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-cyan-900/50">
+                <div class="bg-white/60 dark:bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-sky-400 dark:border-t-cyan-400 hover:bg-white/90 dark:hover:bg-[#112240] transition-colors shadow-sm dark:shadow-none border border-slate-200 dark:border-transparent hover:border-sky-300 dark:hover:border-cyan-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="daily_title">Daily</h3>
-                        <i class="fa-solid fa-clock text-cyan-400/50"></i>
+                        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="daily_title">Daily</h3>
+                        <i class="fa-solid fa-clock text-sky-500 dark:text-cyan-400/50"></i>
                     </div>
                     <ul class="protocol-list">
                         <li data-i18n="daily_1">Verify VHF DSC internal connections & display via built-in test.</li>
@@ -367,10 +455,10 @@
                 </div>
 
                 <!-- Weekly Tests -->
-                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-emerald-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-emerald-900/50">
+                <div class="bg-white/60 dark:bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-emerald-400 hover:bg-white/90 dark:hover:bg-[#112240] transition-colors shadow-sm dark:shadow-none border border-slate-200 dark:border-transparent hover:border-emerald-300 dark:hover:border-emerald-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="weekly_title">Weekly</h3>
-                        <i class="fa-solid fa-calendar-week text-emerald-400/50"></i>
+                        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="weekly_title">Weekly</h3>
+                        <i class="fa-solid fa-calendar-week text-emerald-500 dark:text-emerald-400/50"></i>
                     </div>
                     <ul class="protocol-list">
                         <li data-i18n="weekly_1">Transmit DSC test call to Coast Station (MF/HF).</li>
@@ -381,10 +469,10 @@
                 </div>
 
                 <!-- Monthly Tests -->
-                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-amber-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-amber-900/50">
+                <div class="bg-white/60 dark:bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-amber-400 hover:bg-white/90 dark:hover:bg-[#112240] transition-colors shadow-sm dark:shadow-none border border-slate-200 dark:border-transparent hover:border-amber-300 dark:hover:border-amber-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="monthly_title">Monthly</h3>
-                        <i class="fa-regular fa-calendar-days text-amber-400/50"></i>
+                        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="monthly_title">Monthly</h3>
+                        <i class="fa-regular fa-calendar-days text-amber-500 dark:text-amber-400/50"></i>
                     </div>
                     <ul class="protocol-list">
                         <li data-i18n="monthly_1">INMARSAT-C Performance Verification (PV).</li>
@@ -395,10 +483,10 @@
                 </div>
 
                 <!-- Logbook Rules -->
-                <div class="bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-rose-400 hover:bg-[#112240] transition-colors border border-transparent hover:border-rose-900/50">
+                <div class="bg-white/60 dark:bg-[#112240]/60 backdrop-blur rounded-xl p-6 border-t-2 border-t-rose-400 hover:bg-white/90 dark:hover:bg-[#112240] transition-colors shadow-sm dark:shadow-none border border-slate-200 dark:border-transparent hover:border-rose-300 dark:hover:border-rose-900/50">
                     <div class="flex items-center justify-between mb-5">
-                        <h3 class="text-lg font-semibold text-slate-200" data-i18n="log_title">Radio Log</h3>
-                        <i class="fa-solid fa-book-bookmark text-rose-400/50"></i>
+                        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="log_title">Radio Log</h3>
+                        <i class="fa-solid fa-book-bookmark text-rose-500 dark:text-rose-400/50"></i>
                     </div>
                     <ul class="protocol-list">
                         <li data-i18n="log_1">Record exact vessel position (Lat/Long) daily.</li>
@@ -414,12 +502,12 @@
     </main>
 
     <!-- Footer -->
-    <footer class="mt-auto py-6 border-t border-[#233554] bg-[#050b14]/80 backdrop-blur-md relative z-10">
+    <footer class="mt-auto py-6 border-t border-slate-200 dark:border-[#233554] bg-white/80 dark:bg-[#050b14]/80 backdrop-blur-md relative z-10">
         <div class="container mx-auto px-4 flex justify-center items-center">
-            <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-3 text-slate-400 hover:text-slate-200 transition-colors duration-300 bg-[#112240] px-4 py-2 rounded-full border border-white/5">
+            <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-3 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors duration-300 bg-slate-100 dark:bg-[#112240] px-4 py-2 rounded-full border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                 <span class="text-xs font-mono-tech" data-i18n="footer_author">SYSTEM.AUTHOR</span>
-                <span class="w-1 h-1 bg-cyan-400 rounded-full group-hover:scale-150 transition-transform"></span>
-                <span class="font-medium text-cyan-400 group-hover:text-[#64ffda] transition-colors duration-300">@c.wijaya.t</span>
+                <span class="w-1 h-1 bg-sky-500 dark:bg-cyan-400 rounded-full group-hover:scale-150 transition-transform"></span>
+                <span class="font-medium text-sky-600 dark:text-cyan-400 group-hover:text-sky-800 dark:group-hover:text-[#64ffda] transition-colors duration-300">@c.wijaya.t</span>
                 <i class="fa-brands fa-instagram text-lg group-hover:text-pink-500 transition-colors duration-300 ml-1"></i>
             </a>
         </div>
@@ -476,13 +564,13 @@
                 log_2: 'Log all distress, urgency, and safety communications.',
                 log_3: 'Record details of all maintenance and testing (Pass/Fail).',
                 log_4: 'Master must review and sign the logbook daily.',
-                footer_author: 'SYSTEM.AUTHOR'
+                footer_author: 'SYSTEM.AUTHOR',
+                theme_msg: 'UI Theme updated.'
             },
             zh: {
-                splash_title: '系统 <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">初始化</span>',
+                splash_title: '系统 <span class="text-gradient">初始化</span>',
                 splash_subtitle: '建立连接中...',
-                header_title: '驾驶台 <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">仪表板</span>',
-                header_subtitle: '战术导航与通信中心',
+                header_title: '驾驶台 <span class="text-gradient">仪表板</span>',
                 badge_comms: '通信', badge_gmdss: '全球海上遇险', badge_env: '环境', badge_astro: '天文', badge_nav: '导航', badge_enc: '海图',
                 card1_title: '航行警告追踪器',
                 card1_desc: '监控通过航行警告电传播发的海上安全信息（MSI）、气象警告和导航警报。',
@@ -525,13 +613,13 @@
                 log_2: '记录所有遇险、紧急和安全通信。',
                 log_3: '记录所有维护和测试的详细信息（通过/失败）。',
                 log_4: '船长必须每天审查并签署日志。',
-                footer_author: '系统.作者'
+                footer_author: '系统.作者',
+                theme_msg: '用户界面主题已更新。'
             },
             id: {
-                splash_title: 'SISTEM <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">INISIALISASI</span>',
+                splash_title: 'SISTEM <span class="text-gradient">INISIALISASI</span>',
                 splash_subtitle: 'Membangun Koneksi...',
-                header_title: 'Dasbor <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Anjungan</span>',
-                header_subtitle: 'Pusat Navigasi Taktis & Komunikasi',
+                header_title: 'Dasbor <span class="text-gradient">Anjungan</span>',
                 badge_comms: 'KOMUNIKASI', badge_gmdss: 'GMDSS', badge_env: 'LINGKUNGAN', badge_astro: 'ASTRO', badge_nav: 'NAVIGASI', badge_enc: 'ENC',
                 card1_title: 'Pelacak Navtex',
                 card1_desc: 'Pantau MSI (Informasi Keselamatan Maritim), peringatan meteorologi, dan peringatan navigasi yang disiarkan melalui Navtex.',
@@ -574,13 +662,17 @@
                 log_2: 'Catat semua komunikasi marabahaya, urgensi, dan keselamatan.',
                 log_3: 'Catat detail semua pemeliharaan dan pengujian (Lulus/Gagal).',
                 log_4: 'Nakhoda harus meninjau dan menandatangani buku log setiap hari.',
-                footer_author: 'SISTEM.PENULIS'
+                footer_author: 'SISTEM.PENULIS',
+                theme_msg: 'Tema UI diperbarui.'
             }
         };
+
+        let currentLang = 'en';
 
         // Language Switching Logic
         function setLanguage(lang) {
             if (!translations[lang]) return;
+            currentLang = lang;
             
             // Update Text Nodes
             document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -590,26 +682,25 @@
                 }
             });
 
-            // Update Button Styles
+            // Update Button Styles cleanly by overwriting className
             document.querySelectorAll('.lang-btn').forEach(btn => {
-                // Reset all to inactive state
-                btn.classList.add('bg-transparent', 'opacity-40', 'grayscale', 'border-transparent');
-                btn.classList.remove('bg-cyan-900/40', 'border-cyan-500/30', 'shadow-lg', 'opacity-100', 'grayscale-0');
+                btn.className = "lang-btn w-9 h-9 rounded-full bg-transparent hover:bg-slate-200 dark:hover:bg-white/10 flex items-center justify-center text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all border border-transparent";
             });
 
             // Set active state for clicked button
             const activeBtn = document.getElementById(`btn-lang-${lang}`);
             if (activeBtn) {
-                activeBtn.classList.remove('bg-transparent', 'opacity-40', 'grayscale', 'border-transparent');
-                activeBtn.classList.add('bg-cyan-900/40', 'border-cyan-500/30', 'shadow-lg', 'opacity-100', 'grayscale-0');
+                activeBtn.className = "lang-btn w-9 h-9 rounded-full bg-slate-200 dark:bg-cyan-900/40 hover:bg-slate-300 dark:hover:bg-cyan-800/60 border border-slate-400 dark:border-cyan-500/30 flex items-center justify-center text-sm font-bold text-slate-800 dark:text-cyan-400 transition-all shadow-sm";
             }
 
-            // Show Toast Notification
+            showToast(`SYSTEM.LANG <span class="font-bold">${lang.toUpperCase()}</span> ACTIVE.`, "UI localized successfully");
+        }
+
+        function showToast(title, subtitle) {
             const toast = document.getElementById('toast');
             const message = document.getElementById('toastMessage');
-            const langNames = { en: 'ENGLISH', zh: 'CHINESE (中文)', id: 'INDONESIAN' };
             
-            message.innerHTML = `SYSTEM.LANG <span class="text-white">${langNames[lang]}</span> ACTIVE.<br><span class="text-xs text-slate-400">UI localized successfully</span>`;
+            message.innerHTML = `${title}<br><span class="text-xs opacity-75">${subtitle}</span>`;
             
             toast.classList.remove('translate-x-[120%]', 'opacity-0');
             
@@ -617,6 +708,27 @@
                 toast.classList.add('translate-x-[120%]', 'opacity-0');
             }, 3000);
         }
+
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('themeToggle');
+        
+        // Check for saved theme preference, otherwise use system preference, default to dark
+        if (localStorage.getItem('theme') === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+            document.body.classList.remove('dark');
+        } else {
+            document.body.classList.add('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            document.body.classList.toggle('dark');
+            
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            const themeName = isDark ? 'NIGHT MODE' : 'DAY MODE';
+            const subtitle = translations[currentLang]?.theme_msg || 'UI Theme updated.';
+            showToast(`SYSTEM.THEME <span class="font-bold">${themeName}</span>`, subtitle);
+        });
 
         // On Load Logic
         document.addEventListener('DOMContentLoaded', () => {
