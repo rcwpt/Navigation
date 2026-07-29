@@ -2,194 +2,276 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NAVTEX TRACKER BY @c.wijaya.t.</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NAVTEX TRACKER</title>
     
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        border: "hsl(214.3 31.8% 91.4%)",
-                        background: "hsl(0 0% 100%)",
-                        foreground: "hsl(222.2 84% 4.9%)",
-                        primary: { DEFAULT: "hsl(222.2 47.4% 11.2%)", foreground: "hsl(210 40% 98%)" },
-                        muted: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(215.4 16.3% 46.9%)" },
-                        accent: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(222.2 47.4% 11.2%)" },
+                        primary: "#0ea5e9", // Sky 500
+                        secondary: "#0f172a", // Slate 900
                     }
                 }
             }
         }
     </script>
 
-    <!-- Leaflet CSS & JS -->
+    <!-- Leaflet & Turf.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Turf.js for distance calculation & geometry -->
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-    
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <script>
+        // Check theme on load to prevent FOUC (Flash of Unstyled Content)
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #f8fafc; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f1f5f9; }
+        .dark body, .dark html { background-color: #0f172a; }
         
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 10; }
+        
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-        /* Leaflet Custom Icon Wrapper */
+        /* Leaflet Marker Tweaks */
         .leaflet-custom-marker-wrap {
-            background: transparent;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: visible;
+            background: transparent; border: none; display: flex; align-items: center; justify-content: center; overflow: visible;
         }
 
-        /* Marker CSS */
         .navtex-marker {
-            background-color: white;
-            border: 2px solid #0f172a;
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #0f172a;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-            cursor: default;
-            white-space: nowrap;
-            width: max-content;
+            background-color: white; border: 2px solid #0f172a; border-radius: 8px; padding: 4px 8px;
+            font-size: 11px; font-weight: 700; color: #0f172a;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex; align-items: center; gap: 6px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: default; white-space: nowrap; width: max-content;
         }
-        .navtex-marker.active {
-            background-color: #ef4444;
-            border-color: #991b1b;
-            color: white;
-            transform: scale(1.1);
-            z-index: 999 !important;
+        .dark .navtex-marker {
+            background-color: #1e293b; border-color: #cbd5e1; color: #f8fafc;
         }
-        .marker-letter {
-            background: #0f172a;
-            color: white;
-            border-radius: 4px;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-        }
-        .navtex-marker.active .marker-letter {
-            background: white;
-            color: #ef4444;
-        }
+        
+        .navtex-marker:hover { z-index: 800 !important; transform: translateY(-2px) scale(1.05); }
 
-        /* Hidden textarea for copying */
-        .sr-only-copy {
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-            opacity: 0;
+        .navtex-marker.active {
+            background-color: #ef4444; border-color: #7f1d1d; color: white; transform: scale(1.1); z-index: 999 !important;
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4);
         }
+        .dark .navtex-marker.active {
+            border-color: #fca5a5;
+        }
+        
+        .marker-letter {
+            background: #0f172a; color: white; border-radius: 4px; width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center; font-size: 10px;
+        }
+        .dark .marker-letter { background: #cbd5e1; color: #0f172a; }
+        .navtex-marker.active .marker-letter { background: white; color: #ef4444; }
+
+        .sr-only-copy { position: absolute; left: -9999px; top: -9999px; opacity: 0; }
+        
+        /* Leaflet UI Overrides */
+        .leaflet-control-zoom { border: none !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important; border-radius: 8px !important; overflow: hidden; }
+        .leaflet-control-zoom a { background-color: rgba(255,255,255,0.9) !important; backdrop-filter: blur(4px); color: #0f172a !important; border: none !important; }
+        .leaflet-control-zoom a:hover { background-color: white !important; }
+        .dark .leaflet-control-zoom a { background-color: rgba(30,41,59,0.9) !important; color: #f8fafc !important; }
+        .dark .leaflet-control-zoom a:hover { background-color: #334155 !important; }
+        
+        /* Toast Animation */
+        @keyframes slideInUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast-enter { animation: slideInUp 0.3s ease-out forwards; }
     </style>
 </head>
-<body class="text-foreground antialiased font-sans flex h-screen w-screen">
+<body class="text-slate-800 dark:text-slate-200 antialiased font-sans dark:bg-slate-900 transition-colors duration-300">
 
     <textarea id="copy-area" class="sr-only-copy" tabindex="-1"></textarea>
 
-    <!-- Map Container -->
-    <div class="relative w-full h-full flex-grow">
-        <div id="map"></div>
+    <!-- Top Navigation Bar -->
+    <div class="fixed top-0 left-0 right-0 z-[1000] p-3 flex justify-between items-start pointer-events-none">
+        
+        <!-- Back to Home Button -->
+        <a href="https://rcwpt.github.io/Navigation/" class="pointer-events-auto glass-panel flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg hover:shadow-xl hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-0.5 transition-all duration-200 group">
+            <div class="bg-primary/10 dark:bg-primary/20 p-1.5 rounded-full group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
+                <i data-lucide="home" class="w-4 h-4 text-primary dark:text-sky-400"></i>
+            </div>
+            <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Back to Home</span>
+        </a>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="pointer-events-auto glass-panel flex items-center justify-center p-3 rounded-full shadow-lg hover:shadow-xl hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-0.5 transition-all duration-200" title="Toggle Dark Mode">
+            <i id="theme-icon-light" data-lucide="sun" class="w-5 h-5 text-amber-500 hidden"></i>
+            <i id="theme-icon-dark" data-lucide="moon" class="w-5 h-5 text-slate-700 dark:text-slate-300"></i>
+        </button>
     </div>
 
-    <!-- Sidebar Panel (Left) -->
-    <div class="absolute top-4 left-4 z-[1000] w-[400px] bg-background/95 backdrop-blur-md shadow-2xl border border-border rounded-xl flex flex-col max-h-[calc(100vh-32px)]">
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Control Panel -->
+    <div class="absolute top-16 left-3 sm:left-4 z-[1000] w-[calc(100%-24px)] sm:w-[400px] glass-panel shadow-2xl rounded-2xl flex flex-col max-h-[calc(100vh-80px)] pointer-events-auto overflow-hidden">
         
         <!-- Header -->
-        <div class="p-5 border-b border-border bg-slate-50/50 rounded-t-xl">
-            <h1 class="text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-                <i data-lucide="satellite-dish" class="w-6 h-6 text-blue-600"></i>
-                NAVTEX TRACKER <span class="text-blue-600 font-bold text-sm bg-blue-100 px-2 py-1 rounded-md ml-auto">BY @c.wijaya.t.</span>
+        <div class="p-5 border-b border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-800/50">
+            <h1 class="text-2xl font-extrabold tracking-tight text-secondary dark:text-white flex items-center gap-2">
+                <i data-lucide="satellite-dish" class="w-6 h-6 text-primary dark:text-sky-400"></i>
+                NAVTEX TRACKER
             </h1>
-            <p class="text-xs text-muted-foreground mt-2 font-medium">Global NAVAREA Coverage Analysis Tool</p>
+            <div class="mt-2 flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Global Coverage Tool by</span>
+                <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" class="inline-flex items-center gap-1 text-xs font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/30 px-2 py-1 rounded-md hover:bg-pink-100 dark:hover:bg-pink-900/50 hover:scale-105 transition-all shadow-sm border border-pink-100 dark:border-pink-900">
+                    <i data-lucide="instagram" class="w-3.5 h-3.5"></i> @c.wijaya.t
+                </a>
+            </div>
         </div>
         
-        <!-- Control & Upload Area -->
-        <div class="p-5 flex flex-col gap-4 border-b border-border">
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="block text-sm font-semibold text-slate-800">Route Waypoint Data</label>
-                    <span class="text-[10px] text-muted-foreground">.rtz, .rou, .csv, .txt</span>
-                </div>
-                
-                <label for="route-upload" class="group relative flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <div class="bg-white p-2 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                            <i data-lucide="upload-cloud" class="w-5 h-5 text-blue-600"></i>
-                        </div>
-                        <p class="mb-1 text-xs text-slate-600"><span class="font-semibold">Click to browse</span> or drag file</p>
-                        <p class="text-[10px] text-slate-400">ADC Route / Decimal (DD) Supported</p>
+        <!-- Upload Area -->
+        <div class="p-5 flex flex-col gap-3 border-b border-slate-200/50 dark:border-slate-700/50 bg-slate-50/30 dark:bg-slate-900/30">
+            <div class="flex items-center justify-between">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Import Route Data</label>
+                <div class="group relative cursor-help">
+                    <i data-lucide="info" class="w-4 h-4 text-slate-400 dark:text-slate-500"></i>
+                    <div class="absolute right-0 w-48 p-2 bg-slate-800 dark:bg-slate-700 text-white text-[10px] rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[1001] top-full mt-1">
+                        Supports RTZ, ROU, CSV, TXT.<br/>Detects formats: DD, DMM, DMS (e.g., 34° 23' N, -118.5, etc.)
                     </div>
-                    <input id="route-upload" type="file" class="hidden" accept=".txt,.csv,.rtz,.rou" />
-                </label>
+                </div>
             </div>
             
-            <button id="clear-btn" class="hidden w-full flex items-center justify-center gap-2 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 hover:text-red-600 text-slate-700 text-sm font-medium rounded-lg transition-colors shadow-sm">
-                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear Route
+            <label for="route-upload" class="group relative flex flex-col items-center justify-center w-full h-24 border-2 border-primary/20 dark:border-primary/30 border-dashed rounded-xl cursor-pointer bg-white dark:bg-slate-800 hover:bg-primary/5 dark:hover:bg-slate-700 hover:border-primary/50 transition-all duration-300">
+                <div class="flex flex-col items-center justify-center pointer-events-none">
+                    <div class="bg-primary/10 dark:bg-primary/20 p-2 rounded-full mb-2 group-hover:-translate-y-1 transition-transform duration-300">
+                        <i data-lucide="map" class="w-5 h-5 text-primary dark:text-sky-400"></i>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400"><span class="font-bold text-primary dark:text-sky-400">Click to upload</span> or drag file</p>
+                </div>
+                <input id="route-upload" type="file" class="hidden" accept=".txt,.csv,.rtz,.rou" />
+            </label>
+            
+            <button id="clear-btn" class="hidden w-full flex items-center justify-center gap-2 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all shadow-sm">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear Map
             </button>
         </div>
 
-        <!-- Affected Stations List -->
-        <div class="flex-grow overflow-y-auto p-0 flex flex-col">
-            <div class="p-5 pb-2 sticky top-0 bg-background/95 backdrop-blur z-10 border-b border-slate-100 flex items-center justify-between">
+        <!-- Results Area -->
+        <div class="flex-grow overflow-y-auto flex flex-col relative bg-white/40 dark:bg-slate-800/40">
+            <!-- Sticky Sub-header -->
+            <div class="p-4 sticky top-0 glass-panel z-10 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-2">
-                    <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                        <i data-lucide="radio" class="w-4 h-4 text-emerald-600"></i>
-                        Stations in Range
-                    </h2>
-                    <span id="station-count" class="bg-emerald-100 text-emerald-700 py-0.5 px-2 rounded-md text-xs font-bold shadow-sm">0</span>
+                    <div class="bg-emerald-100 dark:bg-emerald-900/50 p-1 rounded-md">
+                        <i data-lucide="radio" class="w-4 h-4 text-emerald-700 dark:text-emerald-400"></i>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-700 dark:text-slate-200">Stations in Range</h2>
+                    <span id="station-count" class="bg-secondary dark:bg-slate-700 text-white py-0.5 px-2 rounded-full text-xs font-bold shadow-sm ml-1">0</span>
                 </div>
-                <!-- Copy Button -->
-                <button id="copy-btn" class="hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-md border border-blue-200 transition-colors shadow-sm">
+                <button id="copy-btn" class="hidden flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm transition-all hover:shadow">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
                 </button>
             </div>
             
-            <div id="affected-list" class="p-5 pt-3 space-y-3 flex-grow">
-                <div class="text-center py-8">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
-                        <i data-lucide="map" class="w-6 h-6 text-slate-400"></i>
+            <!-- List Content -->
+            <div id="affected-list" class="p-4 space-y-3">
+                <div class="text-center py-10 px-4">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-700 shadow-inner mb-4">
+                        <i data-lucide="navigation" class="w-6 h-6 text-slate-400 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-sm font-medium text-slate-600">No route uploaded</p>
-                    <p class="text-xs text-slate-400 mt-1">Upload a route to calculate 400 NM NAVTEX coverage.</p>
+                    <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Ready to Analyze</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-[250px] mx-auto leading-relaxed">Upload your route waypoint data to identify NAVTEX stations within a 400 NM radius.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Initialize Lucide Icons
+        // Initialize Icons
         lucide.createIcons();
 
-        // Comprehensive Global NAVTEX Database - NAVAREA I to XXI
-        // Decimal Coordinates Format: Latitude (- = South), Longitude (- = West)
+        // Theme Toggle Setup
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIconDark = document.getElementById('theme-icon-dark');
+        const themeIconLight = document.getElementById('theme-icon-light');
+
+        if (document.documentElement.classList.contains('dark')) {
+            themeIconDark.classList.add('hidden');
+            themeIconLight.classList.remove('hidden');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            
+            if (isDark) {
+                themeIconDark.classList.add('hidden');
+                themeIconLight.classList.remove('hidden');
+            } else {
+                themeIconLight.classList.add('hidden');
+                themeIconDark.classList.remove('hidden');
+            }
+            
+            setMapTheme(isDark ? 'dark' : 'light');
+        });
+
+        // Custom Toast Notification System
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('toast-container') || (() => {
+                const c = document.createElement('div');
+                c.id = 'toast-container';
+                c.className = 'fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(c);
+                return c;
+            })();
+
+            const toast = document.createElement('div');
+            const bg = type === 'error' ? 'bg-red-500' : (type === 'success' ? 'bg-emerald-500' : 'bg-slate-800');
+            const icon = type === 'error' ? 'alert-octagon' : (type === 'success' ? 'check-circle' : 'info');
+            
+            toast.className = `toast-enter flex items-center gap-3 ${bg} text-white px-4 py-3 rounded-xl shadow-2xl pointer-events-auto font-medium text-sm`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 opacity-90"></i> ${message}`;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.transition = 'all 0.4s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        // Comprehensive Global NAVTEX Database
         const navtexStations = [
             // NAVAREA I
             { id: '1_A', b1: 'A', name: 'Svalbard', country: 'Norway', lat: 78.22, lng: 15.65, range: 400 },
@@ -212,7 +294,6 @@
             { id: '1_R', b1: 'R', name: 'Saudanes', country: 'Iceland', lat: 66.27, lng: -18.96, range: 400 },
             { id: '1_S', b1: 'S', name: 'Pinneberg', country: 'Germany', lat: 53.66, lng: 9.79, range: 400 },
             { id: '1_T', b1: 'T', name: 'Oostende', country: 'Belgium', lat: 51.23, lng: 2.92, range: 400 },
-            { id: '1_V', b1: 'V', name: 'Oostende', country: 'Belgium', lat: 51.23, lng: 2.92, range: 400 },
             { id: '1_W', b1: 'W', name: 'Valentia', country: 'Ireland', lat: 51.93, lng: -10.23, range: 400 },
             { id: '1_X', b1: 'X', name: 'Grindavik', country: 'Iceland', lat: 63.84, lng: -22.43, range: 400 },
 
@@ -389,43 +470,62 @@
             { id: '20_N', b1: 'N', name: 'Mys Sterlegova', country: 'Russia', lat: 75.39, lng: 88.89, range: 400 }
         ];
 
-        // Initialize Map (Leaflet JS for secure iframe compatibility)
         const map = L.map('map', {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([-2.0, 118.0], 4);
+            zoomControl: false, attributionControl: false,
+            maxBounds: [[-90, -180], [90, 180]],
+            maxBoundsViscosity: 1.0
+        }).setView([-2.0, 118.0], 5);
 
-        // Add Zoom Control at the bottom right
+        // Add Zoom Control
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Tile layer Carto Voyager
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
+        // Professional Base Maps
+        const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png';
+        
+        let tileLayer = L.tileLayer(document.documentElement.classList.contains('dark') ? darkTileUrl : lightTileUrl, {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd', maxZoom: 19
         }).addTo(map);
 
         let stationMarkers = [];
         let radiusLayers = [];
         let routeLayer = null;
+        let currentAffectedIds = [];
 
-        // Render Navtex Points
+        function setMapTheme(theme) {
+            tileLayer.setUrl(theme === 'dark' ? darkTileUrl : lightTileUrl);
+            drawNavtexMap(currentAffectedIds); // Redraw markers & zones with new theme colors
+            
+            // Re-draw route line color if it exists
+            if (routeLayer) {
+                const geojson = routeLayer.toGeoJSON();
+                map.removeLayer(routeLayer);
+                const routeColor = theme === 'dark' ? '#38bdf8' : '#0f172a';
+                routeLayer = L.geoJSON(geojson, {
+                    style: { color: routeColor, weight: 4, dashArray: '8, 8', lineCap: 'round' }
+                }).addTo(map);
+            }
+        }
+
         function drawNavtexMap(affectedIds = []) {
-            // Clear previous markers & radiuses
+            currentAffectedIds = affectedIds;
+
             stationMarkers.forEach(m => map.removeLayer(m));
             radiusLayers.forEach(r => map.removeLayer(r));
             stationMarkers = [];
             radiusLayers = [];
 
+            const isDark = document.documentElement.classList.contains('dark');
+
             navtexStations.forEach(station => {
                 const isAffected = affectedIds.includes(station.id);
                 
-                // Dynamic styling
-                const fillColor = isAffected ? '#fca5a5' : '#e2e8f0'; // Light red / Grey
-                const fillOpacity = isAffected ? 0.2 : 0.05;
-                const lineColor = isAffected ? '#dc2626' : '#94a3b8'; // Dark red / Dark grey
+                // Dynamic colors reflecting dark mode state
+                const fillColor = isAffected ? '#ef4444' : (isDark ? '#cbd5e1' : '#94a3b8');
+                const fillOpacity = isAffected ? (isDark ? 0.25 : 0.15) : (isDark ? 0.02 : 0.03);
+                const lineColor = isAffected ? '#ef4444' : (isDark ? '#475569' : '#94a3b8');
 
-                // Create Custom HTML Marker via Leaflet divIcon
                 const iconHtml = `
                     <div class="navtex-marker ${isAffected ? 'active' : ''}">
                         <div class="marker-letter">${station.b1}</div>
@@ -434,50 +534,39 @@
                 `;
 
                 const customIcon = L.divIcon({
-                    html: iconHtml,
-                    className: 'leaflet-custom-marker-wrap',
-                    iconSize: [120, 30], // Generic bounding box to prevent Leaflet clipping
-                    iconAnchor: [60, 15] // Center the anchor
+                    html: iconHtml, className: 'leaflet-custom-marker-wrap',
+                    iconSize: [120, 30], iconAnchor: [60, 15]
                 });
 
                 const marker = L.marker([station.lat, station.lng], { 
-                    icon: customIcon,
-                    zIndexOffset: isAffected ? 1000 : 0
+                    icon: customIcon, zIndexOffset: isAffected ? 1000 : 0
                 }).addTo(map);
                 
                 stationMarkers.push(marker);
 
-                // Create 400 NM Radius Circle Geometry (Turf.js -> GeoJSON -> Leaflet)
+                // 400 NM Radius
                 const center = [station.lng, station.lat];
                 const options = { steps: 64, units: 'nauticalmiles' };
                 const circleGeojson = turf.circle(center, station.range, options);
                 
                 const circleLayer = L.geoJSON(circleGeojson, {
-                    style: {
-                        color: lineColor,
-                        weight: 1.5,
-                        dashArray: '4, 4',
-                        fillColor: fillColor,
-                        fillOpacity: fillOpacity
-                    }
+                    style: { color: lineColor, weight: isAffected ? 2 : 1, dashArray: '4, 4', fillColor: fillColor, fillOpacity: fillOpacity }
                 }).addTo(map);
                 
                 radiusLayers.push(circleLayer);
             });
         }
 
-        // Initial Map Render
         drawNavtexMap();
 
-        // --- FILE UPLOAD HANDLER ---
         document.getElementById('route-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Simple loading state
             document.getElementById('affected-list').innerHTML = `
-                <div class="flex justify-center items-center py-10 text-blue-600">
-                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+                <div class="flex flex-col justify-center items-center py-12 text-primary dark:text-sky-400">
+                    <i data-lucide="loader-2" class="w-10 h-10 animate-spin mb-3"></i>
+                    <p class="text-sm font-semibold text-slate-600 dark:text-slate-400">Analyzing Route Data...</p>
                 </div>
             `;
             lucide.createIcons();
@@ -492,28 +581,29 @@
                     try {
                         if (ext === 'rtz') {
                             coordinates = parseRTZ(content);
-                        } else if (ext === 'txt' || ext === 'csv' || ext === 'rou') {
-                            coordinates = parseCSV_TXT(content);
+                        } else {
+                            // General robust parser for CSV, TXT, ROU
+                            coordinates = parseUniversalCoords(content);
                         }
 
                         if (coordinates.length < 2) {
-                            alert("Unknown format or the file contains less than 2 waypoints.");
+                            showNotification("Unable to detect a valid route. Ensure the file contains at least 2 coordinate points.", "error");
                             resetApp();
                             return;
                         }
 
+                        showNotification("Route loaded successfully!", "success");
                         processVoyageRoute(coordinates);
                     } catch (err) {
                         console.error(err);
-                        alert("A system error occurred while reading the file.");
+                        showNotification("System error occurred while reading the file.", "error");
                         resetApp();
                     }
-                }, 300); // Simulated delay to prevent UI freeze
+                }, 400); 
             };
             reader.readAsText(file);
         });
 
-        // RTZ Parser (Standard ECDIS XML format)
         function parseRTZ(xmlStr) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
@@ -531,99 +621,92 @@
             return coords;
         }
 
-        // TXT/CSV/ROU Parser (Decimal Coordinates: DD with optional N/S/E/W)
-        function parseCSV_TXT(text) {
+        // Robust parser handling DD, DMM, DMS formats across messy text files
+        function parseUniversalCoords(text) {
             const coords = [];
             const lines = text.split('\n');
+            
+            // Matches components: degrees, optional minutes, optional seconds, Direction
+            // e.g., 34.5 N, 34 30 N, 34°30'0"N
+            const complexRegex = /([+-]?\d+(?:\.\d+)?)[^\dA-Za-z]*?(?:(\d+(?:\.\d+)?)[^\dA-Za-z]*?)?(?:(\d+(?:\.\d+)?)[^\dA-Za-z]*?)?([NSEW])/gi;
 
             lines.forEach(line => {
-                // Match decimal numbers with optional direction (e.g., -12.345, 12.345, 12.345N, 12.345 N)
-                const matches = [...line.matchAll(/(-?\d+\.\d+)[°\s]*([NSEW])?/gi)];
-                
+                let matches = [...line.matchAll(complexRegex)];
                 if (matches.length >= 2) {
-                    let val1 = parseFloat(matches[0][1]);
-                    const dir1 = matches[0][2] ? matches[0][2].toUpperCase() : '';
-                    if (dir1 === 'S' || dir1 === 'W') val1 = -Math.abs(val1);
+                    let lat = null, lon = null;
+                    
+                    // Process the first two directional matches found on the line
+                    for(let i=0; i<2; i++) {
+                        let deg = parseFloat(matches[i][1]) || 0;
+                        let min = parseFloat(matches[i][2]) || 0;
+                        let sec = parseFloat(matches[i][3]) || 0;
+                        let dir = matches[i][4].toUpperCase();
+                        
+                        let decimal = Math.abs(deg) + (min / 60) + (sec / 3600);
+                        if (deg < 0) decimal = -decimal; // Handle cases where negative sign is explicitly written
+                        
+                        if (dir === 'S' || dir === 'W') decimal = -decimal;
 
-                    let val2 = parseFloat(matches[1][1]);
-                    const dir2 = matches[1][2] ? matches[1][2].toUpperCase() : '';
-                    if (dir2 === 'S' || dir2 === 'W') val2 = -Math.abs(val2);
-                    
-                    let lat, lon;
-                    
-                    // Detect Lat/Lon based on direction letter (N/S vs E/W)
-                    if (dir1 === 'N' || dir1 === 'S' || dir2 === 'E' || dir2 === 'W') {
-                        lat = (dir1 === 'N' || dir1 === 'S') ? val1 : val2;
-                        lon = (dir2 === 'E' || dir2 === 'W') ? val2 : val1;
-                    } else if (dir2 === 'N' || dir2 === 'S' || dir1 === 'E' || dir1 === 'W') {
-                        lat = (dir2 === 'N' || dir2 === 'S') ? val2 : val1;
-                        lon = (dir1 === 'E' || dir1 === 'W') ? val1 : val2;
-                    } else {
-                        // Fallback based on value (>90 is definitely Longitude)
-                        if (Math.abs(val1) > 90) { lon = val1; lat = val2; }
-                        else { lat = val1; lon = val2; }
+                        if (dir === 'N' || dir === 'S') lat = decimal;
+                        if (dir === 'E' || dir === 'W') lon = decimal;
                     }
-
-                    // Validate lat/lon ranges
-                    if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                    
+                    if (lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
                         coords.push([lon, lat]);
+                    }
+                } else {
+                    // Fallback to basic comma/space separated decimal values (e.g., "34.1234, -118.5678")
+                    const basicRegex = /(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/g;
+                    const basicMatch = basicRegex.exec(line);
+                    if (basicMatch) {
+                        let val1 = parseFloat(basicMatch[1]);
+                        let val2 = parseFloat(basicMatch[2]);
+                        
+                        // Infer Lat/Lon by realistic bounds (Lat is max 90, Lon is max 180)
+                        if (Math.abs(val1) <= 90 && Math.abs(val2) <= 180 && (Math.abs(val2) > 90 || Math.abs(val1) < Math.abs(val2))) {
+                            coords.push([val2, val1]); // [lon, lat]
+                        } else if (Math.abs(val2) <= 90 && Math.abs(val1) <= 180) {
+                             coords.push([val1, val2]);
+                        }
                     }
                 }
             });
             return coords;
         }
 
-        // --- MAIN LOGIC: SPATIAL CALCULATION ---
         function processVoyageRoute(coordinates) {
-            // Clear existing route if any
-            if (routeLayer) {
-                map.removeLayer(routeLayer);
-            }
+            if (routeLayer) map.removeLayer(routeLayer);
 
-            // Create line geometry object (GeoJSON uses [lng, lat] format)
             const lineString = turf.lineString(coordinates);
             
-            // Render route on map using Leaflet GeoJSON
+            // Draw Route with Theme-Aware Color
+            const isDark = document.documentElement.classList.contains('dark');
+            const routeColor = isDark ? '#38bdf8' : '#0f172a';
+
             routeLayer = L.geoJSON(lineString, {
-                style: {
-                    color: '#1e3a8a',
-                    weight: 3,
-                    dashArray: '5, 5'
-                }
+                style: { color: routeColor, weight: 4, dashArray: '8, 8', lineCap: 'round' }
             }).addTo(map);
 
-            // Set map camera to route bounds
-            const routeBounds = routeLayer.getBounds();
-            map.fitBounds(routeBounds, { padding: [100, 100], maxZoom: 8 });
+            // Animate map fit bounds
+            map.flyToBounds(routeLayer.getBounds(), { padding: [100, 100], maxZoom: 7, duration: 1.5 });
 
             document.getElementById('clear-btn').classList.remove('hidden');
 
             const affectedStations = [];
             
-            // Loop through all stations to calculate closest distance to vessel route
             navtexStations.forEach(station => {
                 const pt = turf.point([station.lng, station.lat]);
-                // Turf calculates distance from point to closest line segment
                 const distance = turf.pointToLineDistance(pt, lineString, { units: 'nauticalmiles' });
                 
                 if (distance <= station.range) {
-                    affectedStations.push({
-                        ...station,
-                        distanceToRoute: distance.toFixed(1) // 1 decimal format
-                    });
+                    affectedStations.push({ ...station, distanceToRoute: distance.toFixed(1) });
                 }
             });
 
-            // Sort by Station Alphabet (b1) then by country name
-            affectedStations.sort((a, b) => {
-                if (a.b1 === b.b1) return a.country.localeCompare(b.country);
-                return a.b1.localeCompare(b.b1);
-            });
+            // Sort purely by Distance for better operational sense
+            affectedStations.sort((a, b) => parseFloat(a.distanceToRoute) - parseFloat(b.distanceToRoute));
 
-            // Refresh Map Visual (Highlight affected stations in red)
             drawNavtexMap(affectedStations.map(s => s.id));
-
-            // Update Left Sidebar UI & Prepare copy text
             renderSidebarList(affectedStations);
         }
 
@@ -635,17 +718,16 @@
             
             counter.innerText = stations.length;
             listContainer.innerHTML = '';
-            
-            let copyText = "NAVTEX STATIONS LIST (400 NM Radius):\n\n";
+            let copyText = "NAVTEX STATIONS IN RANGE (400 NM):\n\n";
 
             if (stations.length === 0) {
                 copyArea.value = "";
                 copyBtn.classList.add('hidden');
                 listContainer.innerHTML = `
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-                        <i data-lucide="shield-alert" class="w-6 h-6 text-amber-500 mx-auto mb-2"></i>
-                        <p class="text-sm text-amber-800 font-medium">Out of Coverage</p>
-                        <p class="text-xs text-amber-600 mt-1">The voyage route is outside the NAVTEX coverage area.</p>
+                    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl p-5 text-center mt-2 shadow-sm">
+                        <i data-lucide="shield-alert" class="w-8 h-8 text-amber-500 mx-auto mb-3"></i>
+                        <p class="text-base text-amber-800 dark:text-amber-400 font-bold">Out of Coverage</p>
+                        <p class="text-sm text-amber-600 dark:text-amber-500/80 mt-1">The uploaded voyage route does not pass within 400 NM of any global NAVTEX station.</p>
                     </div>
                 `;
                 lucide.createIcons();
@@ -655,107 +737,109 @@
             copyBtn.classList.remove('hidden');
 
             stations.forEach(st => {
-                // Add data to copy string
-                copyText += `${st.b1} - ${st.name} (${st.country})\n`;
+                copyText += `[${st.b1}] ${st.name} (${st.country}) - ${st.distanceToRoute} NM\n`;
 
                 const div = document.createElement('div');
-                // Calculate distance progress bar (closer = red, further = green)
                 const distancePercent = Math.min((st.distanceToRoute / st.range) * 100, 100);
-                const barColor = distancePercent < 30 ? 'bg-red-500' : (distancePercent < 70 ? 'bg-amber-500' : 'bg-emerald-500');
+                const barColor = distancePercent < 25 ? 'bg-red-500' : (distancePercent < 60 ? 'bg-amber-400' : 'bg-emerald-500');
 
-                div.className = "group relative bg-white p-3 border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all";
+                div.className = "group relative bg-white dark:bg-slate-800 p-4 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md hover:border-primary/50 dark:hover:border-sky-500/50 transition-all cursor-pointer";
                 div.innerHTML = `
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-8 h-8 rounded-md bg-slate-900 text-white font-bold text-lg shadow-inner">
-                                ${st.b1}
+                            <div class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-secondary dark:bg-slate-700 text-white shadow-inner">
+                                <span class="text-xs font-semibold opacity-70 leading-none mb-0.5">ID</span>
+                                <span class="font-extrabold text-lg leading-none">${st.b1}</span>
                             </div>
                             <div>
-                                <h3 class="text-sm font-bold text-slate-800 leading-none">${st.name}</h3>
-                                <p class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
-                                    <i data-lucide="map-pin" class="w-3 h-3"></i> ${st.country} • ${st.range} NM
+                                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 leading-tight">${st.name}</h3>
+                                <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+                                    <i data-lucide="map-pin" class="w-3 h-3"></i> ${st.country}
                                 </p>
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Closest Point</p>
-                            <p class="text-sm font-bold text-slate-900">${st.distanceToRoute} <span class="text-[10px] text-slate-500">NM</span></p>
+                            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Closest Pt</p>
+                            <p class="text-sm font-black text-secondary dark:text-sky-400">${st.distanceToRoute} <span class="text-[10px] text-slate-500 font-semibold">NM</span></p>
                         </div>
                     </div>
-                    
-                    <!-- Distance Visualization (Inverted Progress Bar) -->
-                    <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden flex">
-                        <div class="h-1.5 ${barColor} rounded-full" style="width: ${100 - distancePercent}%"></div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 ${barColor} rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-target-width="${100 - distancePercent}%"></div>
                     </div>
                 `;
+                
+                // Click to focus map on station
+                div.addEventListener('click', () => {
+                    map.flyTo([st.lat, st.lng], 7, { duration: 1 });
+                });
+
                 listContainer.appendChild(div);
             });
 
-            // Save to hidden textarea
-            copyArea.value = copyText.trim();
+            // Animate progress bars
+            setTimeout(() => {
+                document.querySelectorAll('#affected-list [data-target-width]').forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-target-width');
+                });
+            }, 100);
 
-            // Re-initialize icons inside the new list
+            copyArea.value = copyText.trim();
             lucide.createIcons();
         }
 
-        // --- COPY BUTTON HANDLER ---
         document.getElementById('copy-btn').addEventListener('click', function() {
             const copyArea = document.getElementById('copy-area');
             copyArea.select();
-            copyArea.setSelectionRange(0, 99999); // For mobile
+            copyArea.setSelectionRange(0, 99999); 
             
             try {
                 document.execCommand('copy');
-                // Temporarily change button appearance for feedback
                 const btn = document.getElementById('copy-btn');
                 const originalHTML = btn.innerHTML;
-                btn.innerHTML = `<i data-lucide="check-check" class="w-3.5 h-3.5"></i> Copied!`;
-                btn.classList.replace('text-blue-700', 'text-emerald-700');
-                btn.classList.replace('bg-blue-50', 'bg-emerald-50');
-                btn.classList.replace('border-blue-200', 'border-emerald-200');
+                btn.innerHTML = `<i data-lucide="check-check" class="w-3.5 h-3.5"></i> Copied`;
+                
+                btn.classList.replace('text-slate-700', 'text-emerald-700');
+                btn.classList.replace('dark:text-slate-300', 'dark:text-emerald-400');
+                btn.classList.add('bg-emerald-50', 'dark:bg-emerald-900/30', 'border-emerald-200', 'dark:border-emerald-800');
                 lucide.createIcons();
                 
                 setTimeout(() => {
                     btn.innerHTML = originalHTML;
-                    btn.classList.replace('text-emerald-700', 'text-blue-700');
-                    btn.classList.replace('bg-emerald-50', 'bg-blue-50');
-                    btn.classList.replace('border-emerald-200', 'border-blue-200');
+                    btn.classList.replace('text-emerald-700', 'text-slate-700');
+                    btn.classList.replace('dark:text-emerald-400', 'dark:text-slate-300');
+                    btn.classList.remove('bg-emerald-50', 'dark:bg-emerald-900/30', 'border-emerald-200', 'dark:border-emerald-800');
                     lucide.createIcons();
                 }, 2000);
             } catch (err) {
-                alert('Failed to copy. Please try again.');
+                showNotification('Failed to copy. Please try again.', 'error');
             }
         });
 
         function resetApp() {
-            // Remove route from Leaflet Map
             if (routeLayer) {
                 map.removeLayer(routeLayer);
                 routeLayer = null;
             }
             
-            // Return markers and map to normal view
             drawNavtexMap([]); 
             
-            // Reset UI
             document.getElementById('station-count').innerText = '0';
             document.getElementById('copy-btn').classList.add('hidden');
             document.getElementById('copy-area').value = "";
             document.getElementById('affected-list').innerHTML = `
-                <div class="text-center py-8">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
-                        <i data-lucide="map" class="w-6 h-6 text-slate-400"></i>
+                <div class="text-center py-10 px-4">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-700 shadow-inner mb-4">
+                        <i data-lucide="navigation" class="w-6 h-6 text-slate-400 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-sm font-medium text-slate-600">No route uploaded</p>
-                    <p class="text-xs text-slate-400 mt-1">Upload a route to calculate 400 NM NAVTEX coverage.</p>
+                    <p class="text-base font-semibold text-slate-700 dark:text-slate-200">Ready to Analyze</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-[250px] mx-auto leading-relaxed">Upload your route waypoint data to identify NAVTEX stations within a 400 NM radius.</p>
                 </div>
             `;
             document.getElementById('route-upload').value = '';
             document.getElementById('clear-btn').classList.add('hidden');
             lucide.createIcons();
             
-            // Return camera position to the center of Indonesia
-            map.setView([-2.0, 118.0], 4, { animate: true });
+            map.flyTo([-2.0, 118.0], 5, { duration: 1.5 });
         }
 
         document.getElementById('clear-btn').addEventListener('click', resetApp);
