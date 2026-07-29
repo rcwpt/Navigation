@@ -1,25 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMDSS DSC Station Finder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GMDSS DSC Station Finder Pro</title>
     
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
                     colors: {
-                        background: "#f8fafc",
-                        border: "#e2e8f0",
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                        },
+                        darkbg: '#0f172a',
+                        darkpanel: '#1e293b'
                     }
                 }
             }
@@ -27,422 +38,600 @@
     </script>
 
     <!-- Leaflet CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
-    <!-- Turf.js for distance calculation -->
+    <!-- Turf.js for spatial calculations -->
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #f8fafc; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
+        
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 0; }
         
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Custom Leaflet Marker for Ship */
-        .ship-marker {
-            background-color: #1e40af; /* Blue-800 */
-            border: 3px solid white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            animation: pulse 2s infinite;
-        }
+        /* Leaflet Overrides for Dark Mode */
+        .dark .leaflet-bar a { background-color: #1e293b; color: #e2e8f0; border-color: #334155; }
+        .dark .leaflet-bar a:hover { background-color: #334155; }
+        .leaflet-container { cursor: crosshair; }
 
-        /* Custom Leaflet Marker for Stations */
+        /* Custom Markers */
+        .vessel-marker {
+            background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 20px; height: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            animation: pulse-ring 2s infinite;
+        }
+        .dark .vessel-marker { border-color: #0f172a; }
+
         .station-marker {
             background-color: white;
-            border: 2px solid #0f172a;
-            border-radius: 6px;
-            padding: 3px 6px;
-            font-size: 11px;
+            border: 2px solid #334155;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-family: 'Inter', sans-serif;
             font-weight: 700;
-            color: #0f172a;
+            color: #334155;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            transition: all 0.2s;
         }
-        .station-marker.hf-type { border-color: #0284c7; color: #0284c7; }
-        .station-marker.mf-type { border-color: #16a34a; color: #16a34a; }
+        .dark .station-marker { background-color: #1e293b; color: #f8fafc; border-color: #64748b; }
+        .station-marker.type-hf { border-color: #0284c7; color: #0284c7; }
+        .dark .station-marker.type-hf { border-color: #38bdf8; color: #38bdf8; }
+        .station-marker.type-mf { border-color: #16a34a; color: #16a34a; }
+        .dark .station-marker.type-mf { border-color: #4ade80; color: #4ade80; }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(30, 64, 175, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0); }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
 
-        /* Crosshair cursor when clicking on map */
-        .leaflet-container { cursor: crosshair; }
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .side-panel {
+                width: 100%;
+                height: 50vh;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                border-radius: 24px 24px 0 0;
+                max-height: none;
+            }
+        }
     </style>
 </head>
-<body class="antialiased font-sans flex h-screen w-screen text-slate-800">
+<body class="bg-slate-50 dark:bg-darkbg text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
-    <!-- Map Container -->
-    <div class="relative w-full h-full flex-grow">
-        <div id="map"></div>
-    </div>
+    <div id="map"></div>
 
-    <!-- Sidebar Panel -->
-    <div class="absolute top-4 left-4 z-[1000] w-[420px] bg-white/95 backdrop-blur-md shadow-2xl border border-slate-200 rounded-xl flex flex-col max-h-[calc(100vh-32px)]">
+    <div class="side-panel absolute top-4 left-4 z-[1000] w-[400px] max-h-[calc(100vh-32px)] flex flex-col glass-panel shadow-2xl rounded-2xl overflow-hidden transition-all duration-300">
         
         <!-- Header -->
-        <div class="p-5 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
-            <h1 class="text-lg font-extrabold tracking-tight text-slate-900 flex items-center justify-between">
-                <span class="flex items-center gap-2">
-                    <i data-lucide="radio-tower" class="w-6 h-6 text-blue-600"></i>
-                    GMDSS DSC FINDER
-                </span>
-                <span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded border border-blue-200 uppercase">A3 Area</span>
-            </h1>
-            <p class="text-[11px] text-slate-500 mt-2 font-medium">Click on the map or input coordinates to find the nearest MF/HF DSC Coast Stations for testing.</p>
-        </div>
-        
-        <!-- Position Input Area -->
-        <div class="p-5 flex flex-col gap-4 border-b border-slate-200 bg-white">
-            <div class="flex items-center gap-3">
-                <div class="flex-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Latitude (DD)</label>
-                    <input type="number" id="input-lat" step="0.0001" placeholder="-2.5000" class="w-full bg-slate-50 border border-slate-200 text-sm font-medium rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-brand-600 rounded-lg text-white shadow-sm">
+                        <i data-lucide="radio-tower" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold leading-tight">GMDSS DSC Finder</h1>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">MF/HF Station Locator</p>
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Longitude (DD)</label>
-                    <input type="number" id="input-lng" step="0.0001" placeholder="118.0000" class="w-full bg-slate-50 border border-slate-200 text-sm font-medium rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="flex items-end h-full">
-                    <button id="btn-set-pos" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition-colors shadow-sm" title="Set Position">
-                        <i data-lucide="target" class="w-5 h-5"></i>
+                
+                <div class="flex items-center gap-1">
+                    <a href="https://rcwpt.github.io/Navigation/" target="_blank" class="p-2 text-slate-500 hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Back to Home">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                    </a>
+                    <button id="theme-toggle" class="p-2 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Toggle Dark Mode">
+                        <i data-lucide="sun" class="w-4 h-4 dark:hidden"></i>
+                        <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
                     </button>
                 </div>
             </div>
-            <div class="flex items-center justify-center p-3 border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg text-xs font-medium text-blue-700">
-                <i data-lucide="mouse-pointer-click" class="w-4 h-4 mr-2"></i> Or simply click anywhere on the map
-            </div>
         </div>
 
-        <!-- Station List Area -->
-        <div class="flex-grow overflow-y-auto flex flex-col bg-slate-50/50">
-            <div class="p-4 pb-2 sticky top-0 bg-white/95 backdrop-blur z-10 border-b border-slate-200 flex items-center justify-between">
-                <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="list-ordered" class="w-4 h-4 text-slate-500"></i>
-                    Nearest Stations
-                </h2>
-                <!-- Filter Toggle -->
-                <select id="type-filter" class="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white font-medium focus:outline-none">
-                    <option value="ALL">All Bands (MF/HF)</option>
-                    <option value="HF">HF Only (Global)</option>
-                    <option value="MF">MF Only (Coastal)</option>
-                </select>
+        <div class="flex flex-col border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+            <!-- Tabs -->
+            <div class="flex text-xs font-semibold">
+                <button class="tab-btn flex-1 py-2.5 text-center border-b-2 border-brand-600 text-brand-600 dark:text-brand-400 transition-colors" data-target="tab-click">Map Click</button>
+                <button class="tab-btn flex-1 py-2.5 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" data-target="tab-manual">Coord Input</button>
+                <button class="tab-btn flex-1 py-2.5 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" data-target="tab-route">Route Import</button>
             </div>
-            
-            <div id="station-list" class="p-4 space-y-3 flex-grow">
-                <!-- Empty State -->
-                <div class="text-center py-10 opacity-60">
-                    <i data-lucide="map-pin" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
-                    <p class="text-sm font-semibold text-slate-600">No Position Set</p>
-                    <p class="text-xs text-slate-500 mt-1">Set vessel position to calculate distances.</p>
+
+            <!-- Tab Content: Map Click -->
+            <div id="tab-click" class="tab-content p-4">
+                <div class="flex items-center justify-center p-4 border-2 border-dashed border-brand-200 dark:border-slate-600 bg-brand-50/50 dark:bg-slate-800/50 rounded-xl text-xs font-medium text-brand-700 dark:text-brand-300">
+                    <i data-lucide="mouse-pointer-click" class="w-4 h-4 mr-2"></i> Click anywhere on the map to set vessel position
+                </div>
+                <div class="mt-3 flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                    <span id="display-lat">Lat: --.----</span>
+                    <span id="display-lng">Lng: ---.----</span>
+                </div>
+            </div>
+
+            <!-- Tab Content: Manual Input -->
+            <div id="tab-manual" class="tab-content p-4 hidden">
+                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Enter Coordinates (DD, DMS, or DMM)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="smart-input" placeholder="e.g. 02 30 S, 118 00 E or -2.5, 118.0" class="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono placeholder:font-sans">
+                    <button id="btn-parse-coord" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center shadow-sm">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <p class="text-[9px] text-slate-400 mt-1.5">Supports formats like: -2.5, 118.0 | 2° 30' S, 118° 0' E | 2 30.0 S 118 0.0 E</p>
+                <p id="parse-error" class="text-xs text-red-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Tab Content: Route Import -->
+            <div id="tab-route" class="tab-content p-4 hidden flex-col gap-2">
+                <div class="flex justify-between items-end mb-1">
+                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Paste Route or Upload</label>
+                    <div class="relative">
+                        <input type="file" id="file-import" accept=".txt,.csv,.rtz" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Upload Route File">
+                        <button class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-[10px] font-semibold px-2 py-1 rounded border border-slate-200 dark:border-slate-600 transition-colors shadow-sm pointer-events-none">
+                            <i data-lucide="upload" class="w-3 h-3"></i> File (.txt, .csv, .rtz)
+                        </button>
+                    </div>
+                </div>
+                <textarea id="route-input" rows="3" placeholder="-2.5, 118.0&#10;-1.0, 119.5&#10;1.2, 121.0" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono resize-none"></textarea>
+                <div class="flex justify-between items-center mt-1">
+                    <p class="text-[9px] text-slate-400">Draws path & calculates from last point.</p>
+                    <button id="btn-draw-route" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors shadow-sm">
+                        Draw Route
+                    </button>
                 </div>
             </div>
         </div>
+
+        <div class="flex-grow flex flex-col overflow-hidden bg-white/30 dark:bg-slate-900/30">
+            <div class="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center z-10 backdrop-blur">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Nearest Stations</span>
+                <select id="type-filter" class="text-xs bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-md px-2 py-1 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 font-medium cursor-pointer">
+                    <option value="ALL">All Bands</option>
+                    <option value="HF">HF Only</option>
+                    <option value="MF">MF Only</option>
+                </select>
+            </div>
+            
+            <div id="station-list" class="overflow-y-auto p-3 space-y-3 flex-grow">
+                <!-- Initial State -->
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 opacity-70">
+                    <i data-lucide="map" class="w-12 h-12 mb-2 stroke-1"></i>
+                    <p class="text-sm font-medium">Awaiting Location</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Credits -->
+        <div class="p-2 border-t border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 text-center backdrop-blur">
+            <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-slate-500 hover:text-pink-600 dark:text-slate-400 dark:hover:text-pink-400 transition-colors">
+                <i data-lucide="instagram" class="w-3 h-3"></i>
+                @c.wijaya.t
+            </a>
+        </div>
     </div>
 
-    <!-- Hidden Input for Copying MMSI -->
-    <input type="text" id="copy-mmsi-hidden" class="absolute left-[-9999px] opacity-0" tabindex="-1" />
+    <input type="text" id="copy-hidden" class="absolute left-[-9999px] opacity-0" aria-hidden="true">
 
     <script>
+        // Initialize Icons
         lucide.createIcons();
 
-        // GLOBAL GMDSS MF/HF DSC Coast Stations Database
-        // Diperbarui sesuai dengan data dari tabel gambar referensi.
+        // Database of Stations
         const dscStations = [
             // ASIA / PACIFIC
-            { name: 'Shanghai', country: 'China', mmsi: '004122100', type: 'MF/HF', lat: 31.23, lng: 121.47, area: 'East China Sea & Coastal China', freq: 'Any frequency' },
-            { name: 'Hong Kong', country: 'China', mmsi: '004773500', type: 'HF', lat: 22.31, lng: 114.16, area: 'South China Sea - Pearl River Delta', freq: '8MHz' },
-            { name: 'Ho Chi Minh-Ville', country: 'Vietnam', mmsi: '005743030', type: 'HF', lat: 10.82, lng: 106.63, area: 'Vietnam', freq: '16MHz/12MHz' },
+            { name: 'Shanghai', country: 'China', mmsi: '004122100', type: 'MF/HF', lat: 31.23, lng: 121.47, area: 'East China Sea', freq: 'Any' },
+            { name: 'Hong Kong', country: 'China', mmsi: '004773500', type: 'HF', lat: 22.31, lng: 114.16, area: 'South China Sea', freq: '8MHz' },
+            { name: 'Ho Chi Minh', country: 'Vietnam', mmsi: '005743030', type: 'HF', lat: 10.82, lng: 106.63, area: 'Vietnam', freq: '16/12MHz' },
             { name: 'Bangkok', country: 'Thailand', mmsi: '005671000', type: 'HF', lat: 13.75, lng: 100.50, area: 'Thailand', freq: '8MHz' },
             { name: 'Dalian', country: 'China', mmsi: '004121300', type: 'MF/HF', lat: 38.92, lng: 121.62, area: 'China', freq: '2/4MHz' },
-            { name: 'Hai Phong', country: 'Vietnam', mmsi: '005741040', type: 'MF/HF', lat: 20.84, lng: 106.68, area: 'Vietnam', freq: 'Unspecified' },
-            { name: 'SEOUL', country: 'Korea', mmsi: '004400002', type: 'MF/HF', lat: 37.56, lng: 126.97, area: 'Korea', freq: 'Unspecified' },
-            { name: 'Wiluna', country: 'Australia', mmsi: '005030001', type: 'HF', lat: -26.59, lng: 120.22, area: 'Australia/Indian Ocean', freq: 'Auto-acknowledge' },
-            { name: 'Busan Coast Radio', country: 'Korea', mmsi: '004401004', type: 'HF', lat: 35.17, lng: 129.07, area: 'Korea Strait & Sea of Japan', freq: '12MHz' },
-            { name: 'Incheon Coast Radio', country: 'Korea', mmsi: '004401001', type: 'HF', lat: 37.45, lng: 126.70, area: 'Yellow Sea - Korea West Coast', freq: '8MHz' },
-            { name: 'Ambon Radio', country: 'Indonesia', mmsi: '005250006', type: 'HF', lat: -3.69, lng: 128.18, area: 'Eastern Indonesia/Banda Sea', freq: '8MHz' },
-            { name: 'Balikpapan Radio', country: 'Indonesia', mmsi: '005250009', type: 'HF', lat: -1.23, lng: 116.82, area: 'Central Indonesia - Makassar Strait/Java Sea', freq: '8MHz' },
-            { name: 'Mumbai Radio', country: 'India', mmsi: '004192203', type: 'HF', lat: 19.07, lng: 72.87, area: 'Arabian Sea - NW Indian Ocean', freq: '12MHz' },
-            { name: 'Chennai Radio', country: 'India', mmsi: '004194401', type: 'HF', lat: 13.08, lng: 80.27, area: 'Bay of Bengal - NE Indian Ocean', freq: '12MHz' },
-            { name: 'Tokyo Coast Guard Radio', country: 'Japan', mmsi: '004310001', type: 'HF', lat: 35.67, lng: 139.65, area: 'NW Pacific & Japanese waters', freq: '12MHz' },
-
-            // USA
-            { name: 'Boston', country: 'USA', mmsi: '003669991', type: 'HF', lat: 42.36, lng: -71.05, area: 'East coast USA', freq: '8MHz' },
-            { name: 'New Orleans', country: 'USA', mmsi: '003669998', type: 'MF/HF', lat: 29.95, lng: -90.07, area: 'Caribbean Sea', freq: 'Unspecified' },
-            { name: 'Point Reyes/CAMSPAC', country: 'USA', mmsi: '003669990', type: 'HF', lat: 38.10, lng: -122.87, area: 'West coast USA', freq: '4MHz' },
-            { name: 'Honolulu', country: 'USA', mmsi: '003699993', type: 'MF/HF', lat: 21.30, lng: -157.85, area: 'Pacific', freq: 'Unspecified' },
-            { name: 'Miami', country: 'USA', mmsi: '003669997', type: 'MF/HF', lat: 25.76, lng: -80.19, area: 'USA', freq: 'Unspecified' },
-            { name: 'Kodiak', country: 'USA', mmsi: '003669899', type: 'MF/HF', lat: 57.79, lng: -152.40, area: 'Alaska', freq: 'Unspecified' },
-
-            // EUROPE (Berdasarkan list gambar)
-            { name: 'Cape Town', country: 'South Africa', mmsi: '006010001', type: 'MF/HF', lat: -33.92, lng: 18.42, area: 'Cape of Good Hope approaches', freq: 'Unspecified' },
-            { name: 'Lyngby', country: 'Denmark', mmsi: '002191000', type: 'MF', lat: 55.77, lng: 12.50, area: 'North/Baltic Seas', freq: '2MHz' },
-            { name: 'Madrid', country: 'Spain', mmsi: '002241078', type: 'HF', lat: 40.41, lng: -3.70, area: 'Mediterranean Sea', freq: '8MHz' },
-            { name: 'Istanbul Radio', country: 'Turkey', mmsi: '002711000', type: 'HF', lat: 41.00, lng: 28.97, area: 'Black Sea', freq: '16MHz/12MHz' },
-            { name: 'Olympia Radio', country: 'Greece', mmsi: '002371000', type: 'MF/HF', lat: 37.98, lng: 23.72, area: 'Mediterranean Sea', freq: 'Any frequency' },
-            { name: 'Valencia', country: 'Spain', mmsi: '002241004', type: 'HF', lat: 39.46, lng: -0.37, area: 'Western Mediterranean', freq: '8MHz' },
+            { name: 'Seoul', country: 'Korea', mmsi: '004400002', type: 'MF/HF', lat: 37.56, lng: 126.97, area: 'Korea', freq: 'Unspecified' },
+            { name: 'Busan', country: 'Korea', mmsi: '004401004', type: 'HF', lat: 35.17, lng: 129.07, area: 'Korea Strait', freq: '12MHz' },
+            { name: 'Wiluna', country: 'Australia', mmsi: '005030001', type: 'HF', lat: -26.59, lng: 120.22, area: 'Indian Ocean', freq: 'Auto' },
+            { name: 'Ambon Radio', country: 'Indonesia', mmsi: '005250006', type: 'HF', lat: -3.69, lng: 128.18, area: 'Banda Sea', freq: '8MHz' },
+            { name: 'Balikpapan', country: 'Indonesia', mmsi: '005250009', type: 'HF', lat: -1.23, lng: 116.82, area: 'Makassar Strait', freq: '8MHz' },
+            { name: 'Jakarta Radio', country: 'Indonesia', mmsi: '005250000', type: 'MF/HF', lat: -6.12, lng: 106.87, area: 'Java Sea', freq: '8/12MHz' },
+            { name: 'Mumbai', country: 'India', mmsi: '004192203', type: 'HF', lat: 19.07, lng: 72.87, area: 'Arabian Sea', freq: '12MHz' },
+            { name: 'Chennai', country: 'India', mmsi: '004194401', type: 'HF', lat: 13.08, lng: 80.27, area: 'Bay of Bengal', freq: '12MHz' },
+            { name: 'Tokyo CG', country: 'Japan', mmsi: '004310001', type: 'HF', lat: 35.67, lng: 139.65, area: 'NW Pacific', freq: '12MHz' },
+            // AMERICAS
+            { name: 'Boston', country: 'USA', mmsi: '003669991', type: 'HF', lat: 42.36, lng: -71.05, area: 'East Coast', freq: '8MHz' },
+            { name: 'New Orleans', country: 'USA', mmsi: '003669998', type: 'MF/HF', lat: 29.95, lng: -90.07, area: 'Caribbean', freq: 'Any' },
+            { name: 'CAMSPAC', country: 'USA', mmsi: '003669990', type: 'HF', lat: 38.10, lng: -122.87, area: 'West Coast', freq: '4MHz' },
+            { name: 'Honolulu', country: 'USA', mmsi: '003699993', type: 'MF/HF', lat: 21.30, lng: -157.85, area: 'Pacific', freq: 'Any' },
+            { name: 'Rio de Janeiro', country: 'Brazil', mmsi: '007100001', type: 'HF', lat: -22.90, lng: -43.20, area: 'SW Atlantic', freq: '12MHz' },
+            { name: 'Buenos Aires', country: 'Argentina', mmsi: '007010111', type: 'HF', lat: -34.60, lng: -58.38, area: 'Rio de la Plata', freq: '8MHz' },
+            // EUROPE & AFRICA
+            { name: 'Cape Town', country: 'South Africa', mmsi: '006010001', type: 'MF/HF', lat: -33.92, lng: 18.42, area: 'Cape of Good Hope', freq: 'Any' },
+            { name: 'Lyngby', country: 'Denmark', mmsi: '002191000', type: 'MF', lat: 55.77, lng: 12.50, area: 'North Sea', freq: '2MHz' },
+            { name: 'Madrid', country: 'Spain', mmsi: '002241078', type: 'HF', lat: 40.41, lng: -3.70, area: 'Mediterranean', freq: '8MHz' },
+            { name: 'Istanbul', country: 'Turkey', mmsi: '002711000', type: 'HF', lat: 41.00, lng: 28.97, area: 'Black Sea', freq: '16/12MHz' },
             { name: 'Rogaland', country: 'Norway', mmsi: '002570300', type: 'HF', lat: 58.96, lng: 5.73, area: 'North Sea', freq: '8MHz' },
-
             // MIDDLE EAST
-            { name: 'Jeddah Radio', country: 'Saudi Arabia', mmsi: '004030000', type: 'HF', lat: 21.48, lng: 39.19, area: 'Red Sea - East side', freq: '12MHz' },
-            { name: 'Bandar Abbas Radio', country: 'Iran', mmsi: '004225300', type: 'HF', lat: 27.18, lng: 56.26, area: 'Persian Gulf', freq: '8MHz' },
-            { name: 'Alexandria Radio', country: 'Egypt', mmsi: '006221111', type: 'HF', lat: 31.20, lng: 29.91, area: 'Eastern Mediterranean & Approaches to Suez', freq: '8MHz' },
-            { name: 'Mauritius Radio', country: 'Mauritius', mmsi: '006452700', type: 'HF', lat: -20.34, lng: 57.55, area: 'Southwestern Indian Ocean', freq: '12MHz' },
-
-            // SOUTH AMERICA
-            { name: 'Rio de Janeiro Radio', country: 'Brazil', mmsi: '007100001', type: 'HF', lat: -22.90, lng: -43.20, area: 'Southwest Atlantic - Brazilian coast', freq: '12MHz' },
-            { name: 'Buenos Aires Radio', country: 'Argentina', mmsi: '007010111', type: 'HF', lat: -34.60, lng: -58.38, area: 'Southwest Atlantic - Río de la Plata', freq: '8MHz' },
-            { name: 'Montevideo Radio', country: 'Uruguay', mmsi: '007703870', type: 'HF', lat: -34.90, lng: -56.16, area: 'South Atlantic - River Plate area', freq: '8MHz' }
+            { name: 'Jeddah', country: 'Saudi Arabia', mmsi: '004030000', type: 'HF', lat: 21.48, lng: 39.19, area: 'Red Sea', freq: '12MHz' },
+            { name: 'Bandar Abbas', country: 'Iran', mmsi: '004225300', type: 'HF', lat: 27.18, lng: 56.26, area: 'Persian Gulf', freq: '8MHz' }
         ];
 
-        // Initialize Map
-        const map = L.map('map', {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([-2.0, 118.0], 4); // Default to Indonesia center
+        const htmlElement = document.documentElement;
+        const themeBtn = document.getElementById('theme-toggle');
+        
+        // Tile URLs
+        const lightTiles = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        const darkTiles = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
+        // Init Map
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([0, 118], 4);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        let currentTileLayer = L.tileLayer(lightTiles, { maxZoom: 19 }).addTo(map);
 
-        // Map Carto TileLayer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(map);
-
-        let shipMarker = null;
-        let stationMarkersGroup = L.layerGroup().addTo(map);
-        let activePosition = null;
-
-        // Render Stations on Map
-        function renderStationMarkers(filter = 'ALL') {
-            stationMarkersGroup.clearLayers();
-
-            dscStations.forEach(station => {
-                if (filter === 'HF' && station.type === 'MF') return;
-                if (filter === 'MF' && station.type === 'HF') return;
-
-                const isHF = station.type.includes('HF');
-                const badgeClass = isHF ? 'hf-type' : 'mf-type';
-                const iconHtml = `
-                    <div class="station-marker ${badgeClass}">
-                        ${station.name}
-                    </div>
-                `;
-
-                const customIcon = L.divIcon({
-                    html: iconHtml,
-                    className: 'leaflet-custom-marker-wrap',
-                    iconSize: [0, 0]
-                });
-
-                L.marker([station.lat, station.lng], { icon: customIcon }).addTo(stationMarkersGroup);
-            });
+        // Theme Management
+        function toggleTheme() {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            
+            // Switch map tiles smoothly
+            const newUrl = isDark ? darkTiles : lightTiles;
+            const newLayer = L.tileLayer(newUrl, { maxZoom: 19 }).addTo(map);
+            
+            setTimeout(() => {
+                map.removeLayer(currentTileLayer);
+                currentTileLayer = newLayer;
+            }, 200); // Wait for new tiles to load slightly
+            
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
         }
 
-        renderStationMarkers();
+        themeBtn.addEventListener('click', toggleTheme);
 
-        // --- MAP CLICK HANDLER ---
-        map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
-            
-            // Update Inputs
-            document.getElementById('input-lat').value = lat.toFixed(4);
-            document.getElementById('input-lng').value = lng.toFixed(4);
-            
-            updateVesselPosition(lat, lng);
-        });
-
-        // --- MANUAL INPUT HANDLER ---
-        document.getElementById('btn-set-pos').addEventListener('click', function() {
-            const lat = parseFloat(document.getElementById('input-lat').value);
-            const lng = parseFloat(document.getElementById('input-lng').value);
-            
-            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                alert("Invalid coordinate values.");
-                return;
-            }
-            
-            updateVesselPosition(lat, lng);
-            map.flyTo([lat, lng], 5, { animate: true, duration: 1 });
-        });
-
-        // Filter Handler
-        document.getElementById('type-filter').addEventListener('change', function() {
-            const filter = this.value;
-            renderStationMarkers(filter);
-            if (activePosition) {
-                calculateDistances(activePosition.lat, activePosition.lng, filter);
-            }
-        });
-
-        // --- CORE LOGIC: Update Position & Calculate Nearest ---
-        function updateVesselPosition(lat, lng) {
-            activePosition = { lat, lng };
-
-            // Remove old ship marker
-            if (shipMarker) map.removeLayer(shipMarker);
-
-            // Create Ship Marker
-            const shipIcon = L.divIcon({
-                html: `<div class="ship-marker"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-navigation"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></div>`,
-                className: 'leaflet-custom-marker-wrap',
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
-            });
-
-            shipMarker = L.marker([lat, lng], { icon: shipIcon, zIndexOffset: 9999 }).addTo(map);
-
-            // Trigger calculation
-            const filter = document.getElementById('type-filter').value;
-            calculateDistances(lat, lng, filter);
+        // Check initial theme preference
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            toggleTheme(); // Set to dark initially if preferred
         }
 
-        function calculateDistances(vesselLat, vesselLng, filter) {
-            const vesselPt = turf.point([vesselLng, vesselLat]);
-            const calculatedStations = [];
+        let vesselMarker = null;
+        let routePolyline = null;
+        const stationLayer = L.layerGroup().addTo(map);
+        let activePos = null;
 
+        function renderStations(filter = 'ALL') {
+            stationLayer.clearLayers();
             dscStations.forEach(st => {
-                // Apply filter
-                if (filter === 'HF' && st.type === 'MF') return;
-                if (filter === 'MF' && st.type === 'HF') return;
+                if (filter === 'HF' && !st.type.includes('HF')) return;
+                if (filter === 'MF' && !st.type.includes('MF')) return;
 
-                const stPt = turf.point([st.lng, st.lat]);
-                const distNM = turf.distance(vesselPt, stPt, { units: 'nauticalmiles' });
-                
-                calculatedStations.push({
-                    ...st,
-                    distance: distNM
+                const typeClass = st.type.includes('HF') ? 'type-hf' : 'type-mf';
+                const icon = L.divIcon({
+                    html: `<div class="station-marker ${typeClass}">${st.name}</div>`,
+                    className: 'custom-div-icon',
+                    iconSize: [0,0]
                 });
+                L.marker([st.lat, st.lng], { icon }).addTo(stationLayer);
+            });
+        }
+        renderStations();
+
+        document.getElementById('type-filter').addEventListener('change', (e) => {
+            renderStations(e.target.value);
+            if (activePos) processPosition(activePos.lat, activePos.lng);
+        });
+
+        // Robust parser for DD, DMM, DMS formats
+        function parseCoordinateString(input) {
+            if (!input) return null;
+            
+            // Normalize string: replace special chars with space, remove extra spaces
+            let str = input.toUpperCase().replace(/[°'"*;:_]/g, ' ').replace(/[,]/g, ' ').replace(/\s+/g, ' ').trim();
+            
+            // Try matching N/S/E/W specifically
+            const parts = str.split(' ');
+            
+            let lat = null, lng = null;
+            let latSign = 1, lngSign = 1;
+            let numbers = [];
+            let directions = [];
+
+            // Extract numbers and direction letters
+            parts.forEach(p => {
+                if (['N', 'S', 'E', 'W'].includes(p)) {
+                    directions.push(p);
+                } else {
+                    const num = parseFloat(p);
+                    if (!isNaN(num)) numbers.push(num);
+                }
             });
 
-            // Sort by distance (Nearest first)
-            calculatedStations.sort((a, b) => a.distance - b.distance);
+            // Need at least 2 numbers (Lat, Lng)
+            if (numbers.length < 2) return null;
 
-            // Render top 10 to UI
-            renderSidebarList(calculatedStations.slice(0, 10));
+            // Determine signs from directions if provided
+            directions.forEach(dir => {
+                if (dir === 'S') latSign = -1;
+                if (dir === 'W') lngSign = -1;
+            });
+
+            // Logic based on number count (assuming pairs: lat, lng)
+            if (numbers.length === 2) {
+                // DD format (Decimal Degrees)
+                lat = numbers[0];
+                lng = numbers[1];
+                // If directions weren't parsed but negative signs exist, keep them.
+                if (directions.length > 0) {
+                    lat = Math.abs(lat) * latSign;
+                    lng = Math.abs(lng) * lngSign;
+                }
+            } else if (numbers.length === 4) {
+                // DMM format (Deg Min, Deg Min)
+                lat = (Math.abs(numbers[0]) + (numbers[1] / 60)) * (numbers[0] < 0 ? -1 : latSign);
+                lng = (Math.abs(numbers[2]) + (numbers[3] / 60)) * (numbers[2] < 0 ? -1 : lngSign);
+            } else if (numbers.length >= 6) {
+                // DMS format (Deg Min Sec, Deg Min Sec)
+                lat = (Math.abs(numbers[0]) + (numbers[1] / 60) + (numbers[2] / 3600)) * (numbers[0] < 0 ? -1 : latSign);
+                lng = (Math.abs(numbers[3]) + (numbers[4] / 60) + (numbers[5] / 3600)) * (numbers[3] < 0 ? -1 : lngSign);
+            } else {
+                return null; // Unsupported pattern
+            }
+
+            // Basic validation
+            if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                return { lat, lng };
+            }
+            return null;
         }
 
-        function renderSidebarList(stations) {
-            const listContainer = document.getElementById('station-list');
-            listContainer.innerHTML = '';
+        function setVesselMarker(lat, lng) {
+            if (vesselMarker) map.removeLayer(vesselMarker);
+            const icon = L.divIcon({
+                html: '<div class="vessel-marker"></div>',
+                className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+            });
+            vesselMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+            
+            document.getElementById('display-lat').textContent = `Lat: ${lat.toFixed(4)}°`;
+            document.getElementById('display-lng').textContent = `Lng: ${lng.toFixed(4)}°`;
+        }
 
+        function processPosition(lat, lng, panMap = false) {
+            activePos = { lat, lng };
+            setVesselMarker(lat, lng);
+            if(panMap) map.flyTo([lat, lng], 5, { duration: 1 });
+
+            const filter = document.getElementById('type-filter').value;
+            const pt = turf.point([lng, lat]);
+            
+            let results = [];
+            dscStations.forEach(st => {
+                if (filter === 'HF' && !st.type.includes('HF')) return;
+                if (filter === 'MF' && !st.type.includes('MF')) return;
+                
+                const stPt = turf.point([st.lng, st.lat]);
+                const dist = turf.distance(pt, stPt, { units: 'nauticalmiles' });
+                results.push({ ...st, dist });
+            });
+
+            results.sort((a, b) => a.dist - b.dist);
+            renderSidebar(results.slice(0, 8)); // Show top 8
+        }
+
+        // Output to Sidebar
+        function renderSidebar(stations) {
+            const container = document.getElementById('station-list');
+            container.innerHTML = '';
+            
             if (stations.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-10 opacity-60">
-                        <p class="text-sm font-semibold text-slate-600">No stations found for this filter.</p>
-                    </div>
-                `;
+                container.innerHTML = '<p class="text-center text-sm p-4 text-slate-500">No stations found.</p>';
                 return;
             }
 
-            stations.forEach((st, index) => {
-                const distFormatted = st.distance.toFixed(1);
+            stations.forEach((st, idx) => {
+                // Color scaling based on distance/rank
+                const isNearest = idx === 0;
+                const borderClass = isNearest ? 'border-brand-500 dark:border-brand-400 border-2' : 'border-slate-200 dark:border-slate-700 border';
+                const bgClass = isNearest ? 'bg-brand-50 dark:bg-brand-900/20' : 'bg-white dark:bg-slate-800';
                 
-                // Kalkulasi Gradien Warna (Hijau -> Kuning -> Merah)
-                // index 0 akan bernilai 120 (Hijau), index 9 bernilai mendekati 0 (Merah)
-                const hue = Math.max(0, 120 - (index * 13)); 
-                const dynamicBorderColor = `hsl(${hue}, 70%, 50%)`;
-                const dynamicTextColor = `hsl(${hue}, 80%, 35%)`;
-                const dynamicBgColor = `hsl(${hue}, 80%, 95%)`;
-
-                const typeColor = st.type.includes('HF') ? 'bg-sky-100 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-700 border-slate-200';
-
-                const div = document.createElement('div');
-                div.className = `group bg-white p-3.5 rounded-xl border shadow-sm hover:shadow-md transition-all`;
-                div.style.borderColor = dynamicBorderColor;
-                div.style.borderWidth = index === 0 ? '2px' : '1px'; // Yang terdekat bordernya sedikit lebih tebal
-                
-                div.innerHTML = `
-                    <div class="flex items-start justify-between mb-2">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${typeColor}">${st.type}</span>
-                                ${index === 0 ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded animate-pulse" style="background-color: ${dynamicBorderColor}; color: white;">NEAREST</span>` : ''}
-                            </div>
-                            <h3 class="text-sm font-bold text-slate-900 leading-tight">${st.name}</h3>
-                            <p class="text-[11px] font-medium text-slate-500 mt-0.5 flex items-center gap-1">
-                                <i data-lucide="map-pin" class="w-3 h-3"></i> ${st.country}
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Distance</p>
-                            <p class="text-sm font-black" style="color: ${dynamicTextColor}">${distFormatted} <span class="text-[10px] font-semibold text-slate-500">NM</span></p>
-                        </div>
-                    </div>
-                    
-                    <div class="rounded-lg p-2.5 mt-3 border border-slate-100" style="background-color: ${dynamicBgColor}">
-                        <div class="flex items-center justify-between mb-2">
+                const html = `
+                    <div class="rounded-xl p-3 shadow-sm transition-all hover:shadow-md ${borderClass} ${bgClass}">
+                        <div class="flex justify-between items-start mb-2">
                             <div>
-                                <p class="text-[10px] font-semibold text-slate-500 uppercase">MMSI Number</p>
-                                <p class="text-sm font-mono font-bold tracking-wider text-slate-800">${st.mmsi}</p>
+                                <div class="flex gap-2 items-center mb-0.5">
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${st.type}</span>
+                                    ${isNearest ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-brand-500 text-white animate-pulse">NEAREST</span>' : ''}
+                                </div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white leading-tight">${st.name}</h3>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">${st.country} • ${st.area}</p>
                             </div>
-                            <button onclick="copyMMSI('${st.mmsi}', this)" class="bg-white border hover:bg-slate-50 text-slate-600 text-[10px] font-bold px-2 py-1.5 rounded transition-colors flex items-center gap-1 shadow-sm" style="border-color: ${dynamicBorderColor}; color: ${dynamicTextColor}">
+                            <div class="text-right">
+                                <p class="text-lg font-black text-brand-600 dark:text-brand-400 leading-none">${st.dist.toFixed(0)}</p>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase">NM</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2 flex justify-between items-center border border-slate-100 dark:border-slate-700/50">
+                            <div>
+                                <p class="text-[9px] text-slate-500 uppercase font-semibold">MMSI</p>
+                                <p class="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">${st.mmsi}</p>
+                            </div>
+                            <button onclick="copyData('${st.mmsi}', this)" class="text-[10px] font-semibold flex items-center gap-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition">
                                 <i data-lucide="copy" class="w-3 h-3"></i> Copy
                             </button>
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-2 mt-2">
-                            <div>
-                                <p class="text-[9px] font-semibold text-slate-500 uppercase">Coverage Area</p>
-                                <p class="text-[11px] font-semibold text-slate-800 mt-0.5">${st.area}</p>
-                            </div>
-                            <div>
-                                <p class="text-[9px] font-semibold text-slate-500 uppercase">Watch Frequencies</p>
-                                <p class="text-[11px] font-semibold text-slate-800 mt-0.5 break-words">${st.freq}</p>
-                            </div>
-                        </div>
                     </div>
                 `;
-                listContainer.appendChild(div);
+                container.insertAdjacentHTML('beforeend', html);
             });
-
             lucide.createIcons();
         }
 
-        // --- COPY MMSI HELPER ---
-        window.copyMMSI = function(mmsi, btnElement) {
-            const copyInput = document.getElementById('copy-mmsi-hidden');
-            copyInput.value = mmsi;
-            copyInput.select();
-            copyInput.setSelectionRange(0, 99999);
+        // Utility to copy MMSI
+        window.copyData = function(text, btn) {
+            const input = document.getElementById('copy-hidden');
+            input.value = text;
+            input.select();
+            document.execCommand('copy');
             
-            try {
-                document.execCommand('copy');
-                const originalHtml = btnElement.innerHTML;
-                btnElement.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-600"></i> Copied`;
-                btnElement.classList.add('border-green-200', 'bg-green-50', 'text-green-700');
+            const original = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-green-500"></i> Done`;
+            btn.classList.add('text-green-600', 'border-green-300');
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.classList.remove('text-green-600', 'border-green-300');
                 lucide.createIcons();
+            }, 1500);
+        }
+
+        
+        // Tab Switching Logic
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Reset active states
+                tabs.forEach(t => {
+                    t.classList.remove('border-brand-600', 'text-brand-600', 'dark:text-brand-400');
+                    t.classList.add('border-transparent', 'text-slate-500');
+                });
+                contents.forEach(c => c.classList.add('hidden'));
                 
-                setTimeout(() => {
-                    btnElement.innerHTML = originalHtml;
-                    btnElement.classList.remove('border-green-200', 'bg-green-50', 'text-green-700');
-                    lucide.createIcons();
-                }, 1500);
-            } catch (err) {
-                console.error('Copy failed');
+                // Set active
+                tab.classList.add('border-brand-600', 'text-brand-600', 'dark:text-brand-400');
+                tab.classList.remove('border-transparent', 'text-slate-500');
+                document.getElementById(tab.dataset.target).classList.remove('hidden');
+            });
+        });
+
+        // 1. Map Click Event
+        map.on('click', (e) => {
+            // Auto switch to click tab visually if not there
+            tabs[0].click(); 
+            processPosition(e.latlng.lat, e.latlng.lng);
+        });
+
+        // 2. Manual Coordinate Input
+        document.getElementById('btn-parse-coord').addEventListener('click', () => {
+            const inputStr = document.getElementById('smart-input').value;
+            const errEl = document.getElementById('parse-error');
+            
+            const coords = parseCoordinateString(inputStr);
+            if (coords) {
+                errEl.classList.add('hidden');
+                processPosition(coords.lat, coords.lng, true);
+            } else {
+                errEl.textContent = "Invalid format. Try DD, DMS, or DMM.";
+                errEl.classList.remove('hidden');
             }
-        };
+        });
+
+        // Enter key for input
+        document.getElementById('smart-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') document.getElementById('btn-parse-coord').click();
+        });
+
+        // 3. Route Import Logic
+        // File Reader Handler for TXT, CSV, RTZ
+        document.getElementById('file-import').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const content = event.target.result;
+                const ext = file.name.split('.').pop().toLowerCase();
+                let parsedText = '';
+
+                if (ext === 'rtz') {
+                    // Parse RTZ XML format (ECDIS Standard)
+                    try {
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(content, "text/xml");
+                        const waypoints = xmlDoc.getElementsByTagName('waypoint');
+                        
+                        for (let i = 0; i < waypoints.length; i++) {
+                            const pos = waypoints[i].getElementsByTagName('position')[0];
+                            if (pos) {
+                                const lat = pos.getAttribute('lat');
+                                const lon = pos.getAttribute('lon');
+                                if (lat && lon) parsedText += `${lat}, ${lon}\n`;
+                            }
+                        }
+                    } catch(err) {
+                        console.error("Failed to parse RTZ", err);
+                    }
+                } else {
+                    // txt or csv - load directly into textarea for the parser to handle
+                    parsedText = content;
+                }
+
+                if (parsedText.trim() !== '') {
+                    document.getElementById('route-input').value = parsedText.trim();
+                    // Automatically trigger the draw route logic
+                    document.getElementById('btn-draw-route').click(); 
+                } else {
+                    alert("Could not extract valid coordinates from the uploaded file.");
+                }
+                
+                e.target.value = ''; // Reset input so same file can be uploaded again if needed
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('btn-draw-route').addEventListener('click', () => {
+            const lines = document.getElementById('route-input').value.split('\n');
+            let routeCoords = [];
+            
+            lines.forEach(line => {
+                if(line.trim() === '') return;
+                const c = parseCoordinateString(line);
+                if (c) routeCoords.push([c.lat, c.lng]);
+            });
+
+            if (routeCoords.length > 0) {
+                if (routePolyline) map.removeLayer(routePolyline);
+                
+                routePolyline = L.polyline(routeCoords, {
+                    color: '#ef4444', // Red line
+                    weight: 3,
+                    dashArray: '5, 10'
+                }).addTo(map);
+                
+                map.fitBounds(routePolyline.getBounds(), { padding: [50, 50] });
+                
+                // Calculate from the last point of the route
+                const lastPoint = routeCoords[routeCoords.length - 1];
+                processPosition(lastPoint[0], lastPoint[1]);
+            } else {
+                alert("No valid coordinates found in the text.");
+            }
+        });
 
     </script>
 </body>
