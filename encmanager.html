@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENC Permit Manager Pro & Expiry Monitor | Bridge Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#0a192f',
+                            900: '#050b14',
+                            950: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- jsPDF & autoTable for Client-Side PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Load Offline 35,277 ADMIRALTY Catalogue Database -->
+    <script src="admiralty_catalogue_db.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1329;
+            color: #f1f5f9;
+        }
+        .font-mono-tech {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.25);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.5);
+        }
+        .tab-btn.active {
+            background-color: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+        }
+        .chip-btn {
+            transition: all 0.15s ease-in-out;
+        }
+        .chip-btn:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Top Navigation Bar -->
+    <nav class="glass-panel border-b border-white/10 px-4 py-3 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <a href="./index.html" class="flex items-center space-x-2 text-slate-400 hover:text-cyan-400 transition-colors bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono-tech">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Bridge Hub</span>
+                </a>
+                <div class="h-5 w-[1px] bg-slate-700"></div>
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400">
+                        <i class="fa-solid fa-id-card-clip text-sm"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-sm md:text-base font-bold text-white tracking-wide flex items-center gap-2">
+                            ENC Permit Manager Pro
+                            <span class="text-[10px] font-mono-tech bg-sky-500/20 text-sky-300 border border-sky-500/40 px-2 py-0.5 rounded-full">v2.5 WEB</span>
+                        </h1>
+                        <p class="text-[11px] text-slate-400 hidden sm:block">Official ECDIS Permit Expiry Monitor & Deduplicated Requisition Basket</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Action Links -->
+            <div class="flex items-center space-x-2 sm:space-x-3 text-xs">
+                <a href="./admiralty.html" class="flex items-center space-x-1.5 bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg border border-indigo-400/40 font-semibold shadow-sm transition-all hover:scale-105">
+                    <i class="fa-solid fa-map"></i>
+                    <span>ADMIRALTY Map</span>
+                </a>
+
+                <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/90 px-3 py-1.5 rounded-lg border border-pink-500/30 transition-all shadow-sm">
+                    <i class="fa-brands fa-instagram text-pink-400 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-mono-tech text-[11px]">Database by <span class="text-pink-400 font-semibold">@c.wijaya.t</span></span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col gap-4">
+
+        <!-- Tabs Navigation -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-2">
+            <div class="flex space-x-2">
+                <button id="btnTabBasket" onclick="switchTab('basket')" class="tab-btn active px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center gap-2 bg-slate-800 text-slate-300 border border-slate-700">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>Order Basket & Deduplication</span>
+                    <span id="tabBasketBadge" class="bg-sky-400/20 text-sky-200 border border-sky-400/40 text-[10px] px-2 py-0.2 rounded-full font-mono-tech">0</span>
+                </button>
+                <button id="btnTabInventory" onclick="switchTab('inventory')" class="tab-btn px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center gap-2 bg-slate-800 text-slate-300 border border-slate-700">
+                    <i class="fa-solid fa-boxes-packing"></i>
+                    <span>Permit Inventory & Expiry Monitor</span>
+                    <span id="tabInventoryBadge" class="bg-slate-700 text-slate-300 border border-slate-600 text-[10px] px-2 py-0.2 rounded-full font-mono-tech">0</span>
+                </button>
+            </div>
+
+            <!-- Vessel Status Info Pill -->
+            <button onclick="openVesselInfoModal()" class="flex items-center space-x-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono-tech transition-colors" title="Click to view/edit ship info">
+                <i class="fa-solid fa-ship text-sky-400"></i>
+                <span class="text-slate-400">Vessel:</span>
+                <span id="navVesselName" class="font-bold text-sky-300">PROSPERA</span>
+                <i class="fa-solid fa-pen-to-square text-[10px] text-slate-500"></i>
+            </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: ORDER BASKET & DEDUPLICATION -->
+        <!-- ========================================== -->
+        <div id="tabContentBasket" class="flex flex-col gap-3">
+            
+            <!-- Top Action Bar 1: Add, Paste, Import, Extractor -->
+            <div class="glass-panel p-3.5 rounded-xl flex flex-wrap items-center gap-2.5">
+                <button onclick="handlePasteClipboard()" class="chip-btn bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 shadow-sm" title="Paste cell codes from clipboard (Ctrl+V)">
+                    <i class="fa-solid fa-clipboard"></i>
+                    <span>Paste Clipboard</span>
+                </button>
+
+                <label class="chip-btn bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 cursor-pointer shadow-sm" title="Import from CSV, ECDIS .eusr.csv report, or TXT file">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Import CSV / EUSR / TXT</span>
+                    <input type="file" id="basketFileInput" accept=".csv,.txt,.cwo,.eusr" class="hidden" onchange="handleBasketFileUpload(event)">
+                </label>
+
+                <button onclick="openCellExtractorModal()" class="chip-btn bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 shadow-sm" title="Open Quick ENC Cell Extractor">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Cell Extractor...</span>
+                </button>
+
+                <!-- Input Text for Manual Entry -->
+                <div class="flex-grow flex items-center gap-2 min-w-[260px]">
+                    <div class="relative w-full">
+                        <input type="text" id="quickAddInput" placeholder="Type/Paste ENC cell codes (e.g. AU130120, AU130150, GB401234)..." 
+                            class="w-full bg-slate-950/80 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none pr-8 font-mono-tech"
+                            onkeydown="if(event.key==='Enter') addFromQuickInput()">
+                        <button onclick="addFromQuickInput()" class="absolute right-1 top-1 text-slate-400 hover:text-sky-400 p-1" title="Add">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                    <button onclick="addFromQuickInput()" class="chip-btn bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Top Action Bar 2: Add From Loaded Permit Inventory -->
+            <div class="glass-panel p-2.5 rounded-xl flex flex-wrap items-center gap-2 text-xs">
+                <span class="text-sky-400 font-bold flex items-center gap-1.5 mr-1 font-mono-tech">
+                    <i class="fa-solid fa-file-import"></i>
+                    <span>Add from Permit:</span>
+                </span>
+
+                <button onclick="addFromInventory('all')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-2.5 py-1 rounded-md flex items-center gap-1.5" title="Add all charts from loaded permit">
+                    <i class="fa-solid fa-boxes-stacked text-purple-400"></i>
+                    <span>All in Inventory</span>
+                </button>
+
+                <button onclick="addFromInventory('expiring')" class="chip-btn bg-amber-950/60 hover:bg-amber-900/80 text-amber-200 border border-amber-600/50 px-2.5 py-1 rounded-md flex items-center gap-1.5" title="Add charts expiring within 30 days">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>Active &lt;= 30 Days (Expiring)</span>
+                </button>
+
+                <button onclick="addFromInventory('active')" class="chip-btn bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-200 border border-emerald-600/50 px-2.5 py-1 rounded-md flex items-center gap-1.5" title="Add charts with > 30 days remaining">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Active &gt; 30 Days</span>
+                </button>
+
+                <div class="ml-auto text-slate-400 text-[11px] font-mono-tech">
+                    Loaded Permit: <span id="permitStatusLabel" class="text-slate-200 italic font-semibold">None (load in Tab 2)</span>
+                </div>
+            </div>
+
+            <!-- Action Toolbar: Deduplicate, Delete, Clear, Exports -->
+            <div class="glass-panel p-3 rounded-xl flex flex-wrap items-center justify-between gap-2.5">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="removeDuplicates()" class="chip-btn bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm" title="Remove all duplicate ENC cells, keeping one">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Remove Duplicates</span>
+                    </button>
+
+                    <button onclick="deleteSelectedBasketRows()" class="chip-btn bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm" title="Delete selected rows">
+                        <i class="fa-solid fa-xmark"></i>
+                        <span>Delete Selected</span>
+                    </button>
+
+                    <button onclick="clearBasket()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Clear all items in basket">
+                        <i class="fa-solid fa-broom"></i>
+                        <span>Clear Basket</span>
+                    </button>
+
+                    <div class="h-4 w-[1px] bg-slate-700 hidden sm:block"></div>
+
+                    <button onclick="copyBasketCellCodes()" class="chip-btn bg-teal-700 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Copy cell codes formatted as 'AU130120, AU130150, ...'">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy Cell Codes Only (, )</span>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="exportBasketTxt()" class="chip-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm" title="Save order in official ADMIRALTY tab-delimited format (.txt)">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                        <span>Export Basket (.txt)</span>
+                    </button>
+
+                    <button onclick="exportBasketPDF()" class="chip-btn bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm" title="Generate professional PDF Requisition Report">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Export PDF Report</span>
+                    </button>
+
+                    <button onclick="copyFullBasketText()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Copy full table as tab-delimited text">
+                        <i class="fa-solid fa-table"></i>
+                        <span>Copy Full Basket</span>
+                    </button>
+
+                    <button onclick="openVesselInfoModal()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Edit vessel information">
+                        <i class="fa-solid fa-ship"></i>
+                        <span>Vessel Info</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search, Filter & Quick Row Selection Bar -->
+            <div class="glass-panel p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                <!-- Search Input -->
+                <div class="flex-grow max-w-md relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                    <input type="text" id="basketSearchInput" placeholder="Search basket (Cell ID, Title, Scale)..." 
+                        class="w-full bg-slate-950/80 border border-slate-700 focus:border-sky-400 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none"
+                        oninput="renderBasketTable()">
+                </div>
+
+                <!-- Status Filter Dropdown -->
+                <select id="basketFilterSelect" onchange="renderBasketTable()" class="bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none">
+                    <option value="all">All Charts</option>
+                    <option value="in_inventory">📦 In Inventory (All)</option>
+                    <option value="crit_inventory">🟠 In Inventory (Active &lt;= 30 Days)</option>
+                    <option value="act_inventory">🟢 In Inventory (Active &gt; 30 Days)</option>
+                    <option value="new_charts">🆕 Not in Permit (New Charts)</option>
+                    <option value="duplicates">⚠️ Duplicates Only</option>
+                </select>
+
+                <!-- Quick Selection Chips -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-slate-400 text-[11px] font-mono-tech mr-1">Select:</span>
+                    <button onclick="selectBasketRows('all')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">All</button>
+                    <button onclick="selectBasketRows('in_inventory')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">In Permit</button>
+                    <button onclick="selectBasketRows('crit')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">&lt;= 30d</button>
+                    <button onclick="selectBasketRows('act')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">&gt; 30d</button>
+                    <button onclick="selectBasketRows('new')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">New</button>
+                    <button onclick="selectBasketRows('dup')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">Duplicates</button>
+                    <button onclick="selectBasketRows('none')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 px-2 py-0.5 rounded text-[11px]">Clear</button>
+                </div>
+            </div>
+
+            <!-- Basket Table Container -->
+            <div class="glass-panel rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-900/90 text-slate-400 sticky top-0 z-10 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2.5 px-3 w-10 text-center">
+                                    <input type="checkbox" id="basketSelectAll" onchange="toggleSelectAllBasket(this.checked)" class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                                </th>
+                                <th class="py-2.5 px-3 w-12 text-center font-mono-tech">#</th>
+                                <th class="py-2.5 px-3 w-28">Type</th>
+                                <th class="py-2.5 px-3 w-36 font-mono-tech font-bold text-sky-400">Cell ID</th>
+                                <th class="py-2.5 px-3">Product Title (Official UKHO)</th>
+                                <th class="py-2.5 px-3 w-28 text-center font-mono-tech">Scale</th>
+                                <th class="py-2.5 px-3 w-36 text-center">Duplicate Status</th>
+                                <th class="py-2.5 px-3 w-48 text-center">Permit Expiry Status</th>
+                                <th class="py-2.5 px-3 w-20 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="basketTableBody" class="divide-y divide-slate-800/60 font-medium">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty Basket State -->
+                <div id="basketEmptyState" class="py-12 px-4 text-center">
+                    <div class="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto mb-3 text-slate-500">
+                        <i class="fa-solid fa-cart-arrow-down text-2xl"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-slate-300 mb-1">Your Order Basket is Empty</h3>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto">
+                        Paste ENC codes (<code class="text-sky-400">Ctrl+V</code>), import ECDIS <code class="text-sky-400">.eusr.csv</code> route reports, or add expiring charts from your permit.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Statistics Summary Card -->
+            <div class="glass-panel p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono-tech">
+                <div class="flex items-center space-x-4">
+                    <span>Total Rows: <strong id="statTotalRows" class="text-sky-400 font-bold">0</strong></span>
+                    <span class="text-slate-600">|</span>
+                    <span>Unique Cells: <strong id="statUniqueCells" class="text-emerald-400 font-bold">0</strong></span>
+                    <span class="text-slate-600">|</span>
+                    <span>Duplicates: <strong id="statDuplicates" class="text-rose-400 font-bold">0</strong></span>
+                    <span class="text-slate-600">|</span>
+                    <span>New Charts: <strong id="statNewCharts" class="text-indigo-400 font-bold">0</strong></span>
+                </div>
+                <div class="flex items-center space-x-2 text-slate-400 text-[11px]">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>ADMIRALTY UKHO Database: <strong class="text-slate-200">35,277 Cells Loaded</strong></span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: PERMIT INVENTORY & EXPIRY MONITOR -->
+        <!-- ========================================== -->
+        <div id="tabContentInventory" class="flex flex-col gap-3 hidden">
+            
+            <!-- Controls & File Loader -->
+            <div class="glass-panel p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <label class="chip-btn bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-2 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        <span>Load Permit File (PERMIT.TXT / ENC.PMT)</span>
+                        <input type="file" id="permitFileInput" accept=".txt,.pmt,.enc" class="hidden" onchange="handlePermitFileUpload(event)">
+                    </label>
+
+                    <button onclick="openPastePermitModal()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs px-3 py-2 rounded-lg flex items-center gap-1.5" title="Paste raw S-63 permit text">
+                        <i class="fa-solid fa-paste"></i>
+                        <span>Paste Permit Text...</span>
+                    </button>
+                </div>
+
+                <div class="text-xs font-mono-tech text-slate-400 flex items-center gap-2">
+                    <span>Permit File:</span>
+                    <span id="permitLoadedFileName" class="text-sky-300 font-semibold italic">No permit loaded</span>
+                    <span id="permitIssueDateBadge" class="hidden bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px]"></span>
+                </div>
+            </div>
+
+            <!-- KPI Metric Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                <!-- Total -->
+                <div class="glass-panel p-3 rounded-xl border-l-4 border-slate-500">
+                    <div class="text-[10px] uppercase font-bold text-slate-400 font-mono-tech">Total Permit Cells</div>
+                    <div id="kpiTotal" class="text-xl font-bold text-white mt-1">0</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">In Current S-63 File</div>
+                </div>
+
+                <!-- Active -->
+                <div class="glass-panel p-3 rounded-xl border-l-4 border-emerald-500 bg-emerald-950/20">
+                    <div class="text-[10px] uppercase font-bold text-emerald-400 font-mono-tech">🟢 Active (&gt;60d)</div>
+                    <div id="kpiActive" class="text-xl font-bold text-emerald-300 mt-1">0</div>
+                    <div class="text-[10px] text-emerald-500/80 mt-0.5">Fully Valid</div>
+                </div>
+
+                <!-- Warning -->
+                <div class="glass-panel p-3 rounded-xl border-l-4 border-yellow-500 bg-yellow-950/20">
+                    <div class="text-[10px] uppercase font-bold text-yellow-400 font-mono-tech">🟡 Warning (31-60d)</div>
+                    <div id="kpiWarning" class="text-xl font-bold text-yellow-300 mt-1">0</div>
+                    <div class="text-[10px] text-yellow-500/80 mt-0.5">Plan Ahead</div>
+                </div>
+
+                <!-- Critical -->
+                <div class="glass-panel p-3 rounded-xl border-l-4 border-orange-500 bg-orange-950/20">
+                    <div class="text-[10px] uppercase font-bold text-orange-400 font-mono-tech">🟠 Critical (&lt;=30d)</div>
+                    <div id="kpiCritical" class="text-xl font-bold text-orange-300 mt-1">0</div>
+                    <div class="text-[10px] text-orange-500/80 mt-0.5">Renew Required</div>
+                </div>
+
+                <!-- Expired -->
+                <div class="glass-panel p-3 rounded-xl border-l-4 border-rose-500 bg-rose-950/20">
+                    <div class="text-[10px] uppercase font-bold text-rose-400 font-mono-tech">🔴 Expired (&lt;=0d)</div>
+                    <div id="kpiExpired" class="text-xl font-bold text-rose-300 mt-1">0</div>
+                    <div class="text-[10px] text-rose-500/80 mt-0.5">Expired on ECDIS</div>
+                </div>
+            </div>
+
+            <!-- Transfer to Basket & Export Toolbar -->
+            <div class="glass-panel p-3 rounded-xl flex flex-wrap items-center justify-between gap-2.5">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sky-400 font-bold text-xs font-mono-tech mr-1">➕ Transfer to Basket:</span>
+
+                    <button onclick="transferPermitToBasket('critical')" class="chip-btn bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Copy all expiring charts (&lt;= 30 days) to Order Basket">
+                        <span class="w-2 h-2 rounded-full bg-orange-300"></span>
+                        <span>Active &lt;= 30 Days (Expiring)</span>
+                    </button>
+
+                    <button onclick="transferPermitToBasket('active')" class="chip-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Copy charts with &gt; 30 days remaining to Order Basket">
+                        <span class="w-2 h-2 rounded-full bg-emerald-300"></span>
+                        <span>Active &gt; 30 Days</span>
+                    </button>
+
+                    <button onclick="transferPermitToBasket('all')" class="chip-btn bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Copy all permit charts to Order Basket">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>All in Inventory</span>
+                    </button>
+
+                    <button onclick="transferPermitToBasket('selected')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Copy selected rows to Order Basket">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Selected</span>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="copyInventoryCellCodes()" class="chip-btn bg-teal-700 hover:bg-teal-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Copy inventory cell codes formatted as 'AU130120, AU130150, ...'">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy Cell Codes Only (, )</span>
+                    </button>
+
+                    <button onclick="exportInventoryPDF()" class="chip-btn bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Export full-color Permit Audit & Expiry Report PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Export PDF Report</span>
+                    </button>
+
+                    <button onclick="exportInventoryCSV()" class="chip-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm" title="Export clean CSV file">
+                        <i class="fa-solid fa-file-csv"></i>
+                        <span>Export CSV</span>
+                    </button>
+
+                    <button onclick="copyInventoryReportText()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Copy report text to clipboard">
+                        <i class="fa-solid fa-file-lines"></i>
+                        <span>Copy Report</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Status Filter -->
+            <div class="glass-panel p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                <div class="flex-grow max-w-md relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                    <input type="text" id="inventorySearchInput" placeholder="Search inventory (Cell ID, Title, Expiry Date)..." 
+                        class="w-full bg-slate-950/80 border border-slate-700 focus:border-sky-400 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none"
+                        oninput="renderInventoryTable()">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-400 text-[11px] font-mono-tech">Filter Status:</span>
+                    <select id="inventoryFilterSelect" onchange="renderInventoryTable()" class="bg-slate-950/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none">
+                        <option value="all">All Statuses</option>
+                        <option value="crit_exp">🟠 Critical & Expired (&lt;= 30d)</option>
+                        <option value="expired">🔴 Expired Only (&lt;= 0d)</option>
+                        <option value="critical">🟠 Critical Only (1-30d)</option>
+                        <option value="warning">🟡 Warning Only (31-60d)</option>
+                        <option value="active">🟢 Active Only (&gt; 60d)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Inventory Table Container -->
+            <div class="glass-panel rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-900/90 text-slate-400 sticky top-0 z-10 border-b border-slate-800">
+                            <tr>
+                                <th class="py-2.5 px-3 w-10 text-center">
+                                    <input type="checkbox" id="inventorySelectAll" onchange="toggleSelectAllInventory(this.checked)" class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                                </th>
+                                <th class="py-2.5 px-3 w-12 text-center font-mono-tech">#</th>
+                                <th class="py-2.5 px-3 w-36 font-mono-tech font-bold text-sky-400">Cell ID</th>
+                                <th class="py-2.5 px-3">Product Title (Official UKHO)</th>
+                                <th class="py-2.5 px-3 w-28 text-center font-mono-tech">Scale</th>
+                                <th class="py-2.5 px-3 w-32 text-center font-mono-tech">Expiry Date</th>
+                                <th class="py-2.5 px-3 w-28 text-center font-mono-tech">Days Left</th>
+                                <th class="py-2.5 px-3 w-40 text-center">Validity Status</th>
+                                <th class="py-2.5 px-3 w-24 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-slate-800/60 font-medium">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty Inventory State -->
+                <div id="inventoryEmptyState" class="py-12 px-4 text-center">
+                    <div class="w-14 h-14 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto mb-3 text-slate-500">
+                        <i class="fa-solid fa-file-circle-exclamation text-2xl"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-slate-300 mb-1">No Permit File Loaded</h3>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto mb-4">
+                        Load your ship's official <code class="text-sky-400">PERMIT.TXT</code> or <code class="text-sky-400">ENC.PMT</code> file to inspect cell validity, calculate days remaining, and plan chart renewal requisitions.
+                    </p>
+                    <label class="chip-btn bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-2 cursor-pointer shadow-md">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span>Select Permit File...</span>
+                        <input type="file" accept=".txt,.pmt,.enc" class="hidden" onchange="handlePermitFileUpload(event)">
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-4 border-t border-white/10 bg-slate-950/80 text-xs text-slate-400 font-mono-tech">
+        <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span>ENC Permit Manager Pro &bull; Compliant with UKHO S-63 & S-57 Standards</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 transition-colors flex items-center gap-1.5 font-bold">
+                    <i class="fa-brands fa-instagram text-sm"></i>
+                    <span>Database created by @c.wijaya.t</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- MODAL 1: VESSEL INFORMATION -->
+    <!-- ========================================== -->
+    <div id="vesselInfoModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-lg rounded-2xl p-6 border border-white/15 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-ship text-sky-400"></i>
+                    <span>Vessel & Contact Information</span>
+                </h3>
+                <button onclick="closeVesselInfoModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400">
+                These details are included in the official ADMIRALTY order file headers (<code class="text-sky-300">#ShipName</code>, <code class="text-sky-300">#ShipType</code>) and generated PDF reports.
+            </p>
+
+            <form id="vesselInfoForm" onsubmit="saveVesselInfo(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Vessel Name (#ShipName)</label>
+                    <input type="text" id="vesselNameInput" required placeholder="e.g. PROSPERA" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none font-mono-tech">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Ship Type (#ShipType)</label>
+                    <input type="text" id="vesselTypeInput" placeholder="e.g. Bulk Carrier / Container" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Vessel Email (#ShipEmail)</label>
+                    <input type="email" id="vesselEmailInput" placeholder="master@vessel.com" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Vessel Phone / Sat (#ShipPhone)</label>
+                    <input type="text" id="vesselPhoneInput" placeholder="+870 773..." class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-slate-300 font-semibold mb-1">Owner / Management Company (#OwnerName)</label>
+                    <input type="text" id="ownerNameInput" placeholder="Company Name" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Contact Email (#ContactEmail)</label>
+                    <input type="email" id="contactEmailInput" placeholder="dpa@company.com" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Contact Phone (#ContactPhone)</label>
+                    <input type="text" id="contactPhoneInput" placeholder="+62..." class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
+                </div>
+
+                <div class="sm:col-span-2 flex justify-end gap-2 pt-3 border-t border-white/10 mt-1">
+                    <button type="button" onclick="closeVesselInfoModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold flex items-center gap-1.5 shadow-md">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Vessel Info</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 2: CELL EXTRACTOR -->
+    <!-- ========================================== -->
+    <div id="cellExtractorModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 border border-white/15 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-purple-400"></i>
+                    <span>⚡ Quick ENC Cell Extractor & Formatter</span>
+                </h3>
+                <button onclick="closeCellExtractorModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400">
+                Paste any unstructured text, email, ECDIS route waypoint list, or raw table. The extractor scans for all 8-character ENC codes (<code class="text-sky-300">AU130120</code>, <code class="text-sky-300">GB401234</code>, etc.) and formats them automatically:
+            </p>
+
+            <div class="flex flex-col gap-3">
+                <div>
+                    <label class="block text-slate-300 font-semibold text-xs mb-1">Input Text / Paste Zone:</label>
+                    <textarea id="extractorInput" rows="5" placeholder="Paste raw text, CSV data, route plan, or chart list here..."
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-purple-400 rounded-lg p-2.5 text-xs text-white font-mono-tech outline-none custom-scrollbar"
+                        oninput="runCellExtractor()"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                            <input type="checkbox" id="extractorUniqueOnly" checked onchange="runCellExtractor()" class="rounded bg-slate-950 border-slate-700 text-purple-500">
+                            <span>Unique Only</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer ml-3">
+                            <input type="checkbox" id="extractorSortAlpha" checked onchange="runCellExtractor()" class="rounded bg-slate-950 border-slate-700 text-purple-500">
+                            <span>Sort Alphabetical</span>
+                        </label>
+                    </div>
+                    <span id="extractorCountBadge" class="font-mono-tech text-purple-400 font-bold">0 cells detected</span>
+                </div>
+
+                <div>
+                    <label class="block text-emerald-400 font-semibold text-xs mb-1">Extracted Clean Comma-Separated List:</label>
+                    <textarea id="extractorOutput" rows="4" readonly placeholder="Extracted cell codes will appear here..."
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-emerald-300 font-mono-tech outline-none custom-scrollbar"></textarea>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/10 mt-1">
+                <button type="button" onclick="closeCellExtractorModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">Close</button>
+                <button type="button" onclick="copyExtractorOutput()" class="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-600 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copy to Clipboard</span>
+                </button>
+                <button type="button" onclick="addExtractorToBasket()" class="px-4 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>Add to Order Basket</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL 3: PASTE PERMIT TEXT -->
+    <!-- ========================================== -->
+    <div id="pastePermitModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-xl rounded-2xl p-6 border border-white/15 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-lines text-sky-400"></i>
+                    <span>Paste Raw S-63 Permit Text</span>
+                </h3>
+                <button onclick="closePastePermitModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400">
+                Paste contents of <code class="text-sky-300">PERMIT.TXT</code> or <code class="text-sky-300">ENC.PMT</code> below (supports <code class="text-slate-200">:DATE ...</code> and standard 16-character alphanumeric entries):
+            </p>
+
+            <textarea id="rawPermitInput" rows="8" placeholder="Paste permit lines here... (e.g. GB40123420261031...)"
+                class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg p-2.5 text-xs text-white font-mono-tech outline-none custom-scrollbar"></textarea>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-white/10 mt-1">
+                <button type="button" onclick="closePastePermitModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">Cancel</button>
+                <button type="button" onclick="processPastedPermit()" class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Parse & Load Permit</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-3 bg-slate-900 border border-sky-400/40 px-4 py-3 rounded-xl shadow-2xl text-xs font-mono-tech">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <div>
+            <div id="toastTitle" class="font-bold text-white">Notification</div>
+            <div id="toastMessage" class="text-slate-400 text-[11px]">Message text</div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Data Structures
+        let orderBasket = []; // Array of { productType, productNumber, productTitle, scale, status, isDuplicate, duplicateCount, inInventory, daysLeft, expiryStr, selected }
+        let permitInventory = []; // Array of { cellId, productTitle, scale, expiryDate, expiryStr, daysLeft, statusLevel, statusLabel, selected }
+        let permitIssueDate = "";
+        let permitFileName = "";
+        
+        let vesselInfo = {
+            ShipName: "PROSPERA",
+            ShipType: "Commercial Vessel",
+            ShipEmail: "",
+            ShipPhone: "",
+            OwnerName: "",
+            ContactEmail: "",
+            ContactPhone: ""
+        };
+
+        // Initialize from localStorage
+        function initApp() {
+            // Load vessel info
+            const savedVessel = localStorage.getItem('enc_vessel_info');
+            if (savedVessel) {
+                try {
+                    vesselInfo = Object.assign(vesselInfo, JSON.parse(savedVessel));
+                } catch(e){}
+            }
+            updateVesselDisplay();
+
+            // Load saved basket if any
+            const savedBasket = localStorage.getItem('enc_order_basket');
+            if (savedBasket) {
+                try {
+                    orderBasket = JSON.parse(savedBasket);
+                } catch(e){}
+            }
+
+            // Load saved permit if any
+            const savedPermit = localStorage.getItem('enc_permit_cache');
+            if (savedPermit) {
+                try {
+                    const parsed = JSON.parse(savedPermit);
+                    if (parsed.items && parsed.items.length) {
+                        parsePermitText(parsed.rawText, parsed.fileName || "Cached_PERMIT.TXT");
+                    }
+                } catch(e){}
+            }
+
+            refreshDuplicatesAndInventory();
+            renderBasketTable();
+            renderInventoryTable();
+
+            // Keyboard shortcut Ctrl+V for paste
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+                    // Only trigger if not typing in an input/textarea
+                    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                    if (tag !== 'input' && tag !== 'textarea') {
+                        handlePasteClipboard();
+                    }
+                }
+            });
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            const btnBasket = document.getElementById('btnTabBasket');
+            const btnInventory = document.getElementById('btnTabInventory');
+            const contentBasket = document.getElementById('tabContentBasket');
+            const contentInventory = document.getElementById('tabContentInventory');
+
+            if (tabId === 'basket') {
+                btnBasket.classList.add('active');
+                btnInventory.classList.remove('active');
+                contentBasket.classList.remove('hidden');
+                contentInventory.classList.add('hidden');
+            } else {
+                btnInventory.classList.add('active');
+                btnBasket.classList.remove('active');
+                contentInventory.classList.remove('hidden');
+                contentBasket.classList.add('hidden');
+            }
+        }
+
+        // Database Lookup for ENC cell (from window.ENC_CATALOGUE)
+        function lookupCellCatalogue(cellId) {
+            const cid = (cellId || '').trim().toUpperCase();
+            if (window.ENC_CATALOGUE && window.ENC_CATALOGUE[cid]) {
+                const item = window.ENC_CATALOGUE[cid];
+                return {
+                    cellId: cid,
+                    title: item[0] || `ENC Cell ${cid}`,
+                    scale: item[1] || '1 : 180000',
+                    usage: item[2] || 'Standard'
+                };
+            }
+            return {
+                cellId: cid,
+                title: `ENC Cell ${cid}`,
+                scale: '1 : 180000',
+                usage: 'Custom'
+            };
+        }
+
+        // Extract 8-character ENC codes from any text
+        function extractCellCodes(text, uniqueOnly = true, sortAlphabetical = true) {
+            if (!text) return [];
+            const matches = text.match(/\b[A-Za-z0-9]{8}\b/g) || [];
+            let codes = matches.map(c => c.toUpperCase());
+            if (uniqueOnly) {
+                codes = Array.from(new Set(codes));
+            }
+            if (sortAlphabetical) {
+                codes.sort();
+            }
+            return codes;
+        }
+
+        // Update Duplicates & Cross-Reference with Permit Inventory
+        function refreshDuplicatesAndInventory() {
+            const counts = {};
+            orderBasket.forEach(it => {
+                const cid = it.productNumber;
+                counts[cid] = (counts[cid] || 0) + 1;
+            });
+
+            // Map permit inventory items
+            const permitMap = {};
+            permitInventory.forEach(p => {
+                permitMap[p.cellId] = p;
+            });
+
+            orderBasket.forEach(it => {
+                const cid = it.productNumber;
+                const count = counts[cid] || 1;
+                it.isDuplicate = (count > 1);
+                it.duplicateCount = count;
+
+                const pItem = permitMap[cid];
+                if (pItem) {
+                    it.inInventory = true;
+                    it.daysLeft = pItem.daysLeft;
+                    it.expiryStr = pItem.expiryStr;
+                } else {
+                    it.inInventory = false;
+                    it.daysLeft = null;
+                    it.expiryStr = "";
+                }
+            });
+
+            // Save to localStorage
+            localStorage.setItem('enc_order_basket', JSON.stringify(orderBasket));
+
+            // Update badges & stats
+            updateStatistics();
+        }
+
+        // Statistics Update
+        function updateStatistics() {
+            const total = orderBasket.length;
+            const unique = new Set(orderBasket.map(it => it.productNumber)).size;
+            const dups = total - unique;
+            const newCharts = orderBasket.filter(it => !it.inInventory).length;
+
+            document.getElementById('statTotalRows').innerText = total;
+            document.getElementById('statUniqueCells').innerText = unique;
+            document.getElementById('statDuplicates').innerText = dups;
+            document.getElementById('statNewCharts').innerText = newCharts;
+            document.getElementById('tabBasketBadge').innerText = total;
+
+            document.getElementById('tabInventoryBadge').innerText = permitInventory.length;
+        }
+
+        // ==========================================
+        // BASKET OPERATIONS
+        // ==========================================
+        function addCellsToBasket(rawCells, options = {}) {
+            let countAdded = 0;
+            rawCells.forEach(cellId => {
+                const cid = cellId.trim().toUpperCase();
+                if (cid.length === 8) {
+                    const meta = lookupCellCatalogue(cid);
+                    orderBasket.push({
+                        productType: "ENC Units",
+                        productNumber: cid,
+                        productTitle: meta.title,
+                        scale: meta.scale,
+                        status: "",
+                        isDuplicate: false,
+                        duplicateCount: 1,
+                        inInventory: false,
+                        daysLeft: null,
+                        expiryStr: "",
+                        selected: false
+                    });
+                    countAdded++;
+                }
+            });
+
+            refreshDuplicatesAndInventory();
+            renderBasketTable();
+
+            if (countAdded > 0) {
+                showToast("Charts Added", `Successfully added ${countAdded} chart cell(s) to Order Basket.`);
+            }
+            return countAdded;
+        }
+
+        function addFromQuickInput() {
+            const input = document.getElementById('quickAddInput');
+            const val = input.value.trim();
+            if (!val) return;
+            const cells = extractCellCodes(val, false, false);
+            if (cells.length > 0) {
+                addCellsToBasket(cells);
+                input.value = "";
+            } else {
+                showToast("Invalid Input", "Please enter valid 8-character ENC cell codes.", "warning");
+            }
+        }
+
+        async function handlePasteClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    showToast("Clipboard Empty", "No text found in clipboard.", "warning");
+                    return;
+                }
+                processImportedText(text, "Clipboard Paste");
+            } catch(err) {
+                // Fallback prompt
+                const text = prompt("Paste your ENC codes or text here:");
+                if (text) {
+                    processImportedText(text, "Clipboard Input");
+                }
+            }
+        }
+
+        function handleBasketFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                processImportedText(content, file.name);
+                event.target.value = ""; // Reset
+            };
+            reader.readAsText(file);
+        }
+
+        function processImportedText(text, sourceName) {
+            if (!text) return;
+
+            // 1. Detect Vessel Name from text (e.g. ECDIS reports)
+            const mVessel = text.match(/Vessel\s*Name:\s*([^,\r\n]+)/i) || text.match(/#ShipName\|([^\r\n]+)/i);
+            if (mVessel && mVessel[1]) {
+                const detectedName = mVessel[1].trim();
+                if (detectedName) {
+                    vesselInfo.ShipName = detectedName;
+                    updateVesselDisplay();
+                    localStorage.setItem('enc_vessel_info', JSON.stringify(vesselInfo));
+                }
+            }
+
+            // 2. Check if official ADMIRALTY tab-delimited basket file
+            const lines = text.trim().split(/\r?\n/);
+            const isBasketFormat = lines.some(l => l.startsWith("Product Type\t") || l.startsWith("ENC Units\t"));
+
+            if (isBasketFormat) {
+                let added = 0;
+                lines.forEach(line => {
+                    const parts = line.split("\t");
+                    if (parts.length >= 4 && parts[0] === "ENC Units") {
+                        const cid = parts[1].trim().toUpperCase();
+                        const title = parts[2].trim();
+                        const scale = parts[3].trim();
+                        const stat = parts.length > 4 ? parts[4].trim() : "";
+                        orderBasket.push({
+                            productType: "ENC Units",
+                            productNumber: cid,
+                            productTitle: title || lookupCellCatalogue(cid).title,
+                            scale: scale || lookupCellCatalogue(cid).scale,
+                            status: stat,
+                            isDuplicate: false,
+                            duplicateCount: 1,
+                            inInventory: false,
+                            daysLeft: null,
+                            expiryStr: "",
+                            selected: false
+                        });
+                        added++;
+                    } else if (line.startsWith("#")) {
+                        const mMeta = line.match(/^#([A-Za-z]+)\|(.*)$/);
+                        if (mMeta && mMeta[1] in vesselInfo) {
+                            vesselInfo[mMeta[1]] = mMeta[2].trim();
+                        }
+                    }
+                });
+                updateVesselDisplay();
+                localStorage.setItem('enc_vessel_info', JSON.stringify(vesselInfo));
+                refreshDuplicatesAndInventory();
+                renderBasketTable();
+                showToast("Basket Imported", `Loaded ${added} chart(s) from ${sourceName}.`);
+                return;
+            }
+
+            // 3. Otherwise extract 8-character codes
+            const foundCells = extractCellCodes(text, false, false);
+            if (foundCells.length > 0) {
+                addCellsToBasket(foundCells);
+                showToast("Import Success", `Extracted and added ${foundCells.length} chart(s) from ${sourceName}.`);
+            } else {
+                showToast("No Charts Found", `Could not find any 8-character ENC cell codes in ${sourceName}.`, "warning");
+            }
+        }
+
+        // Add from Inventory to Basket
+        function addFromInventory(mode) {
+            if (!permitInventory || permitInventory.length === 0) {
+                showToast("No Permit Loaded", "Please load a PERMIT.TXT or ENC.PMT file first.", "warning");
+                switchTab('inventory');
+                return;
+            }
+
+            let cellsToAdd = [];
+            if (mode === 'all') {
+                cellsToAdd = permitInventory.map(p => p.cellId);
+            } else if (mode === 'expiring') {
+                cellsToAdd = permitInventory.filter(p => p.daysLeft <= 30).map(p => p.cellId);
+            } else if (mode === 'active') {
+                cellsToAdd = permitInventory.filter(p => p.daysLeft > 30).map(p => p.cellId);
+            }
+
+            if (cellsToAdd.length === 0) {
+                showToast("No Matching Charts", `No charts found for criteria: ${mode}.`, "warning");
+                return;
+            }
+
+            addCellsToBasket(cellsToAdd);
+        }
+
+        // Deduplication
+        function removeDuplicates() {
+            const seen = new Set();
+            const deduped = [];
+            let removedCount = 0;
+
+            orderBasket.forEach(it => {
+                const cid = it.productNumber;
+                if (!seen.has(cid)) {
+                    seen.add(cid);
+                    deduped.push(it);
+                } else {
+                    removedCount++;
+                }
+            });
+
+            orderBasket = deduped;
+            refreshDuplicatesAndInventory();
+            renderBasketTable();
+
+            if (removedCount > 0) {
+                showToast("Duplicates Cleaned", `Removed ${removedCount} duplicate entry/entries.`);
+            } else {
+                showToast("Clean", "No duplicate chart entries in basket.");
+            }
+        }
+
+        // Delete Selected Rows
+        function deleteSelectedBasketRows() {
+            const initialCount = orderBasket.length;
+            orderBasket = orderBasket.filter(it => !it.selected);
+            const deleted = initialCount - orderBasket.length;
+            
+            if (deleted > 0) {
+                refreshDuplicatesAndInventory();
+                renderBasketTable();
+                showToast("Deleted", `Removed ${deleted} selected row(s).`);
+            } else {
+                showToast("No Selection", "Please select rows to delete.", "warning");
+            }
+        }
+
+        function clearBasket() {
+            if (orderBasket.length === 0) return;
+            if (confirm("Are you sure you want to completely clear the Order Basket?")) {
+                orderBasket = [];
+                refreshDuplicatesAndInventory();
+                renderBasketTable();
+                showToast("Cleared", "Order Basket has been cleared.");
+            }
+        }
+
+        // Selection Handlers
+        function toggleSelectAllBasket(checked) {
+            orderBasket.forEach(it => it.selected = checked);
+            renderBasketTable();
+        }
+
+        function toggleBasketRowSelect(idx, checked) {
+            if (orderBasket[idx]) {
+                orderBasket[idx].selected = checked;
+            }
+        }
+
+        function selectBasketRows(filterType) {
+            orderBasket.forEach(it => {
+                if (filterType === 'all') it.selected = true;
+                else if (filterType === 'none') it.selected = false;
+                else if (filterType === 'in_inventory') it.selected = it.inInventory;
+                else if (filterType === 'crit') it.selected = (it.inInventory && it.daysLeft !== null && it.daysLeft <= 30);
+                else if (filterType === 'act') it.selected = (it.inInventory && it.daysLeft !== null && it.daysLeft > 30);
+                else if (filterType === 'new') it.selected = !it.inInventory;
+                else if (filterType === 'dup') it.selected = it.isDuplicate;
+            });
+            renderBasketTable();
+        }
+
+        // Render Basket Table
+        function renderBasketTable() {
+            const tbody = document.getElementById('basketTableBody');
+            const emptyState = document.getElementById('basketEmptyState');
+            const searchVal = document.getElementById('basketSearchInput').value.toLowerCase().trim();
+            const filterType = document.getElementById('basketFilterSelect').value;
+
+            if (orderBasket.length === 0) {
+                tbody.innerHTML = "";
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            let html = "";
+            let visibleIdx = 1;
+
+            orderBasket.forEach((item, index) => {
+                // Filter logic
+                if (filterType === 'in_inventory' && !item.inInventory) return;
+                if (filterType === 'crit_inventory' && (!item.inInventory || item.daysLeft === null || item.daysLeft > 30)) return;
+                if (filterType === 'act_inventory' && (!item.inInventory || item.daysLeft === null || item.daysLeft <= 30)) return;
+                if (filterType === 'new_charts' && item.inInventory) return;
+                if (filterType === 'duplicates' && !item.isDuplicate) return;
+
+                // Search logic
+                if (searchVal) {
+                    const text = `${item.productNumber} ${item.productTitle} ${item.scale}`.toLowerCase();
+                    if (!text.includes(searchVal)) return;
+                }
+
+                // Status Badge for Permit
+                let permitBadge = '<span class="bg-indigo-950/60 text-indigo-300 border border-indigo-700/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🆕 Not in Permit (New)</span>';
+                if (item.inInventory) {
+                    if (item.daysLeft <= 0) {
+                        permitBadge = `<span class="bg-rose-950/60 text-rose-300 border border-rose-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🔴 Expired (${Math.abs(item.daysLeft)}d ago)</span>`;
+                    } else if (item.daysLeft <= 30) {
+                        permitBadge = `<span class="bg-orange-950/60 text-orange-300 border border-orange-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🟠 Expiring (${item.daysLeft}d left)</span>`;
+                    } else if (item.daysLeft <= 60) {
+                        permitBadge = `<span class="bg-yellow-950/60 text-yellow-300 border border-yellow-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🟡 Warning (${item.daysLeft}d left)</span>`;
+                    } else {
+                        permitBadge = `<span class="bg-emerald-950/60 text-emerald-300 border border-emerald-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🟢 Active (${item.daysLeft}d left)</span>`;
+                    }
+                }
+
+                // Duplicate Badge
+                let dupBadge = '<span class="text-slate-500 font-mono-tech text-[10px]">OK</span>';
+                if (item.isDuplicate) {
+                    dupBadge = `<span class="bg-rose-900/60 text-rose-300 border border-rose-500/50 px-2 py-0.5 rounded text-[10px] font-mono-tech font-bold animate-pulse">⚠️ DUPLICATE (${item.duplicateCount}x)</span>`;
+                }
+
+                const rowBg = item.selected ? 'bg-sky-950/40' : (item.isDuplicate ? 'bg-rose-950/20' : 'hover:bg-slate-800/40');
+
+                html += `
+                <tr class="${rowBg} transition-colors border-b border-slate-800/40">
+                    <td class="py-2 px-3 text-center">
+                        <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleBasketRowSelect(${index}, this.checked)" class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                    </td>
+                    <td class="py-2 px-3 text-center font-mono-tech text-slate-500">${visibleIdx++}</td>
+                    <td class="py-2 px-3 text-slate-400 font-mono-tech">${item.productType}</td>
+                    <td class="py-2 px-3 font-mono-tech font-bold text-sky-300">${item.productNumber}</td>
+                    <td class="py-2 px-3 text-slate-200">${item.productTitle}</td>
+                    <td class="py-2 px-3 text-center font-mono-tech text-slate-400">${item.scale}</td>
+                    <td class="py-2 px-3 text-center">${dupBadge}</td>
+                    <td class="py-2 px-3 text-center">${permitBadge}</td>
+                    <td class="py-2 px-3 text-center">
+                        <button onclick="deleteSingleBasketItem(${index})" class="text-slate-500 hover:text-rose-400 p-1" title="Delete chart">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function deleteSingleBasketItem(idx) {
+            if (orderBasket[idx]) {
+                orderBasket.splice(idx, 1);
+                refreshDuplicatesAndInventory();
+                renderBasketTable();
+            }
+        }
+
+        // Copy Cell Codes Only
+        function copyBasketCellCodes() {
+            if (orderBasket.length === 0) {
+                showToast("Basket Empty", "No charts to copy.", "warning");
+                return;
+            }
+            // Check if any selected
+            const selected = orderBasket.filter(it => it.selected);
+            const source = selected.length > 0 ? selected : orderBasket;
+            const uniqueCodes = Array.from(new Set(source.map(it => it.productNumber))).sort();
+            const text = uniqueCodes.join(", ");
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Copied!", `Copied ${uniqueCodes.length} cell codes to clipboard: ${text.substring(0, 40)}...`);
+            });
+        }
+
+        // Copy Full Basket
+        function copyFullBasketText() {
+            if (orderBasket.length === 0) return;
+            const lines = ["Product Type\tProduct Number\tProduct Title\tScale\tStatus"];
+            orderBasket.forEach(it => {
+                lines.push(`${it.productType}\t${it.productNumber}\t${it.productTitle}\t${it.scale}\t${it.status}`);
+            });
+            navigator.clipboard.writeText(lines.join("\n")).then(() => {
+                showToast("Copied Full Basket", "Tab-delimited table copied to clipboard.");
+            });
+        }
+
+        // Export Official ADMIRALTY .txt
+        function exportBasketTxt() {
+            if (orderBasket.length === 0) {
+                showToast("Basket Empty", "Nothing to export.", "warning");
+                return;
+            }
+
+            const lines = ["Product Type\tProduct Number\tProduct Title\tScale\tStatus"];
+            orderBasket.forEach(it => {
+                lines.push(`${it.productType}\t${it.productNumber}\t${it.productTitle}\t${it.scale}\t${it.status}`);
+            });
+
+            // Metadata block
+            lines.push(`#ShipName|${vesselInfo.ShipName}`);
+            lines.push(`#ShipType|${vesselInfo.ShipType}`);
+            lines.push(`#ShipEmail|${vesselInfo.ShipEmail}`);
+            lines.push(`#ShipPhone|${vesselInfo.ShipPhone}`);
+            lines.push(`#OwnerName|${vesselInfo.OwnerName}`);
+            lines.push(`#ContactEmail|${vesselInfo.ContactEmail}`);
+            lines.push(`#ContactPhone|${vesselInfo.ContactPhone}`);
+
+            const content = lines.join("\n") + "\n";
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const safeName = (vesselInfo.ShipName || "VESSEL").replace(/[^a-zA-Z0-9_-]/g, '_');
+            downloadFile(content, `ENC_Order_Basket_${safeName}_${dateStr}.txt`, 'text/plain');
+            showToast("Exported", "Official ADMIRALTY Order Basket (.txt) saved successfully.");
+        }
+
+        // Export PDF Requisition Report
+        function exportBasketPDF() {
+            if (orderBasket.length === 0) {
+                showToast("Basket Empty", "Cannot generate PDF for empty basket.", "warning");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'pt',
+                format: 'a4'
+            });
+
+            const vesselName = vesselInfo.ShipName || "PROSPERA";
+            const vesselType = vesselInfo.ShipType || "Commercial Vessel";
+            const total = orderBasket.length;
+            const unique = new Set(orderBasket.map(it => it.productNumber)).size;
+            const newCharts = orderBasket.filter(it => !it.inInventory).length;
+            const renewals = total - newCharts;
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + " UTC";
+
+            // Header Banner
+            doc.setFillColor(15, 23, 42); // slate-900
+            doc.rect(0, 0, 595.28, 70, 'F');
+
+            doc.setTextColor(56, 189, 248); // sky-400
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text("ENC CHART REQUISITION ORDER REPORT", 30, 32);
+
+            doc.setTextColor(203, 213, 225);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text("Official UKHO ADMIRALTY / AVCS Format &bull; Generated via Bridge Navigation Suite", 30, 48);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(244, 63, 94);
+            doc.text(`REF: REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`, 450, 32);
+
+            // Vessel Information Box
+            doc.setDrawColor(203, 213, 225);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(30, 85, 535, 60, 4, 4, 'FD');
+
+            doc.setFontSize(9);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Vessel Name:", 40, 102);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vesselName, 110, 102);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Vessel Type:", 40, 118);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vesselType, 110, 118);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Order Date:", 40, 134);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${dateStr} ${timeStr}`, 110, 134);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Owner / Manager:", 310, 102);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vesselInfo.OwnerName || "-", 400, 102);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Contact Email:", 310, 118);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vesselInfo.ContactEmail || vesselInfo.ShipEmail || "-", 400, 118);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Summary:", 310, 134);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${total} Charts (${newCharts} New, ${renewals} Renewals)`, 400, 134);
+
+            // KPI Summary Row
+            const tableData = orderBasket.map((it, idx) => {
+                let statusText = it.inInventory 
+                    ? (it.daysLeft <= 0 ? `Expired (${Math.abs(it.daysLeft)}d ago)` : `Permit (${it.daysLeft}d left)`) 
+                    : "New License";
+                return [
+                    idx + 1,
+                    it.productType,
+                    it.productNumber,
+                    it.productTitle,
+                    it.scale,
+                    it.isDuplicate ? "DUPLICATE" : "OK",
+                    statusText
+                ];
+            });
+
+            doc.autoTable({
+                startY: 160,
+                head: [['#', 'Type', 'Cell ID', 'Product Title', 'Scale', 'Dup', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 4,
+                    textColor: [30, 41, 59]
+                },
+                headStyles: {
+                    fillColor: [2, 132, 199], // sky-600
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 250, 252]
+                },
+                columnStyles: {
+                    0: { cellWidth: 25, halign: 'center' },
+                    1: { cellWidth: 55, halign: 'center' },
+                    2: { cellWidth: 65, fontStyle: 'bold', halign: 'center' },
+                    3: { cellWidth: 'auto' },
+                    4: { cellWidth: 60, halign: 'center' },
+                    5: { cellWidth: 40, halign: 'center' },
+                    6: { cellWidth: 80, halign: 'center' }
+                },
+                foot: [[
+                    { content: `Total Order: ${total} Chart Units (Unique: ${unique})`, colSpan: 7, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }
+                ]],
+                didDrawPage: function(data) {
+                    // Footer
+                    const str = `Page ${doc.internal.getNumberOfPages()}`;
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text("Database created by @c.wijaya.t (https://www.instagram.com/c.wijaya.t/)", 30, 820);
+                    doc.text(str, 540, 820);
+                }
+            });
+
+            // Signatures block at end
+            const finalY = doc.lastAutoTable.finalY + 30;
+            if (finalY < 740) {
+                doc.setDrawColor(203, 213, 225);
+                doc.line(40, finalY + 40, 200, finalY + 40);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text("Prepared By: 2nd Officer / Nav Officer", 40, finalY + 52);
+
+                doc.line(380, finalY + 40, 540, finalY + 40);
+                doc.text("Approved By: Master / Captain", 380, finalY + 52);
+            }
+
+            const safeName = (vesselInfo.ShipName || "VESSEL").replace(/[^a-zA-Z0-9_-]/g, '_');
+            doc.save(`ENC_Order_Requisition_${safeName}_${now.toISOString().slice(0, 10)}.pdf`);
+            showToast("PDF Generated", "Requisition Order PDF generated and downloaded.");
+        }
+
+        // ==========================================
+        // PERMIT INVENTORY OPERATIONS
+        // ==========================================
+        function handlePermitFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parsePermitText(text, file.name);
+                event.target.value = "";
+            };
+            reader.readAsText(file);
+        }
+
+        function openPastePermitModal() {
+            document.getElementById('pastePermitModal').classList.remove('hidden');
+            document.getElementById('rawPermitInput').value = "";
+        }
+
+        function closePastePermitModal() {
+            document.getElementById('pastePermitModal').classList.add('hidden');
+        }
+
+        function processPastedPermit() {
+            const text = document.getElementById('rawPermitInput').value.trim();
+            if (!text) {
+                showToast("Empty Input", "Please paste permit lines.", "warning");
+                return;
+            }
+            parsePermitText(text, "Pasted_PERMIT.TXT");
+            closePastePermitModal();
+        }
+
+        function parsePermitText(text, fileName = "PERMIT.TXT") {
+            const lines = text.trim().split(/\r?\n/);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const rawEntries = [];
+            let detectedDate = "";
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+                if (line.startsWith(":DATE")) {
+                    const parts = line.split(/\s+/);
+                    if (parts.length >= 2) detectedDate = parts.slice(1).join(" ");
+                    return;
+                }
+                if (line.startsWith(":")) return;
+
+                // Line format in S-63: 8 chars cell ID + 8 chars date YYYYMMDD
+                if (line.length >= 16) {
+                    const cellId = line.substring(0, 8).toUpperCase();
+                    const dateStr = line.substring(8, 16);
+                    if (/^[A-Z0-9]{8}$/.test(cellId) && /^\d{8}$/.test(dateStr)) {
+                        const y = parseInt(dateStr.substring(0, 4), 10);
+                        const m = parseInt(dateStr.substring(4, 6), 10) - 1;
+                        const d = parseInt(dateStr.substring(6, 8), 10);
+                        const expDate = new Date(y, m, d);
+                        rawEntries.push({ cellId, expDate });
+                    }
+                }
+            });
+
+            if (rawEntries.length === 0) {
+                showToast("Invalid Permit", "No valid S-63 ENC permit entries found in file.", "warning");
+                return;
+            }
+
+            permitFileName = fileName;
+            permitIssueDate = detectedDate;
+
+            permitInventory = rawEntries.map(entry => {
+                const meta = lookupCellCatalogue(entry.cellId);
+                const diffTime = entry.expDate.getTime() - today.getTime();
+                const daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const expiryStr = entry.expDate.toISOString().slice(0, 10);
+
+                let statusLevel = 3; // 0=Expired, 1=Critical, 2=Warning, 3=Active
+                let statusLabel = "";
+
+                if (daysLeft < 0) {
+                    statusLevel = 0;
+                    statusLabel = `🔴 Expired (${Math.abs(daysLeft)}d ago)`;
+                } else if (daysLeft === 0) {
+                    statusLevel = 0;
+                    statusLabel = "🔴 Expires Today";
+                } else if (daysLeft <= 30) {
+                    statusLevel = 1;
+                    statusLabel = `🟠 ${daysLeft}d left (Critical)`;
+                } else if (daysLeft <= 60) {
+                    statusLevel = 2;
+                    statusLabel = `🟡 ${daysLeft}d left (Warning)`;
+                } else {
+                    statusLevel = 3;
+                    statusLabel = `🟢 ${daysLeft}d left (Active)`;
+                }
+
+                return {
+                    cellId: entry.cellId,
+                    productTitle: meta.title,
+                    scale: meta.scale,
+                    expiryDate: entry.expDate,
+                    expiryStr: expiryStr,
+                    daysLeft: daysLeft,
+                    statusLevel: statusLevel,
+                    statusLabel: statusLabel,
+                    selected: false
+                };
+            });
+
+            // Sort by days left ascending (expired / critical first)
+            permitInventory.sort((a, b) => a.daysLeft - b.daysLeft);
+
+            // Save cache in localStorage
+            localStorage.setItem('enc_permit_cache', JSON.stringify({
+                rawText: text,
+                fileName: fileName,
+                issueDate: detectedDate,
+                itemsCount: permitInventory.length
+            }));
+
+            // Update UI
+            document.getElementById('permitLoadedFileName').innerText = fileName;
+            document.getElementById('permitStatusLabel').innerText = `${fileName} (${permitInventory.length} cells)`;
+            if (detectedDate) {
+                const badge = document.getElementById('permitIssueDateBadge');
+                badge.innerText = `Issue: ${detectedDate}`;
+                badge.classList.remove('hidden');
+            }
+
+            updateInventoryKPIs();
+            renderInventoryTable();
+            refreshDuplicatesAndInventory();
+            renderBasketTable();
+
+            showToast("Permit Loaded", `Successfully parsed ${permitInventory.length} chart permits from ${fileName}.`);
+        }
+
+        function updateInventoryKPIs() {
+            const total = permitInventory.length;
+            const expired = permitInventory.filter(p => p.statusLevel === 0).length;
+            const critical = permitInventory.filter(p => p.statusLevel === 1).length;
+            const warning = permitInventory.filter(p => p.statusLevel === 2).length;
+            const active = permitInventory.filter(p => p.statusLevel === 3).length;
+
+            document.getElementById('kpiTotal').innerText = total;
+            document.getElementById('kpiExpired').innerText = expired;
+            document.getElementById('kpiCritical').innerText = critical;
+            document.getElementById('kpiWarning').innerText = warning;
+            document.getElementById('kpiActive').innerText = active;
+        }
+
+        // Render Inventory Table
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            const emptyState = document.getElementById('inventoryEmptyState');
+            const searchVal = document.getElementById('inventorySearchInput').value.toLowerCase().trim();
+            const filterType = document.getElementById('inventoryFilterSelect').value;
+
+            if (permitInventory.length === 0) {
+                tbody.innerHTML = "";
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            let html = "";
+            let visibleIdx = 1;
+
+            permitInventory.forEach((item, index) => {
+                // Filter logic
+                if (filterType === 'crit_exp' && item.daysLeft > 30) return;
+                if (filterType === 'expired' && item.statusLevel !== 0) return;
+                if (filterType === 'critical' && item.statusLevel !== 1) return;
+                if (filterType === 'warning' && item.statusLevel !== 2) return;
+                if (filterType === 'active' && item.statusLevel !== 3) return;
+
+                // Search logic
+                if (searchVal) {
+                    const text = `${item.cellId} ${item.productTitle} ${item.expiryStr}`.toLowerCase();
+                    if (!text.includes(searchVal)) return;
+                }
+
+                // Color badge
+                let badgeClass = "bg-emerald-950/60 text-emerald-300 border-emerald-600/50";
+                if (item.statusLevel === 0) badgeClass = "bg-rose-950/60 text-rose-300 border-rose-600/50";
+                else if (item.statusLevel === 1) badgeClass = "bg-orange-950/60 text-orange-300 border-orange-600/50";
+                else if (item.statusLevel === 2) badgeClass = "bg-yellow-950/60 text-yellow-300 border-yellow-600/50";
+
+                const rowBg = item.selected ? 'bg-sky-950/40' : (item.statusLevel === 0 ? 'bg-rose-950/15' : (item.statusLevel === 1 ? 'bg-orange-950/15' : 'hover:bg-slate-800/40'));
+
+                html += `
+                <tr class="${rowBg} transition-colors border-b border-slate-800/40">
+                    <td class="py-2 px-3 text-center">
+                        <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="toggleInventoryRowSelect(${index}, this.checked)" class="rounded bg-slate-950 border-slate-700 text-sky-500 focus:ring-0">
+                    </td>
+                    <td class="py-2 px-3 text-center font-mono-tech text-slate-500">${visibleIdx++}</td>
+                    <td class="py-2 px-3 font-mono-tech font-bold text-sky-300">${item.cellId}</td>
+                    <td class="py-2 px-3 text-slate-200">${item.productTitle}</td>
+                    <td class="py-2 px-3 text-center font-mono-tech text-slate-400">${item.scale}</td>
+                    <td class="py-2 px-3 text-center font-mono-tech text-slate-300">${item.expiryStr}</td>
+                    <td class="py-2 px-3 text-center font-mono-tech font-bold ${item.daysLeft <= 30 ? 'text-orange-400' : 'text-slate-300'}">${item.daysLeft} d</td>
+                    <td class="py-2 px-3 text-center">
+                        <span class="${badgeClass} border px-2 py-0.5 rounded text-[10px] font-mono-tech">${item.statusLabel}</span>
+                    </td>
+                    <td class="py-2 px-3 text-center">
+                        <button onclick="addSinglePermitToBasket('${item.cellId}')" class="text-slate-400 hover:text-sky-400 p-1" title="Add to Order Basket">
+                            <i class="fa-solid fa-cart-plus text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function toggleSelectAllInventory(checked) {
+            permitInventory.forEach(p => p.selected = checked);
+            renderInventoryTable();
+        }
+
+        function toggleInventoryRowSelect(idx, checked) {
+            if (permitInventory[idx]) {
+                permitInventory[idx].selected = checked;
+            }
+        }
+
+        function addSinglePermitToBasket(cellId) {
+            addCellsToBasket([cellId]);
+        }
+
+        function transferPermitToBasket(criteria) {
+            let cells = [];
+            if (criteria === 'critical') {
+                cells = permitInventory.filter(p => p.daysLeft <= 30).map(p => p.cellId);
+            } else if (criteria === 'active') {
+                cells = permitInventory.filter(p => p.daysLeft > 30).map(p => p.cellId);
+            } else if (criteria === 'all') {
+                cells = permitInventory.map(p => p.cellId);
+            } else if (criteria === 'selected') {
+                cells = permitInventory.filter(p => p.selected).map(p => p.cellId);
+            }
+
+            if (cells.length === 0) {
+                showToast("No Charts Selected", "No charts match this selection.", "warning");
+                return;
+            }
+
+            addCellsToBasket(cells);
+            switchTab('basket');
+        }
+
+        function copyInventoryCellCodes() {
+            if (permitInventory.length === 0) return;
+            const selected = permitInventory.filter(p => p.selected);
+            const source = selected.length > 0 ? selected : permitInventory;
+            const codes = source.map(p => p.cellId).join(", ");
+            navigator.clipboard.writeText(codes).then(() => {
+                showToast("Copied", `Copied ${source.length} inventory cell codes.`);
+            });
+        }
+
+        function exportInventoryCSV() {
+            if (permitInventory.length === 0) return;
+            const rows = ["Cell ID,Product Title,Scale,Expiry Date,Days Left,Status"];
+            permitInventory.forEach(p => {
+                const cleanTitle = (p.productTitle || "").replace(/"/g, '""');
+                rows.push(`"${p.cellId}","${cleanTitle}","${p.scale}","${p.expiryStr}",${p.daysLeft},"${p.statusLabel}"`);
+            });
+            downloadFile(rows.join("\n") + "\n", `ENC_Permit_Inventory_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
+            showToast("Exported CSV", "Inventory CSV file generated.");
+        }
+
+        function copyInventoryReportText() {
+            if (permitInventory.length === 0) return;
+            const lines = ["Cell ID\tProduct Title\tScale\tExpiry Date\tDays Left\tStatus"];
+            permitInventory.forEach(p => {
+                lines.push(`${p.cellId}\t${p.productTitle}\t${p.scale}\t${p.expiryStr}\t${p.daysLeft}\t${p.statusLabel}`);
+            });
+            navigator.clipboard.writeText(lines.join("\n")).then(() => {
+                showToast("Copied Report", "Inventory status report copied to clipboard.");
+            });
+        }
+
+        // Export Inventory PDF
+        function exportInventoryPDF() {
+            if (permitInventory.length === 0) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+            const vesselName = vesselInfo.ShipName || "PROSPERA";
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const total = permitInventory.length;
+            const expired = permitInventory.filter(p => p.statusLevel === 0).length;
+            const critical = permitInventory.filter(p => p.statusLevel === 1).length;
+            const warning = permitInventory.filter(p => p.statusLevel === 2).length;
+            const active = permitInventory.filter(p => p.statusLevel === 3).length;
+
+            // Banner
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 595.28, 70, 'F');
+
+            doc.setTextColor(56, 189, 248);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text("ECDIS ENC PERMIT AUDIT & EXPIRY REPORT", 30, 32);
+
+            doc.setTextColor(203, 213, 225);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text("Vessel Electronic Chart License Status & Expiry Verification", 30, 48);
+
+            // Meta Info
+            doc.setDrawColor(203, 213, 225);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(30, 85, 535, 60, 4, 4, 'FD');
+
+            doc.setFontSize(9);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Vessel Name:", 40, 102);
+            doc.setFont('helvetica', 'normal');
+            doc.text(vesselName, 110, 102);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Audit Date:", 40, 118);
+            doc.setFont('helvetica', 'normal');
+            doc.text(dateStr, 110, 118);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Permit Source:", 40, 134);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${permitFileName || "PERMIT.TXT"} (${permitIssueDate || "-"})`, 110, 134);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Status Breakdown:", 310, 102);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Total: ${total} | Active: ${active} | Warning: ${warning}`, 400, 102);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Action Required:", 310, 118);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Critical (<=30d): ${critical} | Expired: ${expired}`, 400, 118);
+
+            const tableData = permitInventory.map((p, idx) => [
+                idx + 1,
+                p.cellId,
+                p.productTitle,
+                p.scale,
+                p.expiryStr,
+                `${p.daysLeft} d`,
+                p.daysLeft <= 0 ? "EXPIRED" : (p.daysLeft <= 30 ? "CRITICAL" : (p.daysLeft <= 60 ? "WARNING" : "ACTIVE"))
+            ]);
+
+            doc.autoTable({
+                startY: 160,
+                head: [['#', 'Cell ID', 'Product Title', 'Scale', 'Expiry Date', 'Days Left', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 4, textColor: [30, 41, 59] },
+                headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                columnStyles: {
+                    0: { cellWidth: 25, halign: 'center' },
+                    1: { cellWidth: 70, fontStyle: 'bold', halign: 'center' },
+                    2: { cellWidth: 'auto' },
+                    3: { cellWidth: 65, halign: 'center' },
+                    4: { cellWidth: 70, halign: 'center' },
+                    5: { cellWidth: 55, halign: 'center' },
+                    6: { cellWidth: 65, halign: 'center' }
+                },
+                didDrawPage: function() {
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text("Database created by @c.wijaya.t (https://www.instagram.com/c.wijaya.t/)", 30, 820);
+                    doc.text(`Page ${doc.internal.getNumberOfPages()}`, 540, 820);
+                }
+            });
+
+            const safeName = (vesselInfo.ShipName || "VESSEL").replace(/[^a-zA-Z0-9_-]/g, '_');
+            doc.save(`ENC_Permit_Audit_${safeName}_${now.toISOString().slice(0, 10)}.pdf`);
+            showToast("PDF Exported", "Permit Audit & Expiry Report PDF generated.");
+        }
+
+        // ==========================================
+        // VESSEL INFO MODAL
+        // ==========================================
+        function updateVesselDisplay() {
+            document.getElementById('navVesselName').innerText = vesselInfo.ShipName || "PROSPERA";
+        }
+
+        function openVesselInfoModal() {
+            document.getElementById('vesselNameInput').value = vesselInfo.ShipName || "";
+            document.getElementById('vesselTypeInput').value = vesselInfo.ShipType || "";
+            document.getElementById('vesselEmailInput').value = vesselInfo.ShipEmail || "";
+            document.getElementById('vesselPhoneInput').value = vesselInfo.ShipPhone || "";
+            document.getElementById('ownerNameInput').value = vesselInfo.OwnerName || "";
+            document.getElementById('contactEmailInput').value = vesselInfo.ContactEmail || "";
+            document.getElementById('contactPhoneInput').value = vesselInfo.ContactPhone || "";
+
+            document.getElementById('vesselInfoModal').classList.remove('hidden');
+        }
+
+        function closeVesselInfoModal() {
+            document.getElementById('vesselInfoModal').classList.add('hidden');
+        }
+
+        function saveVesselInfo(e) {
+            e.preventDefault();
+            vesselInfo.ShipName = document.getElementById('vesselNameInput').value.trim() || "PROSPERA";
+            vesselInfo.ShipType = document.getElementById('vesselTypeInput').value.trim();
+            vesselInfo.ShipEmail = document.getElementById('vesselEmailInput').value.trim();
+            vesselInfo.ShipPhone = document.getElementById('vesselPhoneInput').value.trim();
+            vesselInfo.OwnerName = document.getElementById('ownerNameInput').value.trim();
+            vesselInfo.ContactEmail = document.getElementById('contactEmailInput').value.trim();
+            vesselInfo.ContactPhone = document.getElementById('contactPhoneInput').value.trim();
+
+            localStorage.setItem('enc_vessel_info', JSON.stringify(vesselInfo));
+            updateVesselDisplay();
+            closeVesselInfoModal();
+            showToast("Saved", "Vessel details updated successfully.");
+        }
+
+        // ==========================================
+        // CELL EXTRACTOR MODAL
+        // ==========================================
+        let extractorCells = [];
+
+        function openCellExtractorModal() {
+            document.getElementById('cellExtractorModal').classList.remove('hidden');
+            document.getElementById('extractorInput').value = "";
+            document.getElementById('extractorOutput').value = "";
+            document.getElementById('extractorCountBadge').innerText = "0 cells detected";
+            extractorCells = [];
+        }
+
+        function closeCellExtractorModal() {
+            document.getElementById('cellExtractorModal').classList.add('hidden');
+        }
+
+        function runCellExtractor() {
+            const text = document.getElementById('extractorInput').value;
+            const unique = document.getElementById('extractorUniqueOnly').checked;
+            const sortAlpha = document.getElementById('extractorSortAlpha').checked;
+
+            extractorCells = extractCellCodes(text, unique, sortAlpha);
+            document.getElementById('extractorOutput').value = extractorCells.join(", ");
+            document.getElementById('extractorCountBadge').innerText = `${extractorCells.length} cells detected`;
+        }
+
+        function copyExtractorOutput() {
+            if (extractorCells.length === 0) return;
+            navigator.clipboard.writeText(extractorCells.join(", ")).then(() => {
+                showToast("Copied", `Copied ${extractorCells.length} extracted cell codes.`);
+            });
+        }
+
+        function addExtractorToBasket() {
+            if (extractorCells.length === 0) {
+                showToast("No Cells", "No valid cells extracted to add.", "warning");
+                return;
+            }
+            addCellsToBasket(extractorCells);
+            closeCellExtractorModal();
+            switchTab('basket');
+        }
+
+        // Helper: File Download
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Helper: Toast Notifications
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toastNotification');
+            const icon = document.getElementById('toastIcon');
+            const tTitle = document.getElementById('toastTitle');
+            const tMsg = document.getElementById('toastMessage');
+
+            tTitle.innerText = title;
+            tMsg.innerText = message;
+
+            if (type === 'warning') {
+                icon.className = "fa-solid fa-triangle-exclamation text-amber-400 text-base";
+            } else if (type === 'error') {
+                icon.className = "fa-solid fa-circle-xmark text-rose-400 text-base";
+            } else {
+                icon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3200);
+        }
+
+        // Start
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

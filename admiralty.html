@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIRALTY Digital Catalogue - Official Folios, ENC Units (Band 1-6) & Publications</title>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Load Initial Admiralty Map Data (Band 1, 2, 3, Folios, ALRS, ATT, SD, Harbours) -->
+  <script src="admiralty_data.js"></script>
+  <!-- Load Catalogue Lookup DB for instant metadata -->
+  <script src="admiralty_catalogue_db.js"></script>
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b1329;
+      color: #f8fafc;
+      overflow: hidden;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+      background: #0f172a;
+    }
+    
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Top Floating Navigation Header */
+    .top-nav {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    .top-nav > * {
+      pointer-events: auto;
+    }
+
+    .nav-pill {
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      text-decoration: none;
+      color: #f1f5f9;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .nav-pill:hover {
+      background: rgba(30, 41, 59, 0.95);
+      border-color: #38bdf8;
+      transform: translateY(-1px);
+    }
+
+    /* Sidebar Drawer */
+    .adc-sidebar {
+      position: absolute;
+      top: 66px;
+      left: 14px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.94);
+      color: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.65);
+      width: 340px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.12);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .adc-sidebar.collapsed {
+      transform: translateX(-380px);
+    }
+    .adc-sidebar::-webkit-scrollbar { width: 5px; }
+    .adc-sidebar::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 4px; }
+    
+    .adc-sidebar h3 {
+      margin: 0 0 3px 0;
+      color: #38bdf8;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .adc-sidebar p.sub {
+      margin: 0 0 12px 0;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #38bdf8;
+      margin: 12px 0 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .control-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .control-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .control-item input[type="checkbox"] { accent-color: #38bdf8; width: 14px; height: 14px; cursor: pointer; }
+    .tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; color: #fff; font-family: 'JetBrains Mono', monospace; }
+    
+    .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(3, 7, 18, 0.6);
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      margin-bottom: 6px;
+      font-family: inherit;
+    }
+    .search-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    }
+
+    .coord-display {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.9);
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    #loading-bar {
+      display: none;
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      background: #0284c7;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      align-items: center;
+      gap: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Leaflet Popups */
+    .leaflet-popup-content-wrapper {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .leaflet-popup-tip { background: #0f172a; }
+    .leaflet-popup-content {
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 14px 16px;
+    }
+    .leaflet-popup-content h4 {
+      margin: 0 0 8px 0;
+      color: #38bdf8;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn-add-basket {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      background: #0284c7;
+      hover:background: #0369a1;
+      color: #ffffff;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background-color 0.2s;
+    }
+    .btn-add-basket:hover {
+      background: #0369a1;
+    }
+
+    /* Floating toggle sidebar button */
+    .btn-toggle-sidebar {
+      position: absolute;
+      top: 66px;
+      left: 14px;
+      z-index: 999;
+      background: #0f172a;
+      color: #38bdf8;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    }
+
+    /* Toast */
+    #mapToast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      z-index: 2500;
+      background: #0284c7;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    #mapToast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Bar -->
+  <div id="loading-bar"><div class="spinner"></div><span id="loading-msg">Loading data...</span></div>
+
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="./index.html" class="nav-pill" title="Back to Navigation Hub">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Bridge Hub</span>
+      </a>
+
+      <button onclick="toggleSidebar()" class="nav-pill" title="Toggle Layer Controls">
+        <i class="fa-solid fa-layer-group text-sky-400"></i>
+        <span>Layer Catalogue</span>
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="./encmanager.html" class="nav-pill" style="border-color: rgba(56, 189, 248, 0.4);" title="Open ENC Permit Manager Pro">
+        <i class="fa-solid fa-id-card-clip text-sky-400"></i>
+        <span>ENC Permit Manager</span>
+        <span id="navBasketCount" style="background:#0284c7; color:#fff; padding:1px 6px; border-radius:10px; font-size:10px; font-family:'JetBrains Mono',monospace;">0</span>
+      </a>
+
+      <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="nav-pill" style="border-color: rgba(244, 63, 94, 0.4);" title="Created by @c.wijaya.t">
+        <i class="fa-brands fa-instagram text-pink-400"></i>
+        <span style="font-size: 11px;">Database by <span style="color:#f43f5e;">@c.wijaya.t</span></span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="adc-sidebar" id="sidebar">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+      <h3><i class="fa-solid fa-book-atlas"></i> ADMIRALTY Catalogue</h3>
+      <button onclick="toggleSidebar()" style="background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:14px; padding:2px 4px;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <p class="sub">AVCS Folios, Verified ENC Units (Band 1-6), Publications & Ports</p>
+    
+    <input type="text" id="search" class="search-input" placeholder="🔍 Search Cell (AU, GB, ID...), NP, Port..." oninput="filterMap(this.value)" />
+
+    <!-- 1. Folios -->
+    <div class="section-title">
+      <span>📂 AVCS Folios</span>
+      <span class="tag" style="background:#854d0e;">30 Total</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_folio_transit" checked onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios</label>
+      <span class="tag" style="background:#854d0e;">3 Folios</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_folio_regional" checked onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios</label>
+      <span class="tag" style="background:#854d0e;">22 Folios</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_folio_port" checked onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios</label>
+      <span class="tag" style="background:#854d0e;">5 Folios</span>
+    </div>
+
+    <!-- 2. ENC Units (All 6 Bands) -->
+    <div class="section-title">
+      <span>🗺️ ENC Units (All 6 Bands)</span>
+      <span class="tag" style="background:#0369a1;">26,377 Cells</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b1" checked onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Overview (Band 1)</label>
+      <span class="tag" style="background:#0e7490;">272</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b2" checked onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> General (Band 2)</label>
+      <span class="tag" style="background:#0369a1;">983</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b3" checked onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Coastal (Band 3)</label>
+      <span class="tag" style="background:#1d4ed8;">2,971</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b4" onchange="toggleScriptBand('admiralty_enc_band4_approach.js', 'ENC_BAND4_DATA', 'ENC Band 4 - Approach', this.checked)"><span style="color:#818cf8;">■</span> Approach (Band 4)</label>
+      <span class="tag" style="background:#4338ca;">7,993</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b5" onchange="toggleScriptBand('admiralty_enc_band5_harbour.js', 'ENC_BAND5_DATA', 'ENC Band 5 - Harbour', this.checked)"><span style="color:#a78bfa;">■</span> Harbour (Band 5)</label>
+      <span class="tag" style="background:#6d28d9;">11,707</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b6" onchange="toggleScriptBand('admiralty_enc_band6_berthing.js', 'ENC_BAND6_DATA', 'ENC Band 6 - Berthing', this.checked)"><span style="color:#c084fc;">■</span> Berthing (Band 6)</label>
+      <span class="tag" style="background:#7e22ce;">2,451</span>
+    </div>
+
+    <!-- 3. Official Publications & Ports -->
+    <div class="section-title">
+      <span>📚 Publications & Ports</span>
+      <span class="tag" style="background:#991b1b;">Global</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-72)</label>
+      <span class="tag" style="background:#86198f;">76 Areas</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_alrs" onchange="toggleCategory('Admiralty List of Radio Signals (ALRS)', this.checked)"><span style="color:#f97316;">■</span> ALRS (Radio Signals)</label>
+      <span class="tag" style="background:#9a3412;">16 Areas</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_att" onchange="toggleCategory('Admiralty Tide Tables (ATT)', this.checked)"><span style="color:#ec4899;">■</span> Tide Tables (ATT)</label>
+      <span class="tag" style="background:#9d174d;">19 Areas</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_ports" onchange="toggleCategory('Admiralty Harbours & Ports', this.checked)"><span style="color:#ef4444;">●</span> Harbours & UN/LOCODE Ports</label>
+      <span class="tag" style="background:#991b1b;">5,197 Pts</span>
+    </div>
+
+    <!-- Quick Footer Link -->
+    <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+      <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" style="color: #f472b6; font-size: 11px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+        <i class="fa-brands fa-instagram"></i>
+        <span>Database created by @c.wijaya.t</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Coordinates & Leaflet Map -->
+  <div class="coord-display" id="coords">Lat: 0.0000°, Lon: 0.0000°</div>
+  <div id="map"></div>
+
+  <!-- Toast -->
+  <div id="mapToast"><i class="fa-solid fa-circle-check"></i> <span id="mapToastMsg">Chart added to Order Basket</span></div>
+
+  <script>
+    // Initialize Map
+    const map = L.map('map', {
+      center: [-2.5, 118],
+      zoom: 4,
+      minZoom: 2,
+      worldCopyJump: true
+    });
+
+    // Basemaps (Esri Ocean, World Street, Carto Voyager, Satellite)
+    const esriOcean = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri &bull; GEBCO &bull; NOAA &bull; UKHO'
+    }).addTo(map);
+
+    const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri World Street Map'
+    });
+
+    const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: 'CARTO Voyager'
+    });
+
+    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri Satellite'
+    });
+
+    L.control.layers({
+      '🌊 Ocean Bathymetry (Default)': esriOcean,
+      '🗺️ Street & Navigation': esriStreet,
+      '🏙️ Carto Voyager': cartoVoyager,
+      '🛰️ Satellite Imagery': esriSat
+    }, null, { position: 'topright' }).addTo(map);
+
+    // Mouse coordinates tracker
+    map.on('mousemove', (e) => {
+      document.getElementById('coords').innerText = `Lat: ${e.latlng.lat.toFixed(4)}°, Lon: ${e.latlng.lng.toFixed(4)}°`;
+    });
+
+    // Layer Styles
+    const categoryStyles = {
+      'Folio (Transit)': { color: '#facc15', fill: '#eab308', weight: 2.2, opacity: 0.16 },
+      'Folio (Regional)': { color: '#eab308', fill: '#ca8a04', weight: 2.0, opacity: 0.14 },
+      'Folio (Port)': { color: '#ca8a04', fill: '#a16207', weight: 2.0, opacity: 0.22 },
+      'ENC Band 1 - Overview': { color: '#06b6d4', fill: '#0891b2', weight: 1.5, opacity: 0.20 },
+      'ENC Band 2 - General': { color: '#38bdf8', fill: '#0284c7', weight: 1.2, opacity: 0.16 },
+      'ENC Band 3 - Coastal': { color: '#60a5fa', fill: '#2563eb', weight: 1.0, opacity: 0.14 },
+      'ENC Band 4 - Approach': { color: '#818cf8', fill: '#4338ca', weight: 0.9, opacity: 0.14 },
+      'ENC Band 5 - Harbour': { color: '#a78bfa', fill: '#6d28d9', weight: 0.8, opacity: 0.14 },
+      'ENC Band 6 - Berthing': { color: '#c084fc', fill: '#7e22ce', weight: 0.8, opacity: 0.14 },
+      'Sailing Directions (Admiralty Pilots)': { color: '#e879f9', fill: '#c026d3', weight: 2.0, opacity: 0.18 },
+      'Admiralty List of Radio Signals (ALRS)': { color: '#f97316', fill: '#ea580c', weight: 2.0, opacity: 0.18 },
+      'Admiralty Tide Tables (ATT)': { color: '#ec4899', fill: '#db2777', weight: 2.0, opacity: 0.18 },
+      'Admiralty Harbours & Ports': { color: '#ef4444', fill: '#dc2626', weight: 1.0, opacity: 0.85 }
+    };
+
+    const layerGroups = {};
+    const allLayers = [];
+
+    function renderFeatures(features) {
+      if (!features) return;
+      features.forEach(feature => {
+        const cat = feature.properties.category || 'Other';
+        if (!layerGroups[cat]) {
+          layerGroups[cat] = L.layerGroup();
+        }
+
+        const style = categoryStyles[cat] || { color: '#94a3b8', fill: '#64748b', weight: 1.2, opacity: 0.15 };
+
+        if (feature.geometry.type === 'Point') {
+          const latlng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+          const marker = L.circleMarker(latlng, {
+            radius: 3.5,
+            color: '#b91c1c',
+            fillColor: '#ef4444',
+            fillOpacity: 0.85,
+            weight: 1
+          });
+          const p = feature.properties;
+          marker.bindPopup(`
+            <div>
+              <h4>⚓ ${p.name || 'Harbour / Port'}</h4>
+              <span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">Port / Harbour Waypoint</span><br>
+              <div style="margin-top:4px;">
+                <b>Country:</b> ${p.country || '-'}<br>
+                <b>Coordinates:</b> ${latlng[0].toFixed(4)}°, ${latlng[1].toFixed(4)}°
+              </div>
+            </div>
+          `);
+          marker.featureData = feature;
+          marker.addTo(layerGroups[cat]);
+          allLayers.push(marker);
+        } else {
+          const geoLayer = L.geoJSON(feature, {
+            style: {
+              color: style.color,
+              weight: style.weight,
+              fillColor: style.fill,
+              fillOpacity: style.opacity
+            },
+            onEachFeature: (f, layer) => {
+              const p = f.properties;
+              
+              layer.on({
+                mouseover: (e) => {
+                  const l = e.target;
+                  l.setStyle({ weight: style.weight + 1.5, fillOpacity: style.opacity + 0.35 });
+                },
+                mouseout: (e) => {
+                  geoLayer.resetStyle(e.target);
+                }
+              });
+
+              if (p.cell) {
+                const cellId = p.cell;
+                const safeTitle = (p.title || `ENC Cell ${cellId}`).replace(/'/g, "\\'");
+                const safeScale = (p.scale || '1 : 180000').replace(/'/g, "\\'");
+
+                layer.bindPopup(`
+                  <div>
+                    <h4>🗺️ ENC Cell: ${cellId}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${p.usage_band || p.category}</span>
+                    <div style="margin-top:6px;">
+                      <b>Chart Title:</b> ${p.title || '-'}<br>
+                      <b>Agency / Country:</b> ${p.country || '-'}<br>
+                      <b>Scale:</b> ${p.scale || '-'}
+                    </div>
+                    <button class="btn-add-basket" onclick="addToOrderBasket('${cellId}', '${safeTitle}', '${safeScale}')">
+                      <i class="fa-solid fa-cart-plus"></i> Add to Order Basket
+                    </button>
+                  </div>
+                `);
+              } else if (p.folio_type) {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📂 ${p.code} - ${p.title}</h4>
+                    <span style="background:${style.color};color:#1e293b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">AVCS ${p.category}</span>
+                    <div style="margin-top:6px;">
+                      <b>Coverage:</b> ${p.title}<br>
+                      <b>Group:</b> ${p.group || 'AVCS Folios'}
+                    </div>
+                  </div>
+                `);
+              } else {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📖 ${p.code ? p.code + ' - ' : ''}${p.title || p.name}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${p.category}</span>
+                    <div style="margin-top:6px;">
+                      <b>Code:</b> ${p.code || '-'}<br>
+                      <b>Area Coverage:</b> ${p.description || p.title || '-'}<br>
+                      <b>Series:</b> ${p.group || 'Admiralty Publications'}
+                    </div>
+                  </div>
+                `);
+              }
+            }
+          });
+          geoLayer.featureData = feature;
+          geoLayer.addTo(layerGroups[cat]);
+          allLayers.push(geoLayer);
+        }
+      });
+    }
+
+    function toggleCategory(cat, isVisible) {
+      if (!layerGroups[cat]) return;
+      if (isVisible) {
+        map.addLayer(layerGroups[cat]);
+      } else {
+        map.removeLayer(layerGroups[cat]);
+      }
+    }
+
+    // Dynamic Script Loader for Band 4, 5, 6
+    function toggleScriptBand(jsFile, varName, categoryName, isVisible) {
+      if (window[varName]) {
+        toggleCategory(categoryName, isVisible);
+        return;
+      }
+      
+      if (isVisible) {
+        showLoading(true, `Loading ${categoryName}...`);
+        const script = document.createElement('script');
+        script.src = jsFile;
+        script.onload = () => {
+          showLoading(false);
+          if (window[varName]) {
+            renderFeatures(window[varName].features);
+            if (layerGroups[categoryName]) {
+              map.addLayer(layerGroups[categoryName]);
+            }
+          }
+        };
+        script.onerror = () => {
+          showLoading(false);
+          alert(`Failed to load ${jsFile}. Please ensure the file is present in repository.`);
+        };
+        document.head.appendChild(script);
+      }
+    }
+
+    function showLoading(show, msg) {
+      const bar = document.getElementById('loading-bar');
+      if (bar) {
+        bar.style.display = show ? 'flex' : 'none';
+        if (msg) document.getElementById('loading-msg').innerText = msg;
+      }
+    }
+
+    function filterMap(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        allLayers.forEach(l => {
+          if (l.setStyle) {
+            const cat = l.featureData ? l.featureData.properties.category : '';
+            const style = categoryStyles[cat] || { opacity: 1, fillOpacity: 0.15 };
+            l.setStyle({ opacity: 1, fillOpacity: style.opacity });
+          }
+        });
+        return;
+      }
+
+      allLayers.forEach(layer => {
+        const props = layer.featureData ? layer.featureData.properties : {};
+        const text = `${props.name || ''} ${props.code || ''} ${props.cell || ''} ${props.title || ''} ${props.description || ''} ${props.country || ''}`.toLowerCase();
+        const matches = text.includes(q);
+        if (layer.setStyle) {
+          layer.setStyle({
+            opacity: matches ? 1 : 0.02,
+            fillOpacity: matches ? 0.6 : 0.01
+          });
+        }
+      });
+    }
+
+    // Toggle Sidebar Drawer
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      sb.classList.toggle('collapsed');
+    }
+
+    // Add to Order Basket (Shared with encmanager.html via localStorage)
+    function addToOrderBasket(cellId, title, scale) {
+      let basket = [];
+      try {
+        const raw = localStorage.getItem('enc_order_basket');
+        if (raw) basket = JSON.parse(raw);
+      } catch(e) {}
+
+      // Add new item
+      basket.push({
+        productType: "ENC Units",
+        productNumber: cellId.toUpperCase(),
+        productTitle: title,
+        scale: scale,
+        status: "",
+        isDuplicate: false,
+        duplicateCount: 1,
+        inInventory: false,
+        daysLeft: null,
+        expiryStr: "",
+        selected: false
+      });
+
+      localStorage.setItem('enc_order_basket', JSON.stringify(basket));
+      updateNavBasketBadge();
+      showToast(`Added ${cellId} to Order Basket!`);
+    }
+
+    function updateNavBasketBadge() {
+      try {
+        const raw = localStorage.getItem('enc_order_basket');
+        const count = raw ? JSON.parse(raw).length : 0;
+        document.getElementById('navBasketCount').innerText = count;
+      } catch(e) {}
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('mapToast');
+      document.getElementById('mapToastMsg').innerText = msg;
+      t.classList.add('show');
+      setTimeout(() => {
+        t.classList.remove('show');
+      }, 2500);
+    }
+
+    // Initialize initial features
+    if (window.ADMIRALTY_DATA) {
+      renderFeatures(window.ADMIRALTY_DATA.features);
+      // Default active layers on load
+      ['Folio (Transit)', 'Folio (Regional)', 'Folio (Port)', 'ENC Band 1 - Overview', 'ENC Band 2 - General', 'ENC Band 3 - Coastal'].forEach(cat => {
+        if (layerGroups[cat]) layerGroups[cat].addTo(map);
+      });
+    }
+
+    updateNavBasketBadge();
+  </script>
+</body>
+</html>
