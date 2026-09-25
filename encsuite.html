@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -625,20 +625,20 @@
           </div>
 
           <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">ENC Units</div>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b1" checked onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Band 1 Overview (272)</label>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b2" checked onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> Band 2 General (983)</label>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b3" checked onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Band 3 Coastal (2,971)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b1" onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Band 1 Overview (272)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b2" onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> Band 2 General (983)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b3" onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Band 3 Coastal (2,971)</label>
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b4" onchange="toggleScriptBand('admiralty_enc_band4_approach.js', 'ENC_BAND4_DATA', 'ENC Band 4 - Approach', this.checked)"><span style="color:#818cf8;">■</span> Band 4 Approach (7,993)</label>
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b5" onchange="toggleScriptBand('admiralty_enc_band5_harbour.js', 'ENC_BAND5_DATA', 'ENC Band 5 - Harbour', this.checked)"><span style="color:#a78bfa;">■</span> Band 5 Harbour (11,707)</label>
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b6" onchange="toggleScriptBand('admiralty_enc_band6_berthing.js', 'ENC_BAND6_DATA', 'ENC Band 6 - Berthing', this.checked)"><span style="color:#c084fc;">■</span> Band 6 Berthing (2,451)</label>
 
           <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">AVCS Folios</div>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_transit" checked onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios (3)</label>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_regional" checked onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios (22)</label>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_port" checked onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios (5)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_transit" onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios (3)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_regional" onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios (22)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_port" onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios (5)</label>
 
           <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">Publications & Ports</div>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-72)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-NP74)</label>
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_alrs" onchange="toggleCategory('Admiralty List of Radio Signals (ALRS)', this.checked)"><span style="color:#f97316;">■</span> ALRS Radio Signals</label>
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_all" onchange="toggleCategory('Admiralty List of Lights (ALL)', this.checked)"><span style="color:#eab308;">■</span> List of Lights (ALL Vol A-Q)</label>
           <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_adll" onchange="toggleCategory('Admiralty Digital List of Lights (ADLL)', this.checked)"><span style="color:#facc15;">■</span> Digital List of Lights (ADLL)</label>
@@ -817,7 +817,9 @@
         center: [-2.5, 118],
         zoom: 4,
         minZoom: 2,
-        worldCopyJump: true
+      maxBounds: [[-90, -540], [90, 540]],
+      maxBoundsViscosity: 0.8,
+      worldCopyJump: true
       });
 
       // Basemaps
@@ -853,12 +855,88 @@
         document.getElementById('coords').innerText = `Lat: ${e.latlng.lat.toFixed(4)}°, Lon: ${e.latlng.lng.toFixed(4)}°`;
       });
 
+      // ── Layer preference persistence ───────────────────────────────────
+      const LAYER_PREF_KEY = 'admiralty_layer_prefs';
+      const CHK_MAP = {
+        'chk_folio_transit':  'Folio (Transit)',
+        'chk_folio_regional': 'Folio (Regional)',
+        'chk_folio_port':     'Folio (Port)',
+        'chk_enc_b1': 'ENC Band 1 - Overview',
+        'chk_enc_b2': 'ENC Band 2 - General',
+        'chk_enc_b3': 'ENC Band 3 - Coastal',
+        'chk_enc_b4': 'ENC Band 4 - Approach',
+        'chk_enc_b5': 'ENC Band 5 - Harbour',
+        'chk_enc_b6': 'ENC Band 6 - Berthing',
+        'chk_sd':    'Sailing Directions (Admiralty Pilots)',
+        'chk_alrs':  'Admiralty List of Radio Signals (ALRS)',
+        'chk_all':   'Admiralty List of Lights (ALL)',
+        'chk_adll':  'Admiralty Digital List of Lights (ADLL)',
+        'chk_att':   'Admiralty Tide Tables (ATT)',
+        'chk_ports': 'Admiralty Harbours & Ports'
+      };
+      const SCRIPT_BANDS = {
+        'chk_enc_b4': { js: 'admiralty_enc_band4_approach.js', varName: 'ENC_BAND4_DATA', cat: 'ENC Band 4 - Approach' },
+        'chk_enc_b5': { js: 'admiralty_enc_band5_harbour.js',  varName: 'ENC_BAND5_DATA', cat: 'ENC Band 5 - Harbour' },
+        'chk_enc_b6': { js: 'admiralty_enc_band6_berthing.js', varName: 'ENC_BAND6_DATA', cat: 'ENC Band 6 - Berthing' }
+      };
+      window._saveLayerPref = function(chkId, isChecked) {
+        let prefs = {};
+        try { prefs = JSON.parse(localStorage.getItem(LAYER_PREF_KEY) || '{}'); } catch(e) {}
+        prefs[chkId] = isChecked;
+        localStorage.setItem(LAYER_PREF_KEY, JSON.stringify(prefs));
+      };
+
+      // Wrap toggleCategory/toggleScriptBand to auto-save
+      const _origTC = toggleCategory;
+      window.toggleCategory = function(cat, visible) {
+        _origTC(cat, visible);
+        for (const [id, c] of Object.entries(CHK_MAP)) {
+          if (c === cat) { window._saveLayerPref(id, visible); break; }
+        }
+      };
+      const _origTS = toggleScriptBand;
+      window.toggleScriptBand = function(jsFile, varName, cat, visible) {
+        _origTS(jsFile, varName, cat, visible);
+        for (const [id, info] of Object.entries(SCRIPT_BANDS)) {
+          if (info.cat === cat) { window._saveLayerPref(id, visible); break; }
+        }
+      };
+
       // Load Catalogue features from admiralty_data.js
       if (window.ADMIRALTY_DATA) {
         renderFeatures(window.ADMIRALTY_DATA.features);
-        ['Folio (Transit)', 'Folio (Regional)', 'Folio (Port)', 'ENC Band 1 - Overview', 'ENC Band 2 - General', 'ENC Band 3 - Coastal'].forEach(cat => {
-          if (layerGroups[cat]) layerGroups[cat].addTo(map);
-        });
+
+        let prefs = {};
+        try { prefs = JSON.parse(localStorage.getItem(LAYER_PREF_KEY) || '{}'); } catch(e) {}
+        const hasSavedPrefs = Object.keys(prefs).length > 0;
+
+        for (const [chkId, cat] of Object.entries(CHK_MAP)) {
+          const el = document.getElementById(chkId);
+          if (!el) continue;
+          const isChecked = hasSavedPrefs ? (prefs[chkId] === true) : false;
+          el.checked = isChecked;
+          if (isChecked && layerGroups[cat]) layerGroups[cat].addTo(map);
+        }
+        // Restore script-bands
+        for (const [chkId, info] of Object.entries(SCRIPT_BANDS)) {
+          const el = document.getElementById(chkId);
+          if (!el) continue;
+          if (hasSavedPrefs && prefs[chkId] === true) {
+            el.checked = true;
+            showLoading(true, `Loading ${info.cat}...`);
+            const script = document.createElement('script');
+            script.src = info.js;
+            script.onload = () => {
+              showLoading(false);
+              if (window[info.varName]) {
+                renderFeatures(window[info.varName].features);
+                if (layerGroups[info.cat]) layerGroups[info.cat].addTo(map);
+              }
+            };
+            script.onerror = () => { showLoading(false); };
+            document.head.appendChild(script);
+          }
+        }
       }
 
       // 2. Load LocalStorage Data (Device Persistence)
@@ -955,6 +1033,20 @@
     // ==============================================
     // MAP RENDERING & DYNAMIC SCRIPTS
     // ==============================================
+
+    // Helper: shift GeoJSON coordinates by ±360 for world copy rendering
+    function shiftFeatureLng(feature, delta) {
+      const f = JSON.parse(JSON.stringify(feature));
+      function shiftCoords(coords) {
+        if (typeof coords[0] === 'number') return [coords[0] + delta, coords[1]];
+        return coords.map(shiftCoords);
+      }
+      if (f.geometry && f.geometry.coordinates) {
+        f.geometry.coordinates = shiftCoords(f.geometry.coordinates);
+      }
+      return f;
+    }
+
     function renderFeatures(features) {
       if (!features) return;
       features.forEach(feature => {
@@ -1053,6 +1145,19 @@
           geoLayer.featureData = feature;
           geoLayer.addTo(layerGroups[cat]);
           allLayers.push(geoLayer);
+
+          // World copy rendering for seamless panning
+          if (feature.geometry.type !== 'Point') {
+            [-360, 360].forEach(delta => {
+              const shifted = shiftFeatureLng(feature, delta);
+              const copyLayer = L.geoJSON(shifted, {
+                style: { color: style.color, weight: style.weight, fillColor: style.fill, fillOpacity: style.opacity }
+              });
+              copyLayer.featureData = feature;
+              copyLayer.addTo(layerGroups[cat]);
+              allLayers.push(copyLayer);
+            });
+          }
         }
       });
     }

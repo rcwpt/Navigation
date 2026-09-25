@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -354,15 +354,15 @@
       <span class="tag" style="background:#854d0e;">30 Total</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_folio_transit" checked onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios</label>
+      <label><input type="checkbox" id="chk_folio_transit" onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios</label>
       <span class="tag" style="background:#854d0e;">3 Folios</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_folio_regional" checked onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios</label>
+      <label><input type="checkbox" id="chk_folio_regional" onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios</label>
       <span class="tag" style="background:#854d0e;">22 Folios</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_folio_port" checked onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios</label>
+      <label><input type="checkbox" id="chk_folio_port" onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios</label>
       <span class="tag" style="background:#854d0e;">5 Folios</span>
     </div>
 
@@ -372,15 +372,15 @@
       <span class="tag" style="background:#0369a1;">26,377 Cells</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_enc_b1" checked onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Overview (Band 1)</label>
+      <label><input type="checkbox" id="chk_enc_b1" onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Overview (Band 1)</label>
       <span class="tag" style="background:#0e7490;">272</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_enc_b2" checked onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> General (Band 2)</label>
+      <label><input type="checkbox" id="chk_enc_b2" onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> General (Band 2)</label>
       <span class="tag" style="background:#0369a1;">983</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_enc_b3" checked onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Coastal (Band 3)</label>
+      <label><input type="checkbox" id="chk_enc_b3" onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Coastal (Band 3)</label>
       <span class="tag" style="background:#1d4ed8;">2,971</span>
     </div>
     <div class="control-item">
@@ -402,12 +402,12 @@
       <span class="tag" style="background:#991b1b;">Global</span>
     </div>
     <div class="control-item">
-      <label><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-72)</label>
+      <label><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1–NP74)</label>
       <span class="tag" style="background:#86198f;">80 Areas</span>
     </div>
     <div class="control-item">
       <label><input type="checkbox" id="chk_alrs" onchange="toggleCategory('Admiralty List of Radio Signals (ALRS)', this.checked)"><span style="color:#f97316;">■</span> ALRS (Radio Signals)</label>
-      <span class="tag" style="background:#9a3412;">22 Areas</span>
+      <span class="tag" style="background:#9a3412;">6 Vols</span>
     </div>
     <div class="control-item">
       <label><input type="checkbox" id="chk_all" onchange="toggleCategory('Admiralty List of Lights (ALL)', this.checked)"><span style="color:#eab308;">■</span> List of Lights (ALL Vol A-Q)</label>
@@ -448,6 +448,8 @@
       center: [-2.5, 118],
       zoom: 4,
       minZoom: 2,
+      maxBounds: [[-90, -540], [90, 540]],
+      maxBoundsViscosity: 0.8,
       worldCopyJump: true
     });
 
@@ -501,6 +503,21 @@
 
     const layerGroups = {};
     const allLayers = [];
+
+    // Helper: shift GeoJSON coordinates by +/-360 for world copy rendering
+    function shiftFeatureLng(feature, delta) {
+      const f = JSON.parse(JSON.stringify(feature));
+      function shiftCoords(coords) {
+        if (typeof coords[0] === 'number') {
+          return [coords[0] + delta, coords[1]];
+        }
+        return coords.map(shiftCoords);
+      }
+      if (f.geometry && f.geometry.coordinates) {
+        f.geometry.coordinates = shiftCoords(f.geometry.coordinates);
+      }
+      return f;
+    }
 
     function renderFeatures(features) {
       if (!features) return;
@@ -604,6 +621,19 @@
           geoLayer.featureData = feature;
           geoLayer.addTo(layerGroups[cat]);
           allLayers.push(geoLayer);
+
+          // World copy rendering: add +360 and -360 shifted copies for seamless panning
+          if (feature.geometry.type !== 'Point') {
+            [-360, 360].forEach(delta => {
+              const shifted = shiftFeatureLng(feature, delta);
+              const copyLayer = L.geoJSON(shifted, {
+                style: { color: style.color, weight: style.weight, fillColor: style.fill, fillOpacity: style.opacity }
+              });
+              copyLayer.featureData = feature; // point to original for filter
+              copyLayer.addTo(layerGroups[cat]);
+              allLayers.push(copyLayer);
+            });
+          }
         }
       });
     }
@@ -730,13 +760,101 @@
       }, 2500);
     }
 
+    // ── localStorage layer preference persistence ──────────────────────────
+    const PREF_KEY = 'admiralty_layer_prefs';
+
+    // Map checkbox id -> category name (for standard toggleCategory layers)
+    const CHK_MAP = {
+      'chk_folio_transit':  'Folio (Transit)',
+      'chk_folio_regional': 'Folio (Regional)',
+      'chk_folio_port':     'Folio (Port)',
+      'chk_enc_b1': 'ENC Band 1 - Overview',
+      'chk_enc_b2': 'ENC Band 2 - General',
+      'chk_enc_b3': 'ENC Band 3 - Coastal',
+      'chk_enc_b4': 'ENC Band 4 - Approach',
+      'chk_enc_b5': 'ENC Band 5 - Harbour',
+      'chk_enc_b6': 'ENC Band 6 - Berthing',
+      'chk_sd':    'Sailing Directions (Admiralty Pilots)',
+      'chk_alrs':  'Admiralty List of Radio Signals (ALRS)',
+      'chk_all':   'Admiralty List of Lights (ALL)',
+      'chk_adll':  'Admiralty Digital List of Lights (ADLL)',
+      'chk_att':   'Admiralty Tide Tables (ATT)',
+      'chk_ports': 'Admiralty Harbours & Ports'
+    };
+    // Script-band checkboxes (loaded on demand)
+    const SCRIPT_BANDS = {
+      'chk_enc_b4': { js: 'admiralty_enc_band4_approach.js', varName: 'ENC_BAND4_DATA', cat: 'ENC Band 4 - Approach' },
+      'chk_enc_b5': { js: 'admiralty_enc_band5_harbour.js',  varName: 'ENC_BAND5_DATA', cat: 'ENC Band 5 - Harbour' },
+      'chk_enc_b6': { js: 'admiralty_enc_band6_berthing.js', varName: 'ENC_BAND6_DATA', cat: 'ENC Band 6 - Berthing' }
+    };
+
+    function savePref(chkId, isChecked) {
+      let prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); } catch(e) {}
+      prefs[chkId] = isChecked;
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+    }
+
+    // Wrap toggleCategory to also save pref
+    const _origToggle = toggleCategory;
+    window.toggleCategory = function(cat, visible) {
+      _origToggle(cat, visible);
+      // Find matching chk id and save
+      for (const [id, c] of Object.entries(CHK_MAP)) {
+        if (c === cat) { savePref(id, visible); break; }
+      }
+    };
+    // Wrap toggleScriptBand similarly
+    const _origToggleScript = toggleScriptBand;
+    window.toggleScriptBand = function(jsFile, varName, cat, visible) {
+      _origToggleScript(jsFile, varName, cat, visible);
+      for (const [id, info] of Object.entries(SCRIPT_BANDS)) {
+        if (info.cat === cat) { savePref(id, visible); break; }
+      }
+    };
+
     // Initialize initial features
     if (window.ADMIRALTY_DATA) {
       renderFeatures(window.ADMIRALTY_DATA.features);
-      // Default active layers on load
-      ['Folio (Transit)', 'Folio (Regional)', 'Folio (Port)', 'ENC Band 1 - Overview', 'ENC Band 2 - General', 'ENC Band 3 - Coastal'].forEach(cat => {
-        if (layerGroups[cat]) layerGroups[cat].addTo(map);
-      });
+
+      // Restore saved preferences or default to all-unchecked
+      let prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); } catch(e) {}
+
+      const hasSavedPrefs = Object.keys(prefs).length > 0;
+
+      for (const [chkId, cat] of Object.entries(CHK_MAP)) {
+        const el = document.getElementById(chkId);
+        if (!el) continue;
+        let isChecked = hasSavedPrefs ? (prefs[chkId] === true) : false;
+        el.checked = isChecked;
+        if (isChecked && layerGroups[cat]) {
+          layerGroups[cat].addTo(map);
+        }
+      }
+
+      // Restore script-band layers if they were saved as checked
+      // (they will be loaded when the checkbox is triggered if needed)
+      for (const [chkId, info] of Object.entries(SCRIPT_BANDS)) {
+        const el = document.getElementById(chkId);
+        if (!el) continue;
+        if (hasSavedPrefs && prefs[chkId] === true) {
+          el.checked = true;
+          // Trigger load
+          showLoading(true, `Loading ${info.cat}...`);
+          const script = document.createElement('script');
+          script.src = info.js;
+          script.onload = () => {
+            showLoading(false);
+            if (window[info.varName]) {
+              renderFeatures(window[info.varName].features);
+              if (layerGroups[info.cat]) layerGroups[info.cat].addTo(map);
+            }
+          };
+          script.onerror = () => { showLoading(false); };
+          document.head.appendChild(script);
+        }
+      }
     }
 
     updateNavBasketBadge();
