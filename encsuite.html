@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENC & ADMIRALTY Voyage Suite - Permit Manager, Route Analyzer & Catalogue Map</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            marine: {
+              800: '#0a192f',
+              900: '#050b14',
+              950: '#020617'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- jsPDF & autoTable for Client-Side PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Load Initial Admiralty Map Data (Band 1-3, Folios, ALRS, ATT, SD, Harbours) -->
+  <script src="admiralty_data.js"></script>
+  <!-- Load Catalogue Lookup DB for instant 35,277 chart metadata -->
+  <script src="admiralty_catalogue_db.js"></script>
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #060d1f;
+      color: #f1f5f9;
+      overflow: hidden;
+    }
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.3);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.6);
+    }
+    .tab-btn.active {
+      background-color: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+    .chip-btn {
+      transition: all 0.15s ease-in-out;
+    }
+    .chip-btn:hover {
+      transform: translateY(-1px);
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+      background: #0a0f1d;
+    }
+    /* Leaflet Popups */
+    .leaflet-popup-content-wrapper {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      box-shadow: 0 14px 35px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .leaflet-popup-tip { background: #0f172a; }
+    .leaflet-popup-content {
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 12px 14px;
+    }
+    .leaflet-popup-content h4 {
+      margin: 0 0 6px 0;
+      color: #38bdf8;
+      font-size: 13.5px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-add-basket {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: #0284c7;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background 0.2s;
+    }
+    .btn-add-basket:hover {
+      background: #0369a1;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <!-- Top Navigation Header -->
+  <header class="glass-panel border-b border-white/10 px-4 py-2.5 z-40 flex items-center justify-between gap-3 shrink-0">
+    <div class="flex items-center space-x-3">
+      <a href="./index.html" class="flex items-center space-x-2 text-slate-300 hover:text-cyan-400 bg-slate-800/90 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono-tech transition-colors">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Bridge Hub</span>
+      </a>
+
+      <div class="h-4 w-[1px] bg-slate-700"></div>
+
+      <div class="flex items-center space-x-2.5">
+        <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400">
+          <i class="fa-solid fa-compass-drafting text-sm"></i>
+        </div>
+        <div>
+          <h1 class="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
+            <span>ENC & ADMIRALTY Voyage Suite</span>
+            <span class="text-[10px] font-mono-tech bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.2 rounded-full">INTEGRATED</span>
+          </h1>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls: Toggle Sidebar, Map Layers, & Creator Credits -->
+    <div class="flex items-center space-x-2 sm:space-x-3 text-xs">
+      <button onclick="toggleSidebar()" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-white/10 font-medium transition-all" title="Toggle Sidebar Panel">
+        <i class="fa-solid fa-table-columns text-sky-400"></i>
+        <span id="sidebarToggleText" class="hidden sm:inline">Sidebar</span>
+      </button>
+
+      <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="group flex items-center space-x-1.5 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/90 px-3 py-1.5 rounded-lg border border-pink-500/30 transition-all">
+        <i class="fa-brands fa-instagram text-pink-400 group-hover:scale-110 transition-transform"></i>
+        <span class="font-mono-tech text-[11px]">Database by <span class="text-pink-400 font-semibold">@c.wijaya.t</span></span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Body Layout: Split Sidebar + Leaflet Map -->
+  <div class="flex-grow flex w-full h-[calc(100vh-50px)] overflow-hidden relative">
+
+    <!-- Left Sidebar: ENC Manager, Route Analyzer & Permit Monitor -->
+    <aside id="suiteSidebar" class="w-full sm:w-[460px] md:w-[490px] glass-panel border-r border-white/10 flex flex-col z-30 transition-all duration-300 ease-in-out shrink-0 h-full overflow-hidden">
+      
+      <!-- Sidebar Tabs -->
+      <div class="p-2 border-b border-white/10 bg-slate-900/80 flex items-center gap-1.5 shrink-0 text-xs font-semibold">
+        <button id="tabBtnRoute" onclick="setSuiteTab('route')" class="tab-btn active flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700" title="Import route & analyze required charts">
+          <i class="fa-solid fa-route text-sky-400"></i>
+          <span>Route</span>
+          <span id="routeWpBadge" class="hidden bg-sky-500/30 text-sky-200 text-[10px] px-1.5 py-0.2 rounded-full font-mono-tech">0</span>
+        </button>
+
+        <button id="tabBtnBasket" onclick="setSuiteTab('basket')" class="tab-btn flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700" title="Order Requisition Basket & Deduplication">
+          <i class="fa-solid fa-cart-shopping text-emerald-400"></i>
+          <span>Basket</span>
+          <span id="basketCountBadge" class="bg-emerald-500/30 text-emerald-200 text-[10px] px-1.5 py-0.2 rounded-full font-mono-tech">0</span>
+        </button>
+
+        <button id="tabBtnPermit" onclick="setSuiteTab('permit')" class="tab-btn flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700" title="Permit Inventory & Expiry Monitor">
+          <i class="fa-solid fa-boxes-packing text-purple-400"></i>
+          <span>Permits</span>
+          <span id="permitCountBadge" class="bg-purple-500/30 text-purple-200 text-[10px] px-1.5 py-0.2 rounded-full font-mono-tech">0</span>
+        </button>
+      </div>
+
+      <!-- Tab Body Scrollable Container -->
+      <div class="flex-grow overflow-y-auto custom-scrollbar p-3 flex flex-col gap-3">
+
+        <!-- ============================================== -->
+        <!-- TAB 1: ROUTE & PASSAGE PLANNER -->
+        <!-- ============================================== -->
+        <div id="suiteTabContentRoute" class="flex flex-col gap-3">
+          
+          <!-- Route Import Card -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5 font-mono-tech">
+                <i class="fa-solid fa-file-import"></i>
+                <span>Import ECDIS Route File</span>
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono-tech">.rtz / .csv / .gpx</span>
+            </div>
+
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Upload standard ECDIS route file (<code class="text-sky-300">.rtz</code>, <code class="text-sky-300">.eusr.csv</code>, <code class="text-sky-300">.csv</code>, or <code class="text-sky-300">.gpx</code>). The analyzer maps waypoints, computes leg distances, and verifies which required ENC charts are currently active or missing in your permit inventory.
+            </p>
+
+            <div class="flex items-center gap-2">
+              <label class="chip-btn flex-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Load Route File...</span>
+                <input type="file" id="routeFileInput" accept=".rtz,.csv,.gpx,.txt,.eusr" class="hidden" onchange="handleRouteFileUpload(event)">
+              </label>
+
+              <button onclick="openPasteRouteModal()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs py-2 px-3 rounded-lg flex items-center gap-1.5" title="Paste waypoint text">
+                <i class="fa-solid fa-paste"></i>
+                <span>Paste</span>
+              </button>
+
+              <button onclick="clearActiveRoute()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-xs py-2 px-2.5 rounded-lg" title="Clear active route">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+
+            <!-- Route Info Banner -->
+            <div id="routeInfoBanner" class="hidden bg-slate-950/80 border border-sky-500/30 rounded-lg p-2.5 flex items-center justify-between text-xs font-mono-tech">
+              <div>
+                <div id="routeNameDisplay" class="font-bold text-sky-300">Route: Transatlantic_NY_Channel.rtz</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">
+                  <span id="routeWpCount">6 Waypoints</span> &bull; Total Dist: <strong id="routeTotalDist" class="text-emerald-400">3,124 NM</strong>
+                </div>
+              </div>
+              <button onclick="zoomToActiveRoute()" class="chip-btn bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/40 text-[10px] px-2 py-1 rounded" title="Fit route on map">
+                <i class="fa-solid fa-magnifying-glass-location"></i> Zoom
+              </button>
+            </div>
+          </div>
+
+          <!-- Route ENC Analysis Card -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5 font-mono-tech">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Passage ENC Coverage Audit</span>
+              </span>
+              <span id="routeAuditStatus" class="text-[10px] text-slate-400 font-mono-tech">Ready</span>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-4 gap-2 text-center text-xs font-mono-tech">
+              <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                <div class="text-[10px] text-slate-400">Required</div>
+                <div id="metricRouteReq" class="text-sm font-bold text-white mt-0.5">0</div>
+              </div>
+              <div class="bg-emerald-950/30 p-2 rounded-lg border border-emerald-700/40">
+                <div class="text-[10px] text-emerald-400">🟢 Active</div>
+                <div id="metricRouteAct" class="text-sm font-bold text-emerald-300 mt-0.5">0</div>
+              </div>
+              <div class="bg-orange-950/30 p-2 rounded-lg border border-orange-700/40">
+                <div class="text-[10px] text-orange-400">🟠 Expiring</div>
+                <div id="metricRouteExp" class="text-sm font-bold text-orange-300 mt-0.5">0</div>
+              </div>
+              <div class="bg-rose-950/30 p-2 rounded-lg border border-rose-700/40">
+                <div class="text-[10px] text-rose-400">⚪ Missing</div>
+                <div id="metricRouteMis" class="text-sm font-bold text-rose-300 mt-0.5">0</div>
+              </div>
+            </div>
+
+            <!-- One-Click Order Requisition Actions -->
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="addMissingRouteChartsToBasket()" class="chip-btn flex-1 bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 shadow-sm" title="Add all missing & expiring charts for this route to Order Basket">
+                <i class="fa-solid fa-cart-plus"></i>
+                <span>Order Missing Charts</span>
+              </button>
+
+              <button onclick="addAllRouteChartsToBasket()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs py-1.5 px-3 rounded-lg" title="Add all charts covering the passage to basket">
+                <span>All Track Charts</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Charts Along Route Table -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl overflow-hidden flex flex-col">
+            <div class="p-2.5 border-b border-white/10 bg-slate-950/80 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-300 flex items-center gap-1.5 font-mono-tech">
+                <i class="fa-solid fa-map-pin text-sky-400"></i>
+                <span>Charts Crossing Route</span>
+              </span>
+              
+              <!-- Filter Select -->
+              <select id="routeChartFilter" onchange="renderRouteChartsList()" class="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-[11px] text-slate-300 outline-none">
+                <option value="all">All Passage Charts</option>
+                <option value="missing">⚪ Missing from Permit</option>
+                <option value="expiring">🟠 Expiring Soon (&lt;=30d)</option>
+                <option value="active">🟢 Active in Permit</option>
+              </select>
+            </div>
+
+            <div class="max-h-[280px] overflow-y-auto custom-scrollbar p-1">
+              <div id="routeChartsListContainer" class="flex flex-col gap-1 text-xs">
+                <div class="py-8 text-center text-slate-500 text-xs">
+                  Load an ECDIS route file above to inspect coverage.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Waypoints Accordion -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl overflow-hidden flex flex-col">
+            <div class="p-2.5 border-b border-white/10 bg-slate-950/80 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-300 flex items-center gap-1.5 font-mono-tech">
+                <i class="fa-solid fa-location-crosshairs text-sky-400"></i>
+                <span>Waypoint Coordinates</span>
+              </span>
+              <span id="routeWpSummary" class="text-[10px] text-slate-400 font-mono-tech">0 WPTs</span>
+            </div>
+
+            <div class="max-h-[220px] overflow-y-auto custom-scrollbar p-1">
+              <table class="w-full text-left text-xs border-collapse font-mono-tech">
+                <thead class="bg-slate-950/60 text-slate-400 text-[10px]">
+                  <tr>
+                    <th class="p-1.5 w-8 text-center">#</th>
+                    <th class="p-1.5">Name</th>
+                    <th class="p-1.5">Position</th>
+                    <th class="p-1.5 text-right">Leg Dist</th>
+                  </tr>
+                </thead>
+                <tbody id="routeWaypointsTableBody" class="divide-y divide-slate-800/60 text-[11px]">
+                  <tr>
+                    <td colspan="4" class="py-6 text-center text-slate-500">No waypoints loaded</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 2: ORDER BASKET & DEDUPLICATION -->
+        <!-- ============================================== -->
+        <div id="suiteTabContentBasket" class="flex flex-col gap-3 hidden">
+          
+          <!-- Quick Input & Clipboard -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5">
+            <div class="flex items-center gap-2">
+              <button onclick="handlePasteClipboard()" class="chip-btn bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-clipboard"></i>
+                <span>Paste (Ctrl+V)</span>
+              </button>
+
+              <label class="chip-btn bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Import File</span>
+                <input type="file" id="basketFileInput" accept=".csv,.txt,.cwo,.eusr" class="hidden" onchange="handleBasketFileUpload(event)">
+              </label>
+
+              <button onclick="openCellExtractorModal()" class="chip-btn bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Extractor</span>
+              </button>
+            </div>
+
+            <!-- Manual Quick Entry -->
+            <div class="relative w-full">
+              <input type="text" id="quickAddInput" placeholder="Add ENC cell codes (e.g. AU130120, GB401234)..." 
+                class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none pr-16 font-mono-tech"
+                onkeydown="if(event.key==='Enter') addFromQuickInput()">
+              <button onclick="addFromQuickInput()" class="absolute right-1 top-1 bg-sky-600 hover:bg-sky-500 text-white text-xs px-2.5 py-0.5 rounded font-semibold">
+                Add
+              </button>
+            </div>
+          </div>
+
+          <!-- Actions Toolbar -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button onclick="removeDuplicates()" class="chip-btn bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-sm" title="Remove duplicates in basket">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Deduplicate</span>
+              </button>
+
+              <button onclick="deleteSelectedBasketRows()" class="chip-btn bg-rose-700 hover:bg-rose-600 text-white text-xs px-2.5 py-1 rounded-md" title="Delete selected">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Delete</span>
+              </button>
+
+              <button onclick="clearBasket()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-xs px-2 py-1 rounded-md" title="Clear all">
+                <span>Clear</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button onclick="copyBasketCellCodes()" class="chip-btn bg-teal-700 hover:bg-teal-600 text-white text-xs px-2.5 py-1 rounded-md" title="Copy comma separated cell codes">
+                <i class="fa-solid fa-copy"></i>
+                <span>Copy Codes</span>
+              </button>
+
+              <button onclick="exportBasketTxt()" class="chip-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm" title="Export ADMIRALTY tab-delimited text file">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                <span>Export .txt</span>
+              </button>
+
+              <button onclick="exportBasketPDF()" class="chip-btn bg-rose-700 hover:bg-rose-600 text-white text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm" title="Export Requisition PDF Report">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Selection & Filter Bar -->
+          <div class="flex items-center justify-between gap-2 text-xs">
+            <input type="text" id="basketSearchInput" placeholder="Search basket..." 
+              class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-2.5 py-1 text-xs text-white placeholder-slate-500 outline-none"
+              oninput="renderBasketTable()">
+
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="selectBasketRows('all')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">All</button>
+              <button onclick="selectBasketRows('dup')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 px-2 py-0.5 rounded text-[11px]">Dups</button>
+              <button onclick="selectBasketRows('none')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 px-2 py-0.5 rounded text-[11px]">Clear</button>
+            </div>
+          </div>
+
+          <!-- Basket Table Container -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl overflow-hidden flex flex-col">
+            <div class="max-h-[380px] overflow-y-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-950 text-slate-400 sticky top-0 z-10 border-b border-slate-800 text-[11px]">
+                  <tr>
+                    <th class="py-2 px-2.5 w-8 text-center">
+                      <input type="checkbox" id="basketSelectAll" onchange="toggleSelectAllBasket(this.checked)" class="rounded bg-slate-950 border-slate-700 text-sky-500">
+                    </th>
+                    <th class="py-2 px-2 font-mono-tech text-sky-400">Cell ID</th>
+                    <th class="py-2 px-2">Title</th>
+                    <th class="py-2 px-2 text-center">Status</th>
+                    <th class="py-2 px-2 w-8 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody id="basketTableBody" class="divide-y divide-slate-800/60 font-medium">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="basketEmptyState" class="py-10 text-center text-slate-500 text-xs">
+              Basket is empty. Paste codes, import route, or select charts from map.
+            </div>
+          </div>
+
+          <!-- Stats Bar -->
+          <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between text-[11px] font-mono-tech text-slate-400">
+            <div>Total: <strong id="statTotalRows" class="text-sky-300">0</strong> &bull; Unique: <strong id="statUniqueCells" class="text-emerald-300">0</strong> &bull; Dups: <strong id="statDuplicates" class="text-rose-400">0</strong></div>
+            <div class="text-slate-500">35,277 UKHO DB Ready</div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: PERMIT INVENTORY & EXPIRY MONITOR -->
+        <!-- ============================================== -->
+        <div id="suiteTabContentPermit" class="flex flex-col gap-3 hidden">
+          
+          <!-- Permit Loader Card -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-purple-400 flex items-center gap-1.5 font-mono-tech">
+                <i class="fa-solid fa-file-invoice"></i>
+                <span>ENC Permit File (S-63)</span>
+              </span>
+              <span id="permitLoadedName" class="text-[10px] text-slate-400 font-mono-tech italic">No file loaded</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <label class="chip-btn flex-1 bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Load PERMIT.TXT / ENC.PMT</span>
+                <input type="file" id="permitFileInput" accept=".txt,.pmt,.enc" class="hidden" onchange="handlePermitFileUpload(event)">
+              </label>
+
+              <button onclick="openPastePermitModal()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs py-2 px-3 rounded-lg flex items-center gap-1.5" title="Paste raw permit text">
+                <i class="fa-solid fa-paste"></i>
+                <span>Paste</span>
+              </button>
+            </div>
+
+            <!-- Map Highlight Control -->
+            <label class="flex items-center justify-between bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-lg cursor-pointer text-xs">
+              <span class="flex items-center gap-2 text-slate-200">
+                <i class="fa-solid fa-eye text-sky-400"></i>
+                <span>Show Permit Cells on Map</span>
+              </span>
+              <input type="checkbox" id="chkShowPermitOnMap" checked onchange="togglePermitMapHighlight(this.checked)" class="rounded bg-slate-900 border-slate-700 text-sky-500">
+            </label>
+          </div>
+
+          <!-- KPI Metrics -->
+          <div class="grid grid-cols-4 gap-2 text-center text-xs font-mono-tech">
+            <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+              <div class="text-[10px] text-slate-400">Total</div>
+              <div id="kpiTotal" class="text-sm font-bold text-white mt-0.5">0</div>
+            </div>
+            <div class="bg-emerald-950/30 p-2 rounded-lg border border-emerald-700/40">
+              <div class="text-[10px] text-emerald-400">Active</div>
+              <div id="kpiActive" class="text-sm font-bold text-emerald-300 mt-0.5">0</div>
+            </div>
+            <div class="bg-orange-950/30 p-2 rounded-lg border border-orange-700/40">
+              <div class="text-[10px] text-orange-400">Critical</div>
+              <div id="kpiCritical" class="text-sm font-bold text-orange-300 mt-0.5">0</div>
+            </div>
+            <div class="bg-rose-950/30 p-2 rounded-lg border border-rose-700/40">
+              <div class="text-[10px] text-rose-400">Expired</div>
+              <div id="kpiExpired" class="text-sm font-bold text-rose-300 mt-0.5">0</div>
+            </div>
+          </div>
+
+          <!-- Transfer to Basket Actions -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-sky-400 font-bold text-[11px] font-mono-tech mr-1">To Basket:</span>
+              <button onclick="transferPermitToBasket('critical')" class="chip-btn bg-orange-600 hover:bg-orange-500 text-white text-xs px-2.5 py-1 rounded-md" title="Renew charts expiring in <= 30 days">
+                &lt;= 30d (Expiring)
+              </button>
+              <button onclick="transferPermitToBasket('all')" class="chip-btn bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-2 py-1 rounded-md" title="Add all permit charts">
+                All
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button onclick="copyInventoryCellCodes()" class="chip-btn bg-teal-700 hover:bg-teal-600 text-white text-xs px-2.5 py-1 rounded-md" title="Copy cell codes">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+              <button onclick="exportInventoryPDF()" class="chip-btn bg-rose-700 hover:bg-rose-600 text-white text-xs px-2.5 py-1 rounded-md" title="Export Audit PDF">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+              </button>
+              <button onclick="exportInventoryCSV()" class="chip-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs px-2.5 py-1 rounded-md" title="Export CSV">
+                CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Search & Status Filter -->
+          <div class="flex items-center justify-between gap-2 text-xs">
+            <input type="text" id="inventorySearchInput" placeholder="Search permit cells..." 
+              class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-2.5 py-1 text-xs text-white placeholder-slate-500 outline-none"
+              oninput="renderInventoryTable()">
+
+            <select id="inventoryFilterSelect" onchange="renderInventoryTable()" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-300 outline-none">
+              <option value="all">All</option>
+              <option value="crit_exp">Critical &lt;= 30d</option>
+              <option value="expired">Expired Only</option>
+              <option value="active">Active Only</option>
+            </select>
+          </div>
+
+          <!-- Permit Inventory Table -->
+          <div class="bg-slate-900/90 border border-white/10 rounded-xl overflow-hidden flex flex-col">
+            <div class="max-h-[380px] overflow-y-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-950 text-slate-400 sticky top-0 z-10 border-b border-slate-800 text-[11px]">
+                  <tr>
+                    <th class="py-2 px-2 font-mono-tech text-sky-400">Cell ID</th>
+                    <th class="py-2 px-2">Title</th>
+                    <th class="py-2 px-2 text-center font-mono-tech">Days Left</th>
+                    <th class="py-2 px-2 text-center">Status</th>
+                    <th class="py-2 px-2 w-8 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody" class="divide-y divide-slate-800/60 font-medium">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="inventoryEmptyState" class="py-10 text-center text-slate-500 text-xs">
+              No permit file loaded. Load <code class="text-sky-400">PERMIT.TXT</code> or <code class="text-sky-400">ENC.PMT</code> above.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Right: Full Interactive ADMIRALTY Catalogue Map -->
+    <main class="flex-grow h-full relative overflow-hidden">
+      
+      <!-- Floating Map Layer Controls Overlay (Top Right) -->
+      <div class="absolute top-3 right-3 z-[1000] flex flex-col items-end gap-2 pointer-events-none">
+        <!-- Floating Layer Dropdown Button -->
+        <button onclick="toggleMapLayersPanel()" class="pointer-events-auto bg-slate-900/95 hover:bg-slate-800 text-slate-200 border border-white/15 px-3 py-1.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 backdrop-blur">
+          <i class="fa-solid fa-layer-group text-sky-400"></i>
+          <span>Catalogue Layers</span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+        </button>
+
+        <!-- Dropdown Panel -->
+        <div id="mapLayersPanel" class="hidden pointer-events-auto bg-slate-900/95 border border-white/15 rounded-xl p-3 shadow-2xl backdrop-blur w-64 text-xs flex flex-col gap-2 max-h-[80vh] overflow-y-auto custom-scrollbar">
+          <div class="font-bold text-sky-400 border-b border-white/10 pb-1 flex justify-between items-center">
+            <span>🗺️ ADMIRALTY Layers</span>
+            <button onclick="toggleMapLayersPanel()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">ENC Units</div>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b1" checked onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Band 1 Overview (272)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b2" checked onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> Band 2 General (983)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b3" checked onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Band 3 Coastal (2,971)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b4" onchange="toggleScriptBand('admiralty_enc_band4_approach.js', 'ENC_BAND4_DATA', 'ENC Band 4 - Approach', this.checked)"><span style="color:#818cf8;">■</span> Band 4 Approach (7,993)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b5" onchange="toggleScriptBand('admiralty_enc_band5_harbour.js', 'ENC_BAND5_DATA', 'ENC Band 5 - Harbour', this.checked)"><span style="color:#a78bfa;">■</span> Band 5 Harbour (11,707)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_enc_b6" onchange="toggleScriptBand('admiralty_enc_band6_berthing.js', 'ENC_BAND6_DATA', 'ENC Band 6 - Berthing', this.checked)"><span style="color:#c084fc;">■</span> Band 6 Berthing (2,451)</label>
+
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">AVCS Folios</div>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_transit" checked onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios (3)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_regional" checked onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios (22)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_folio_port" checked onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios (5)</label>
+
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-2">Publications & Ports</div>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-72)</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_alrs" onchange="toggleCategory('Admiralty List of Radio Signals (ALRS)', this.checked)"><span style="color:#f97316;">■</span> ALRS Radio Signals</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_att" onchange="toggleCategory('Admiralty Tide Tables (ATT)', this.checked)"><span style="color:#ec4899;">■</span> ATT Tide Tables</label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="chk_ports" onchange="toggleCategory('Admiralty Harbours & Ports', this.checked)"><span style="color:#ef4444;">●</span> Harbours & UN/LOCODE</label>
+        </div>
+      </div>
+
+      <!-- Quick Map Search Bar (Top Center) -->
+      <div class="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-72 sm:w-80 pointer-events-auto">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+          <input type="text" id="mapSearchInput" placeholder="Find chart, folio, port, NP..." 
+            class="w-full bg-slate-900/90 border border-white/15 focus:border-sky-400 rounded-full pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 outline-none backdrop-blur shadow-lg"
+            oninput="filterMap(this.value)">
+        </div>
+      </div>
+
+      <!-- Live Coordinates Display -->
+      <div class="absolute bottom-3 right-3 z-[1000] bg-slate-900/90 border border-white/10 rounded-md px-2.5 py-1 text-[11px] font-mono-tech text-sky-400 shadow-md backdrop-blur pointer-events-none" id="coords">
+        Lat: 0.0000°, Lon: 0.0000°
+      </div>
+
+      <!-- Loading Bar -->
+      <div id="loading-bar" class="hidden absolute top-14 left-1/2 -translate-x-1/2 z-[2000] bg-sky-600 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 font-mono-tech">
+        <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <span id="loading-msg">Loading Band...</span>
+      </div>
+
+      <!-- Map Element -->
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="suiteToast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-2.5 bg-slate-900 border border-sky-400/40 px-4 py-2.5 rounded-full shadow-2xl text-xs font-mono-tech">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+    <span id="toastMessage" class="text-slate-200">Message</span>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PASTE ROUTE TEXT -->
+  <!-- ============================================== -->
+  <div id="pasteRouteModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-xl rounded-2xl p-5 border border-white/15 shadow-2xl flex flex-col gap-3.5">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2 font-mono-tech">
+          <i class="fa-solid fa-paste text-sky-400"></i>
+          <span>Paste Route Waypoints or RTZ XML</span>
+        </h3>
+        <button onclick="closePasteRouteModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-400">
+        Paste raw RTZ XML (<code class="text-sky-300">&lt;route&gt;...&lt;/route&gt;</code>) or CSV waypoints (<code class="text-slate-300">Name, Lat, Lon</code> or <code class="text-slate-300">1.25, 103.85</code>):
+      </p>
+
+      <textarea id="rawRouteInput" rows="8" placeholder="Paste route text here..."
+        class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg p-2.5 text-xs text-white font-mono-tech outline-none custom-scrollbar"></textarea>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <button type="button" onclick="closePasteRouteModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
+        <button type="button" onclick="processPastedRoute()" class="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md">
+          <i class="fa-solid fa-check"></i>
+          <span>Parse & Plot Route</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PASTE PERMIT TEXT -->
+  <!-- ============================================== -->
+  <div id="pastePermitModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-xl rounded-2xl p-5 border border-white/15 shadow-2xl flex flex-col gap-3.5">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2 font-mono-tech">
+          <i class="fa-solid fa-file-lines text-purple-400"></i>
+          <span>Paste Raw S-63 Permit Text</span>
+        </h3>
+        <button onclick="closePastePermitModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-400">
+        Paste contents of <code class="text-sky-300">PERMIT.TXT</code> or <code class="text-sky-300">ENC.PMT</code> below:
+      </p>
+
+      <textarea id="rawPermitInput" rows="8" placeholder="Paste permit lines here... (e.g. GB40123420261031...)"
+        class="w-full bg-slate-950 border border-slate-700 focus:border-purple-400 rounded-lg p-2.5 text-xs text-white font-mono-tech outline-none custom-scrollbar"></textarea>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <button type="button" onclick="closePastePermitModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
+        <button type="button" onclick="processPastedPermit()" class="px-4 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md">
+          <i class="fa-solid fa-check"></i>
+          <span>Parse & Load Permit</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CELL EXTRACTOR -->
+  <!-- ============================================== -->
+  <div id="cellExtractorModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-xl rounded-2xl p-5 border border-white/15 shadow-2xl flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2 font-mono-tech">
+          <i class="fa-solid fa-bolt text-purple-400"></i>
+          <span>Quick ENC Cell Extractor</span>
+        </h3>
+        <button onclick="closeCellExtractorModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-400">
+        Paste raw text or emails to extract clean 8-character ENC chart codes:
+      </p>
+
+      <textarea id="extractorInput" rows="5" placeholder="Paste unstructured text here..."
+        class="w-full bg-slate-950 border border-slate-700 focus:border-purple-400 rounded-lg p-2.5 text-xs text-white font-mono-tech outline-none custom-scrollbar"
+        oninput="runCellExtractor()"></textarea>
+
+      <div class="flex justify-between items-center text-xs font-mono-tech text-purple-400">
+        <span id="extractorCountBadge">0 cells detected</span>
+      </div>
+
+      <textarea id="extractorOutput" rows="3" readonly placeholder="Extracted cell codes..."
+        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-emerald-300 font-mono-tech outline-none custom-scrollbar"></textarea>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <button type="button" onclick="closeCellExtractorModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Close</button>
+        <button type="button" onclick="addExtractorToBasket()" class="px-4 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md">
+          <i class="fa-solid fa-cart-plus"></i>
+          <span>Add to Basket</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script>
+    // Global State
+    let orderBasket = []; // [{ productType, productNumber, productTitle, scale, status, isDuplicate, inInventory, daysLeft, selected }]
+    let permitInventory = []; // [{ cellId, productTitle, scale, expiryDate, expiryStr, daysLeft, statusLevel, statusLabel, selected }]
+    let activeRoute = { name: "", waypoints: [], totalDistNm: 0, requiredCharts: [] };
+
+    // Leaflet map layers
+    let map;
+    const layerGroups = {};
+    const allLayers = [];
+    let permitLayerGroup;
+    let routeLayerGroup;
+
+    // Category Styles
+    const categoryStyles = {
+      'Folio (Transit)': { color: '#facc15', fill: '#eab308', weight: 2.2, opacity: 0.16 },
+      'Folio (Regional)': { color: '#eab308', fill: '#ca8a04', weight: 2.0, opacity: 0.14 },
+      'Folio (Port)': { color: '#ca8a04', fill: '#a16207', weight: 2.0, opacity: 0.22 },
+      'ENC Band 1 - Overview': { color: '#06b6d4', fill: '#0891b2', weight: 1.5, opacity: 0.20 },
+      'ENC Band 2 - General': { color: '#38bdf8', fill: '#0284c7', weight: 1.2, opacity: 0.16 },
+      'ENC Band 3 - Coastal': { color: '#60a5fa', fill: '#2563eb', weight: 1.0, opacity: 0.14 },
+      'ENC Band 4 - Approach': { color: '#818cf8', fill: '#4338ca', weight: 0.9, opacity: 0.14 },
+      'ENC Band 5 - Harbour': { color: '#a78bfa', fill: '#6d28d9', weight: 0.8, opacity: 0.14 },
+      'ENC Band 6 - Berthing': { color: '#c084fc', fill: '#7e22ce', weight: 0.8, opacity: 0.14 },
+      'Sailing Directions (Admiralty Pilots)': { color: '#e879f9', fill: '#c026d3', weight: 2.0, opacity: 0.18 },
+      'Admiralty List of Radio Signals (ALRS)': { color: '#f97316', fill: '#ea580c', weight: 2.0, opacity: 0.18 },
+      'Admiralty Tide Tables (ATT)': { color: '#ec4899', fill: '#db2777', weight: 2.0, opacity: 0.18 },
+      'Admiralty Harbours & Ports': { color: '#ef4444', fill: '#dc2626', weight: 1.0, opacity: 0.85 }
+    };
+
+    // Initialize App & Map
+    function initSuite() {
+      // 1. Setup Leaflet Map
+      map = L.map('map', {
+        center: [-2.5, 118],
+        zoom: 4,
+        minZoom: 2,
+        worldCopyJump: true
+      });
+
+      // Basemaps
+      const esriOcean = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri &bull; GEBCO &bull; NOAA &bull; UKHO'
+      }).addTo(map);
+
+      const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri World Street Map'
+      });
+
+      const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: 'CARTO'
+      });
+
+      const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri Satellite'
+      });
+
+      L.control.layers({
+        '🌊 Ocean Bathymetry': esriOcean,
+        '🗺️ Street & Nav': esriStreet,
+        '🏙️ Carto Voyager': cartoVoyager,
+        '🛰️ Satellite Imagery': esriSat
+      }, null, { position: 'topleft' }).addTo(map);
+
+      // Dedicated layer groups
+      permitLayerGroup = L.layerGroup().addTo(map);
+      routeLayerGroup = L.layerGroup().addTo(map);
+
+      // Coordinate tracker
+      map.on('mousemove', (e) => {
+        document.getElementById('coords').innerText = `Lat: ${e.latlng.lat.toFixed(4)}°, Lon: ${e.latlng.lng.toFixed(4)}°`;
+      });
+
+      // Load Catalogue features from admiralty_data.js
+      if (window.ADMIRALTY_DATA) {
+        renderFeatures(window.ADMIRALTY_DATA.features);
+        ['Folio (Transit)', 'Folio (Regional)', 'Folio (Port)', 'ENC Band 1 - Overview', 'ENC Band 2 - General', 'ENC Band 3 - Coastal'].forEach(cat => {
+          if (layerGroups[cat]) layerGroups[cat].addTo(map);
+        });
+      }
+
+      // 2. Load LocalStorage Data (Device Persistence)
+      loadPersistedData();
+
+      // Keyboard shortcut Ctrl+V for paste
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+          const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+          if (tag !== 'input' && tag !== 'textarea') {
+            handlePasteClipboard();
+          }
+        }
+      });
+    }
+
+    // Load Local Data (Persistent across device sessions)
+    function loadPersistedData() {
+      // Order Basket
+      try {
+        const rawBasket = localStorage.getItem('enc_order_basket');
+        if (rawBasket) orderBasket = JSON.parse(rawBasket);
+      } catch(e) {}
+
+      // Permit Cache
+      try {
+        const rawPermit = localStorage.getItem('enc_permit_cache');
+        if (rawPermit) {
+          const p = JSON.parse(rawPermit);
+          if (p.rawText) parsePermitText(p.rawText, p.fileName || "Stored_PERMIT.TXT", false);
+        }
+      } catch(e) {}
+
+      // Route Cache
+      try {
+        const rawRoute = localStorage.getItem('enc_active_route');
+        if (rawRoute) {
+          const r = JSON.parse(rawRoute);
+          if (r.waypoints && r.waypoints.length > 0) {
+            activeRoute = r;
+            renderRouteUI();
+            plotRouteOnMap(false);
+          }
+        }
+      } catch(e) {}
+
+      refreshBasketAndInventorySync();
+      renderBasketTable();
+      renderInventoryTable();
+    }
+
+    // Tab Switching
+    function setSuiteTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('suiteTabContentRoute').classList.add('hidden');
+      document.getElementById('suiteTabContentBasket').classList.add('hidden');
+      document.getElementById('suiteTabContentPermit').classList.add('hidden');
+
+      if (tab === 'route') {
+        document.getElementById('tabBtnRoute').classList.add('active');
+        document.getElementById('suiteTabContentRoute').classList.remove('hidden');
+      } else if (tab === 'basket') {
+        document.getElementById('tabBtnBasket').classList.add('active');
+        document.getElementById('suiteTabContentBasket').classList.remove('hidden');
+      } else if (tab === 'permit') {
+        document.getElementById('tabBtnPermit').classList.add('active');
+        document.getElementById('suiteTabContentPermit').classList.remove('hidden');
+      }
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('suiteSidebar');
+      sb.classList.toggle('-ml-[100%]');
+      sb.classList.toggle('sm:-ml-[460px]');
+      sb.classList.toggle('md:-ml-[490px]');
+      setTimeout(() => { map.invalidateSize(); }, 320);
+    }
+
+    function toggleMapLayersPanel() {
+      const p = document.getElementById('mapLayersPanel');
+      p.classList.toggle('hidden');
+    }
+
+    // Lookup metadata from 35k DB
+    function lookupCell(cellId) {
+      const cid = (cellId || '').trim().toUpperCase();
+      if (window.ENC_CATALOGUE && window.ENC_CATALOGUE[cid]) {
+        const item = window.ENC_CATALOGUE[cid];
+        return { cellId: cid, title: item[0] || `ENC Cell ${cid}`, scale: item[1] || '1 : 180000', usage: item[2] || 'Standard' };
+      }
+      return { cellId: cid, title: `ENC Cell ${cid}`, scale: '1 : 180000', usage: 'Custom' };
+    }
+
+    // ==============================================
+    // MAP RENDERING & DYNAMIC SCRIPTS
+    // ==============================================
+    function renderFeatures(features) {
+      if (!features) return;
+      features.forEach(feature => {
+        const cat = feature.properties.category || 'Other';
+        if (!layerGroups[cat]) {
+          layerGroups[cat] = L.layerGroup();
+        }
+
+        const style = categoryStyles[cat] || { color: '#94a3b8', fill: '#64748b', weight: 1.2, opacity: 0.15 };
+
+        if (feature.geometry.type === 'Point') {
+          const latlng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+          const marker = L.circleMarker(latlng, {
+            radius: 3.5,
+            color: '#b91c1c',
+            fillColor: '#ef4444',
+            fillOpacity: 0.85,
+            weight: 1
+          });
+          const p = feature.properties;
+          marker.bindPopup(`
+            <div>
+              <h4>⚓ ${p.name || 'Harbour / Port'}</h4>
+              <span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">Port / Harbour Waypoint</span>
+              <div style="margin-top:4px;">
+                <b>Country:</b> ${p.country || '-'}<br>
+                <b>Coordinates:</b> ${latlng[0].toFixed(4)}°, ${latlng[1].toFixed(4)}°
+              </div>
+            </div>
+          `);
+          marker.featureData = feature;
+          marker.addTo(layerGroups[cat]);
+          allLayers.push(marker);
+        } else {
+          const geoLayer = L.geoJSON(feature, {
+            style: { color: style.color, weight: style.weight, fillColor: style.fill, fillOpacity: style.opacity },
+            onEachFeature: (f, layer) => {
+              const p = f.properties;
+              layer.on({
+                mouseover: (e) => {
+                  e.target.setStyle({ weight: style.weight + 1.5, fillOpacity: style.opacity + 0.35 });
+                },
+                mouseout: (e) => {
+                  geoLayer.resetStyle(e.target);
+                }
+              });
+
+              if (p.cell) {
+                const cellId = p.cell;
+                const safeTitle = (p.title || `ENC Cell ${cellId}`).replace(/'/g, "\\'");
+                const safeScale = (p.scale || '1 : 180000').replace(/'/g, "\\'");
+                
+                // Check if in permit
+                const inPermit = permitInventory.find(it => it.cellId === cellId);
+                let permitTag = '<span style="background:#3b82f6;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;">Not in Permit</span>';
+                if (inPermit) {
+                  permitTag = `<span style="background:${inPermit.daysLeft <= 0 ? '#ef4444' : (inPermit.daysLeft <= 30 ? '#f97316' : '#10b981')};color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;">Permit: ${inPermit.daysLeft}d left</span>`;
+                }
+
+                layer.bindPopup(`
+                  <div>
+                    <h4>🗺️ ENC Cell: ${cellId}</h4>
+                    <div style="display:flex;gap:5px;align-items:center;margin-bottom:5px;">
+                      <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${p.usage_band || p.category}</span>
+                      ${permitTag}
+                    </div>
+                    <b>Title:</b> ${p.title || '-'}<br>
+                    <b>Scale:</b> ${p.scale || '-'}<br>
+                    <b>Agency:</b> ${p.country || '-'}
+                    <div>
+                      <button class="btn-add-basket" onclick="addToOrderBasket('${cellId}', '${safeTitle}', '${safeScale}')">
+                        <i class="fa-solid fa-cart-plus"></i> Add to Order Basket
+                      </button>
+                    </div>
+                  </div>
+                `);
+              } else if (p.folio_type) {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📂 ${p.code} - ${p.title}</h4>
+                    <span style="background:${style.color};color:#1e293b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">AVCS ${p.category}</span><br>
+                    <b>Coverage:</b> ${p.title}
+                  </div>
+                `);
+              } else {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📖 ${p.code ? p.code + ' - ' : ''}${p.title || p.name}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${p.category}</span><br>
+                    <b>Series:</b> ${p.group || 'Admiralty Publications'}
+                  </div>
+                `);
+              }
+            }
+          });
+          geoLayer.featureData = feature;
+          geoLayer.addTo(layerGroups[cat]);
+          allLayers.push(geoLayer);
+        }
+      });
+    }
+
+    function toggleCategory(cat, isVisible) {
+      if (!layerGroups[cat]) return;
+      if (isVisible) map.addLayer(layerGroups[cat]);
+      else map.removeLayer(layerGroups[cat]);
+    }
+
+    function toggleScriptBand(jsFile, varName, categoryName, isVisible) {
+      if (window[varName]) {
+        toggleCategory(categoryName, isVisible);
+        return;
+      }
+      if (isVisible) {
+        showLoading(true, `Loading ${categoryName}...`);
+        const script = document.createElement('script');
+        script.src = jsFile;
+        script.onload = () => {
+          showLoading(false);
+          if (window[varName]) {
+            renderFeatures(window[varName].features);
+            if (layerGroups[categoryName]) map.addLayer(layerGroups[categoryName]);
+            // Re-run route intersection if route active
+            if (activeRoute.waypoints && activeRoute.waypoints.length > 0) {
+              analyzeRouteIntersection();
+            }
+          }
+        };
+        script.onerror = () => {
+          showLoading(false);
+          alert(`Failed to load ${jsFile}.`);
+        };
+        document.head.appendChild(script);
+      }
+    }
+
+    function showLoading(show, msg) {
+      const b = document.getElementById('loading-bar');
+      b.style.display = show ? 'flex' : 'none';
+      if (msg) document.getElementById('loading-msg').innerText = msg;
+    }
+
+    function filterMap(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        allLayers.forEach(l => {
+          if (l.setStyle) {
+            const cat = l.featureData ? l.featureData.properties.category : '';
+            const style = categoryStyles[cat] || { opacity: 1, fillOpacity: 0.15 };
+            l.setStyle({ opacity: 1, fillOpacity: style.opacity });
+          }
+        });
+        return;
+      }
+
+      allLayers.forEach(layer => {
+        const props = layer.featureData ? layer.featureData.properties : {};
+        const text = `${props.name || ''} ${props.code || ''} ${props.cell || ''} ${props.title || ''} ${props.country || ''}`.toLowerCase();
+        const matches = text.includes(q);
+        if (layer.setStyle) {
+          layer.setStyle({ opacity: matches ? 1 : 0.02, fillOpacity: matches ? 0.6 : 0.01 });
+        }
+      });
+    }
+
+    // ==============================================
+    // PERMIT INVENTORY ON MAP HIGHLIGHT
+    // ==============================================
+    function updatePermitMapHighlight() {
+      permitLayerGroup.clearLayers();
+      const showPermit = document.getElementById('chkShowPermitOnMap').checked;
+      if (!showPermit || permitInventory.length === 0) return;
+
+      const permitMap = {};
+      permitInventory.forEach(p => { permitMap[p.cellId] = p; });
+
+      // Search matching cell geometries from all loaded features
+      allLayers.forEach(l => {
+        if (l.featureData && l.featureData.properties && l.featureData.properties.cell) {
+          const cid = l.featureData.properties.cell;
+          const pItem = permitMap[cid];
+          if (pItem) {
+            // Determine border & fill color
+            let color = "#10b981"; // Active
+            if (pItem.statusLevel === 0) color = "#ef4444"; // Expired
+            else if (pItem.statusLevel === 1) color = "#ea580c"; // Critical
+            else if (pItem.statusLevel === 2) color = "#eab308"; // Warning
+
+            const highlightPoly = L.geoJSON(l.featureData, {
+              style: {
+                color: color,
+                weight: 2.5,
+                fillColor: color,
+                fillOpacity: 0.32,
+                dashArray: pItem.statusLevel === 0 ? '4, 4' : null
+              }
+            });
+
+            highlightPoly.bindPopup(`
+              <div>
+                <h4>📦 Permit Cell: ${cid}</h4>
+                <div style="margin-bottom:6px;">
+                  <b>Status:</b> ${pItem.statusLabel}<br>
+                  <b>Expiry Date:</b> ${pItem.expiryStr}<br>
+                  <b>Scale:</b> ${pItem.scale}
+                </div>
+                <button class="btn-add-basket" onclick="addToOrderBasket('${cid}', '${pItem.productTitle.replace(/'/g, "\\'")}', '${pItem.scale}')">
+                  <i class="fa-solid fa-cart-plus"></i> Add to Basket
+                </button>
+              </div>
+            `);
+
+            highlightPoly.addTo(permitLayerGroup);
+          }
+        }
+      });
+    }
+
+    function togglePermitMapHighlight(checked) {
+      if (checked) updatePermitMapHighlight();
+      else permitLayerGroup.clearLayers();
+    }
+
+    // ==============================================
+    // ROUTE PARSER & PASSAGE INTERSECTION ANALYZER
+    // ==============================================
+    function handleRouteFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        parseRouteContent(text, file.name);
+        event.target.value = "";
+      };
+      reader.readAsText(file);
+    }
+
+    function openPasteRouteModal() {
+      document.getElementById('pasteRouteModal').classList.remove('hidden');
+      document.getElementById('rawRouteInput').value = "";
+    }
+
+    function closePasteRouteModal() {
+      document.getElementById('pasteRouteModal').classList.add('hidden');
+    }
+
+    function processPastedRoute() {
+      const text = document.getElementById('rawRouteInput').value.trim();
+      if (!text) {
+        showToast("Empty Input", "Please paste route text or RTZ XML.", "warning");
+        return;
+      }
+      parseRouteContent(text, "Pasted_Route.rtz");
+      closePasteRouteModal();
+    }
+
+    // Universal Route Parser (.rtz, .gpx, .csv, .txt)
+    function parseRouteContent(text, fileName = "Route.rtz") {
+      const waypoints = [];
+      let routeName = fileName.replace(/\.[^/.]+$/, "");
+
+      // 1. Check RTZ (XML)
+      if (text.includes("<route") || text.includes("<waypoints>")) {
+        try {
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(text, "text/xml");
+          const rInfo = xml.querySelector("routeInfo");
+          if (rInfo && rInfo.getAttribute("routeName")) {
+            routeName = rInfo.getAttribute("routeName");
+          }
+          const wpNodes = xml.querySelectorAll("waypoint");
+          wpNodes.forEach((node, idx) => {
+            const name = node.getAttribute("name") || `WP ${idx + 1}`;
+            const pos = node.querySelector("position");
+            if (pos) {
+              const lat = parseFloat(pos.getAttribute("lat"));
+              const lon = parseFloat(pos.getAttribute("lon"));
+              if (!isNaN(lat) && !isNaN(lon)) {
+                waypoints.push({ id: idx + 1, name, lat, lon });
+              }
+            }
+          });
+        } catch(e) {}
+      }
+
+      // 2. Check GPX
+      if (waypoints.length === 0 && text.includes("<gpx")) {
+        try {
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(text, "text/xml");
+          const ptNodes = xml.querySelectorAll("rtept, trkpt, wpt");
+          ptNodes.forEach((node, idx) => {
+            const lat = parseFloat(node.getAttribute("lat"));
+            const lon = parseFloat(node.getAttribute("lon"));
+            const nameEl = node.querySelector("name");
+            const name = nameEl ? nameEl.textContent.trim() : `WP ${idx + 1}`;
+            if (!isNaN(lat) && !isNaN(lon)) {
+              waypoints.push({ id: idx + 1, name, lat, lon });
+            }
+          });
+        } catch(e) {}
+      }
+
+      // 3. Check CSV / Plain Text Waypoints
+      if (waypoints.length === 0) {
+        const lines = text.trim().split(/\r?\n/);
+        lines.forEach((line, idx) => {
+          line = line.trim();
+          if (!line || line.startsWith("#") || line.toLowerCase().startsWith("waypoint") || line.toLowerCase().startsWith("name")) return;
+          
+          // Match decimal coords: lat, lon
+          const mDec = line.match(/([-+]?\d{1,2}\.?\d*)[,\s\t]+([-+]?\d{1,3}\.?\d*)/);
+          if (mDec) {
+            const lat = parseFloat(mDec[1]);
+            const lon = parseFloat(mDec[2]);
+            if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+              waypoints.push({ id: waypoints.length + 1, name: `WP ${waypoints.length + 1}`, lat, lon });
+            }
+          }
+        });
+      }
+
+      if (waypoints.length < 2) {
+        showToast("Invalid Route", "Route must contain at least 2 valid waypoints.", "warning");
+        return;
+      }
+
+      // Calculate leg distances & total distance
+      let totalDist = 0;
+      for (let i = 0; i < waypoints.length; i++) {
+        if (i === 0) {
+          waypoints[i].legDistNm = 0;
+        } else {
+          const d = computeNauticalDistance(waypoints[i-1].lat, waypoints[i-1].lon, waypoints[i].lat, waypoints[i].lon);
+          waypoints[i].legDistNm = Math.round(d * 10) / 10;
+          totalDist += d;
+        }
+      }
+
+      activeRoute = {
+        name: routeName,
+        waypoints: waypoints,
+        totalDistNm: Math.round(totalDist),
+        requiredCharts: []
+      };
+
+      // Persist to localStorage
+      localStorage.setItem('enc_active_route', JSON.stringify(activeRoute));
+
+      // Render & Plot
+      renderRouteUI();
+      plotRouteOnMap(true);
+      analyzeRouteIntersection();
+
+      showToast("Route Loaded", `Loaded ${waypoints.length} waypoints (${activeRoute.totalDistNm} NM).`);
+    }
+
+    function computeNauticalDistance(lat1, lon1, lat2, lon2) {
+      const R = 3440.065; // Earth radius in NM
+      const phi1 = lat1 * Math.PI / 180;
+      const phi2 = lat2 * Math.PI / 180;
+      const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+      const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                Math.cos(phi1) * Math.cos(phi2) *
+                Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function renderRouteUI() {
+      const banner = document.getElementById('routeInfoBanner');
+      if (!activeRoute.waypoints || activeRoute.waypoints.length === 0) {
+        banner.classList.add('hidden');
+        document.getElementById('routeWpBadge').classList.add('hidden');
+        document.getElementById('routeWaypointsTableBody').innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-500">No waypoints loaded</td></tr>';
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      document.getElementById('routeNameDisplay').innerText = activeRoute.name || "ECDIS Route";
+      document.getElementById('routeWpCount').innerText = `${activeRoute.waypoints.length} Waypoints`;
+      document.getElementById('routeTotalDist').innerText = `${activeRoute.totalDistNm.toLocaleString()} NM`;
+      document.getElementById('routeWpSummary').innerText = `${activeRoute.waypoints.length} WPTs`;
+      document.getElementById('routeWpBadge').innerText = activeRoute.waypoints.length;
+      document.getElementById('routeWpBadge').classList.remove('hidden');
+
+      // Waypoint table
+      let html = "";
+      activeRoute.waypoints.forEach(wp => {
+        const latStr = `${Math.abs(wp.lat).toFixed(3)}° ${wp.lat >= 0 ? 'N' : 'S'}`;
+        const lonStr = `${Math.abs(wp.lon).toFixed(3)}° ${wp.lon >= 0 ? 'E' : 'W'}`;
+        html += `
+        <tr class="hover:bg-slate-800/40 border-b border-slate-800/40">
+          <td class="p-1.5 text-center text-slate-500">${wp.id}</td>
+          <td class="p-1.5 font-bold text-slate-300 truncate max-w-[120px]">${wp.name}</td>
+          <td class="p-1.5 text-slate-400">${latStr}, ${lonStr}</td>
+          <td class="p-1.5 text-right font-bold text-emerald-400">${wp.legDistNm ? wp.legDistNm + ' NM' : '-'}</td>
+        </tr>
+        `;
+      });
+      document.getElementById('routeWaypointsTableBody').innerHTML = html;
+    }
+
+    function plotRouteOnMap(fitBounds = false) {
+      routeLayerGroup.clearLayers();
+      if (!activeRoute.waypoints || activeRoute.waypoints.length < 2) return;
+
+      const latlngs = activeRoute.waypoints.map(wp => [wp.lat, wp.lon]);
+
+      // Route Corridor Buffer (visual corridor line)
+      const corridorLine = L.polyline(latlngs, {
+        color: '#38bdf8',
+        weight: 12,
+        opacity: 0.18
+      }).addTo(routeLayerGroup);
+
+      // Main Track Line
+      const trackLine = L.polyline(latlngs, {
+        color: '#0284c7',
+        weight: 3.5,
+        opacity: 0.9,
+        dashArray: '8, 6'
+      }).addTo(routeLayerGroup);
+
+      // Waypoint Circle Markers
+      activeRoute.waypoints.forEach(wp => {
+        const marker = L.circleMarker([wp.lat, wp.lon], {
+          radius: 5,
+          color: '#ffffff',
+          fillColor: '#0284c7',
+          fillOpacity: 1,
+          weight: 2
+        });
+        marker.bindPopup(`
+          <div>
+            <h4>⚓ Waypoint #${wp.id}: ${wp.name}</h4>
+            <b>Position:</b> ${wp.lat.toFixed(4)}°, ${wp.lon.toFixed(4)}°<br>
+            <b>Leg Distance:</b> ${wp.legDistNm} NM
+          </div>
+        `);
+        marker.addTo(routeLayerGroup);
+      });
+
+      if (fitBounds) {
+        map.fitBounds(trackLine.getBounds(), { padding: [40, 40] });
+      }
+    }
+
+    function zoomToActiveRoute() {
+      if (routeLayerGroup.getLayers().length > 0) {
+        const bounds = routeLayerGroup.getLayers()[1].getBounds();
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+
+    function clearActiveRoute() {
+      activeRoute = { name: "", waypoints: [], totalDistNm: 0, requiredCharts: [] };
+      localStorage.removeItem('enc_active_route');
+      routeLayerGroup.clearLayers();
+      renderRouteUI();
+      document.getElementById('metricRouteReq').innerText = "0";
+      document.getElementById('metricRouteAct').innerText = "0";
+      document.getElementById('metricRouteExp').innerText = "0";
+      document.getElementById('metricRouteMis').innerText = "0";
+      document.getElementById('routeChartsListContainer').innerHTML = '<div class="py-8 text-center text-slate-500 text-xs">Route cleared.</div>';
+      showToast("Route Cleared", "Active route removed from workspace.");
+    }
+
+    // Point in Polygon calculation
+    function isPointInRing(pt, ring) {
+      let x = pt[0], y = pt[1];
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        let xi = ring[i][0], yi = ring[i][1];
+        let xj = ring[j][0], yj = ring[j][1];
+        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // Analyze Route Intersection with all loaded ENC Cells
+    function analyzeRouteIntersection() {
+      if (!activeRoute.waypoints || activeRoute.waypoints.length < 2) return;
+
+      // Sample points along the route track (every 0.15 deg / ~9 NM)
+      const samplePts = [];
+      for (let i = 0; i < activeRoute.waypoints.length - 1; i++) {
+        const p1 = activeRoute.waypoints[i];
+        const p2 = activeRoute.waypoints[i+1];
+        samplePts.push([p1.lon, p1.lat]);
+
+        const dist = Math.hypot(p2.lon - p1.lon, p2.lat - p1.lat);
+        const steps = Math.max(1, Math.ceil(dist / 0.15));
+        for (let s = 1; s < steps; s++) {
+          const t = s / steps;
+          samplePts.push([p1.lon + t * (p2.lon - p1.lon), p1.lat + t * (p2.lat - p1.lat)]);
+        }
+      }
+      const lastWp = activeRoute.waypoints[activeRoute.waypoints.length - 1];
+      samplePts.push([lastWp.lon, lastWp.lat]);
+
+      // Match against all loaded features in catalogue
+      const matchedCells = new Map();
+
+      allLayers.forEach(l => {
+        if (l.featureData && l.featureData.properties && l.featureData.properties.cell) {
+          const feat = l.featureData;
+          const cid = feat.properties.cell;
+          if (matchedCells.has(cid)) return;
+
+          if (feat.geometry && (feat.geometry.type === 'Polygon' || feat.geometry.type === 'MultiPolygon')) {
+            const rings = feat.geometry.type === 'Polygon' 
+              ? [feat.geometry.coordinates[0]] 
+              : feat.geometry.coordinates.map(poly => poly[0]);
+
+            // Check if any sample point is inside polygon
+            let hit = false;
+            for (let k = 0; k < samplePts.length; k++) {
+              for (let r = 0; r < rings.length; r++) {
+                if (isPointInRing(samplePts[k], rings[r])) {
+                  hit = true;
+                  break;
+                }
+              }
+              if (hit) break;
+            }
+
+            if (hit) {
+              const meta = lookupCell(cid);
+              matchedCells.set(cid, {
+                cellId: cid,
+                title: feat.properties.title || meta.title,
+                scale: feat.properties.scale || meta.scale,
+                usage: feat.properties.usage_band || meta.usage
+              });
+            }
+          }
+        }
+      });
+
+      // Cross-reference with Permit Inventory
+      const permitMap = new Map();
+      permitInventory.forEach(p => permitMap.set(p.cellId, p));
+
+      const analyzedCharts = [];
+      let activeCount = 0;
+      let expiringCount = 0;
+      let missingCount = 0;
+
+      matchedCells.forEach(chart => {
+        const pItem = permitMap.get(chart.cellId);
+        let status = "missing"; // missing | expired | expiring | active
+        let daysLeft = null;
+        let expiryStr = "";
+
+        if (pItem) {
+          daysLeft = pItem.daysLeft;
+          expiryStr = pItem.expiryStr;
+          if (daysLeft <= 0) {
+            status = "expired";
+            expiringCount++;
+          } else if (daysLeft <= 30) {
+            status = "expiring";
+            expiringCount++;
+          } else {
+            status = "active";
+            activeCount++;
+          }
+        } else {
+          missingCount++;
+        }
+
+        analyzedCharts.push({
+          ...chart,
+          status: status,
+          daysLeft: daysLeft,
+          expiryStr: expiryStr,
+          inPermit: !!pItem
+        });
+      });
+
+      activeRoute.requiredCharts = analyzedCharts;
+
+      // Update KPIs
+      document.getElementById('metricRouteReq').innerText = analyzedCharts.length;
+      document.getElementById('metricRouteAct').innerText = activeCount;
+      document.getElementById('metricRouteExp').innerText = expiringCount;
+      document.getElementById('metricRouteMis').innerText = missingCount;
+
+      renderRouteChartsList();
+    }
+
+    function renderRouteChartsList() {
+      const container = document.getElementById('routeChartsListContainer');
+      const filter = document.getElementById('routeChartFilter').value;
+      const list = activeRoute.requiredCharts || [];
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-500 text-xs">No chart coverage detected yet. Ensure relevant Bands are toggled ON.</div>';
+        return;
+      }
+
+      let html = "";
+      let count = 0;
+
+      list.forEach(c => {
+        if (filter === 'missing' && c.inPermit) return;
+        if (filter === 'expiring' && (c.status !== 'expiring' && c.status !== 'expired')) return;
+        if (filter === 'active' && c.status !== 'active') return;
+
+        let badge = '<span class="bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono-tech">⚪ Missing</span>';
+        if (c.status === 'active') {
+          badge = `<span class="bg-emerald-950/60 text-emerald-300 border border-emerald-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🟢 Active (${c.daysLeft}d)</span>`;
+        } else if (c.status === 'expiring') {
+          badge = `<span class="bg-orange-950/60 text-orange-300 border border-orange-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🟠 Expiring (${c.daysLeft}d)</span>`;
+        } else if (c.status === 'expired') {
+          badge = `<span class="bg-rose-950/60 text-rose-300 border border-rose-600/50 px-2 py-0.5 rounded text-[10px] font-mono-tech">🔴 Expired</span>`;
+        }
+
+        html += `
+        <div class="flex items-center justify-between p-2 rounded bg-slate-950/60 hover:bg-slate-800/50 border border-slate-800/60 text-xs">
+          <div class="truncate mr-2">
+            <span class="font-bold text-sky-300 font-mono-tech">${c.cellId}</span>
+            <span class="text-slate-400 text-[11px] ml-1.5 truncate">${c.title}</span>
+            <div class="text-[10px] text-slate-500 font-mono-tech">${c.scale} &bull; ${c.usage}</div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${badge}
+            <button onclick="addToOrderBasket('${c.cellId}', '${c.title.replace(/'/g, "\\'")}', '${c.scale}')" class="text-slate-400 hover:text-sky-400 p-1" title="Add to Basket">
+              <i class="fa-solid fa-cart-plus"></i>
+            </button>
+          </div>
+        </div>
+        `;
+        count++;
+      });
+
+      container.innerHTML = html || '<div class="py-6 text-center text-slate-500 text-xs">No charts match this filter.</div>';
+    }
+
+    // 1-Click Order Missing Charts from Route
+    function addMissingRouteChartsToBasket() {
+      if (!activeRoute.requiredCharts || activeRoute.requiredCharts.length === 0) {
+        showToast("No Route Loaded", "Please load a route first.", "warning");
+        return;
+      }
+      const missingOrExpiring = activeRoute.requiredCharts
+        .filter(c => !c.inPermit || c.status === 'expiring' || c.status === 'expired')
+        .map(c => c.cellId);
+
+      if (missingOrExpiring.length === 0) {
+        showToast("Full Coverage", "All charts covering this route are already active in your permit!");
+        return;
+      }
+
+      addCellsToBasket(missingOrExpiring);
+      setSuiteTab('basket');
+    }
+
+    function addAllRouteChartsToBasket() {
+      if (!activeRoute.requiredCharts || activeRoute.requiredCharts.length === 0) return;
+      const allCells = activeRoute.requiredCharts.map(c => c.cellId);
+      addCellsToBasket(allCells);
+      setSuiteTab('basket');
+    }
+
+    // ==============================================
+    // BASKET & INVENTORY SYNCHRONIZATION
+    // ==============================================
+    function addCellsToBasket(cellIds) {
+      let added = 0;
+      cellIds.forEach(id => {
+        const cid = id.trim().toUpperCase();
+        if (cid.length === 8) {
+          const meta = lookupCell(cid);
+          orderBasket.push({
+            productType: "ENC Units",
+            productNumber: cid,
+            productTitle: meta.title,
+            scale: meta.scale,
+            status: "",
+            isDuplicate: false,
+            inInventory: false,
+            daysLeft: null,
+            selected: false
+          });
+          added++;
+        }
+      });
+
+      refreshBasketAndInventorySync();
+      renderBasketTable();
+      if (added > 0) {
+        showToast("Added to Basket", `Added ${added} chart(s) to Order Basket.`);
+      }
+    }
+
+    function addToOrderBasket(cellId, title, scale) {
+      addCellsToBasket([cellId]);
+    }
+
+    function addFromQuickInput() {
+      const input = document.getElementById('quickAddInput');
+      const val = input.value.trim();
+      if (!val) return;
+      const matches = val.match(/\b[A-Za-z0-9]{8}\b/g) || [];
+      if (matches.length > 0) {
+        addCellsToBasket(matches);
+        input.value = "";
+      } else {
+        showToast("Invalid Code", "Please enter valid 8-char ENC cell codes.", "warning");
+      }
+    }
+
+    async function handlePasteClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) processImportedBasketText(text, "Clipboard");
+      } catch(err) {
+        const text = prompt("Paste your ENC codes or basket text here:");
+        if (text) processImportedBasketText(text, "Paste");
+      }
+    }
+
+    function handleBasketFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        processImportedBasketText(e.target.result, file.name);
+        event.target.value = "";
+      };
+      reader.readAsText(file);
+    }
+
+    function processImportedBasketText(text, sourceName) {
+      const matches = text.match(/\b[A-Za-z0-9]{8}\b/g) || [];
+      if (matches.length > 0) {
+        addCellsToBasket(matches);
+        showToast("Import Success", `Loaded ${matches.length} chart(s) from ${sourceName}.`);
+      } else {
+        showToast("No Charts Found", `No valid ENC codes in ${sourceName}.`, "warning");
+      }
+    }
+
+    function removeDuplicates() {
+      const seen = new Set();
+      const deduped = [];
+      let rem = 0;
+      orderBasket.forEach(it => {
+        if (!seen.has(it.productNumber)) {
+          seen.add(it.productNumber);
+          deduped.push(it);
+        } else {
+          rem++;
+        }
+      });
+      orderBasket = deduped;
+      refreshBasketAndInventorySync();
+      renderBasketTable();
+      showToast("Deduplicated", rem > 0 ? `Removed ${rem} duplicate charts.` : "No duplicates in basket.");
+    }
+
+    function deleteSelectedBasketRows() {
+      const init = orderBasket.length;
+      orderBasket = orderBasket.filter(it => !it.selected);
+      const del = init - orderBasket.length;
+      if (del > 0) {
+        refreshBasketAndInventorySync();
+        renderBasketTable();
+        showToast("Deleted", `Removed ${del} chart(s).`);
+      }
+    }
+
+    function clearBasket() {
+      if (orderBasket.length === 0) return;
+      if (confirm("Clear entire Order Basket?")) {
+        orderBasket = [];
+        refreshBasketAndInventorySync();
+        renderBasketTable();
+      }
+    }
+
+    function toggleSelectAllBasket(checked) {
+      orderBasket.forEach(it => it.selected = checked);
+      renderBasketTable();
+    }
+
+    function selectBasketRows(type) {
+      orderBasket.forEach(it => {
+        if (type === 'all') it.selected = true;
+        else if (type === 'none') it.selected = false;
+        else if (type === 'dup') it.selected = it.isDuplicate;
+      });
+      renderBasketTable();
+    }
+
+    function refreshBasketAndInventorySync() {
+      const counts = {};
+      orderBasket.forEach(it => {
+        counts[it.productNumber] = (counts[it.productNumber] || 0) + 1;
+      });
+
+      const permitMap = {};
+      permitInventory.forEach(p => { permitMap[p.cellId] = p; });
+
+      orderBasket.forEach(it => {
+        it.isDuplicate = (counts[it.productNumber] > 1);
+        const p = permitMap[it.productNumber];
+        it.inInventory = !!p;
+        it.daysLeft = p ? p.daysLeft : null;
+      });
+
+      // Persist
+      localStorage.setItem('enc_order_basket', JSON.stringify(orderBasket));
+
+      // Update counters
+      const total = orderBasket.length;
+      const unique = new Set(orderBasket.map(it => it.productNumber)).size;
+      document.getElementById('statTotalRows').innerText = total;
+      document.getElementById('statUniqueCells').innerText = unique;
+      document.getElementById('statDuplicates').innerText = total - unique;
+      document.getElementById('basketCountBadge').innerText = total;
+
+      document.getElementById('permitCountBadge').innerText = permitInventory.length;
+    }
+
+    function renderBasketTable() {
+      const tbody = document.getElementById('basketTableBody');
+      const emptyState = document.getElementById('basketEmptyState');
+      const q = document.getElementById('basketSearchInput').value.toLowerCase().trim();
+
+      if (orderBasket.length === 0) {
+        tbody.innerHTML = "";
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      let html = "";
+      orderBasket.forEach((it, idx) => {
+        if (q && !`${it.productNumber} ${it.productTitle}`.toLowerCase().includes(q)) return;
+
+        let statusBadge = '<span class="text-slate-500 font-mono-tech text-[10px]">New</span>';
+        if (it.inInventory) {
+          if (it.daysLeft <= 0) statusBadge = '<span class="text-rose-400 font-mono-tech text-[10px] font-bold">Expired</span>';
+          else if (it.daysLeft <= 30) statusBadge = `<span class="text-orange-400 font-mono-tech text-[10px] font-bold">${it.daysLeft}d left</span>`;
+          else statusBadge = `<span class="text-emerald-400 font-mono-tech text-[10px]">Active</span>`;
+        }
+        if (it.isDuplicate) {
+          statusBadge += ' <span class="text-rose-400 font-bold text-[10px]">[DUP]</span>';
+        }
+
+        html += `
+        <tr class="${it.selected ? 'bg-sky-950/40' : (it.isDuplicate ? 'bg-rose-950/20' : 'hover:bg-slate-800/40')} border-b border-slate-800/40">
+          <td class="py-1.5 px-2.5 text-center">
+            <input type="checkbox" ${it.selected ? 'checked' : ''} onchange="orderBasket[${idx}].selected = this.checked; renderBasketTable();" class="rounded bg-slate-950 border-slate-700 text-sky-500">
+          </td>
+          <td class="py-1.5 px-2 font-mono-tech font-bold text-sky-300">${it.productNumber}</td>
+          <td class="py-1.5 px-2 text-slate-300 truncate max-w-[150px]">${it.productTitle}</td>
+          <td class="py-1.5 px-2 text-center">${statusBadge}</td>
+          <td class="py-1.5 px-2 text-center">
+            <button onclick="orderBasket.splice(${idx}, 1); refreshBasketAndInventorySync(); renderBasketTable();" class="text-slate-500 hover:text-rose-400">
+              <i class="fa-solid fa-trash-can text-[10px]"></i>
+            </button>
+          </td>
+        </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function copyBasketCellCodes() {
+      if (orderBasket.length === 0) return;
+      const codes = Array.from(new Set(orderBasket.map(it => it.productNumber))).sort().join(", ");
+      navigator.clipboard.writeText(codes).then(() => {
+        showToast("Copied", "Cell codes copied to clipboard.");
+      });
+    }
+
+    function exportBasketTxt() {
+      if (orderBasket.length === 0) return;
+      const lines = ["Product Type\tProduct Number\tProduct Title\tScale\tStatus"];
+      orderBasket.forEach(it => {
+        lines.push(`${it.productType}\t${it.productNumber}\t${it.productTitle}\t${it.scale}\t${it.status}`);
+      });
+      downloadFile(lines.join("\n") + "\n", `ENC_Order_Basket_${new Date().toISOString().slice(0, 10)}.txt`, 'text/plain');
+      showToast("Exported", "Official ADMIRALTY .txt order file downloaded.");
+    }
+
+    function exportBasketPDF() {
+      if (orderBasket.length === 0) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, 595.28, 60, 'F');
+      doc.setTextColor(56, 189, 248);
+      doc.setFontSize(15);
+      doc.setFont('helvetica', 'bold');
+      doc.text("ENC CHART REQUISITION ORDER", 30, 36);
+
+      const tableData = orderBasket.map((it, idx) => [
+        idx + 1, it.productType, it.productNumber, it.productTitle, it.scale, it.isDuplicate ? "DUP" : "OK"
+      ]);
+
+      doc.autoTable({
+        startY: 80,
+        head: [['#', 'Type', 'Cell ID', 'Title', 'Scale', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [2, 132, 199] },
+        didDrawPage: function() {
+          doc.setFontSize(8);
+          doc.setTextColor(148, 163, 184);
+          doc.text("Database created by @c.wijaya.t (https://www.instagram.com/c.wijaya.t/)", 30, 820);
+        }
+      });
+      doc.save(`ENC_Order_Requisition_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    // ==============================================
+    // PERMIT INVENTORY LOGIC
+    // ==============================================
+    function handlePermitFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        parsePermitText(e.target.result, file.name, true);
+        event.target.value = "";
+      };
+      reader.readAsText(file);
+    }
+
+    function openPastePermitModal() {
+      document.getElementById('pastePermitModal').classList.remove('hidden');
+      document.getElementById('rawPermitInput').value = "";
+    }
+
+    function closePastePermitModal() {
+      document.getElementById('pastePermitModal').classList.add('hidden');
+    }
+
+    function processPastedPermit() {
+      const text = document.getElementById('rawPermitInput').value.trim();
+      if (!text) return;
+      parsePermitText(text, "Pasted_PERMIT.TXT", true);
+      closePastePermitModal();
+    }
+
+    function parsePermitText(text, fileName, showToastNotice = true) {
+      const lines = text.trim().split(/\r?\n/);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const entries = [];
+      lines.forEach(line => {
+        line = line.trim();
+        if (!line || line.startsWith(":")) return;
+        if (line.length >= 16) {
+          const cellId = line.substring(0, 8).toUpperCase();
+          const dateStr = line.substring(8, 16);
+          if (/^[A-Z0-9]{8}$/.test(cellId) && /^\d{8}$/.test(dateStr)) {
+            const y = parseInt(dateStr.substring(0, 4), 10);
+            const m = parseInt(dateStr.substring(4, 6), 10) - 1;
+            const d = parseInt(dateStr.substring(6, 8), 10);
+            entries.push({ cellId, expDate: new Date(y, m, d) });
+          }
+        }
+      });
+
+      if (entries.length === 0) {
+        if (showToastNotice) showToast("Invalid Permit", "No valid S-63 permit entries found.", "warning");
+        return;
+      }
+
+      permitInventory = entries.map(entry => {
+        const meta = lookupCell(entry.cellId);
+        const diff = entry.expDate.getTime() - today.getTime();
+        const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const expiryStr = entry.expDate.toISOString().slice(0, 10);
+
+        let statusLevel = 3;
+        let statusLabel = `🟢 ${daysLeft}d left (Active)`;
+        if (daysLeft < 0) {
+          statusLevel = 0;
+          statusLabel = `🔴 Expired (${Math.abs(daysLeft)}d ago)`;
+        } else if (daysLeft === 0) {
+          statusLevel = 0;
+          statusLabel = `🔴 Expires Today`;
+        } else if (daysLeft <= 30) {
+          statusLevel = 1;
+          statusLabel = `🟠 ${daysLeft}d left (Critical)`;
+        } else if (daysLeft <= 60) {
+          statusLevel = 2;
+          statusLabel = `🟡 ${daysLeft}d left (Warning)`;
+        }
+
+        return {
+          cellId: entry.cellId,
+          productTitle: meta.title,
+          scale: meta.scale,
+          expiryDate: entry.expDate,
+          expiryStr: expiryStr,
+          daysLeft: daysLeft,
+          statusLevel: statusLevel,
+          statusLabel: statusLabel,
+          selected: false
+        };
+      });
+
+      permitInventory.sort((a, b) => a.daysLeft - b.daysLeft);
+
+      // Persist permit
+      localStorage.setItem('enc_permit_cache', JSON.stringify({
+        rawText: text,
+        fileName: fileName,
+        count: permitInventory.length
+      }));
+
+      document.getElementById('permitLoadedName').innerText = `${fileName} (${permitInventory.length})`;
+
+      // Update KPIs
+      document.getElementById('kpiTotal').innerText = permitInventory.length;
+      document.getElementById('kpiActive').innerText = permitInventory.filter(p => p.statusLevel === 3).length;
+      document.getElementById('kpiCritical').innerText = permitInventory.filter(p => p.statusLevel === 1).length;
+      document.getElementById('kpiExpired').innerText = permitInventory.filter(p => p.statusLevel === 0).length;
+
+      renderInventoryTable();
+      refreshBasketAndInventorySync();
+      renderBasketTable();
+      updatePermitMapHighlight();
+
+      // If route is loaded, re-analyze coverage
+      if (activeRoute.waypoints && activeRoute.waypoints.length > 0) {
+        analyzeRouteIntersection();
+      }
+
+      if (showToastNotice) showToast("Permit Loaded", `Parsed ${permitInventory.length} chart permits.`);
+    }
+
+    function renderInventoryTable() {
+      const tbody = document.getElementById('inventoryTableBody');
+      const emptyState = document.getElementById('inventoryEmptyState');
+      const q = document.getElementById('inventorySearchInput').value.toLowerCase().trim();
+      const filter = document.getElementById('inventoryFilterSelect').value;
+
+      if (permitInventory.length === 0) {
+        tbody.innerHTML = "";
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      let html = "";
+      permitInventory.forEach((p, idx) => {
+        if (filter === 'crit_exp' && p.daysLeft > 30) return;
+        if (filter === 'expired' && p.statusLevel !== 0) return;
+        if (filter === 'active' && p.statusLevel !== 3) return;
+
+        if (q && !`${p.cellId} ${p.productTitle}`.toLowerCase().includes(q)) return;
+
+        let badgeClass = "text-emerald-400";
+        if (p.statusLevel === 0) badgeClass = "text-rose-400 font-bold";
+        else if (p.statusLevel === 1) badgeClass = "text-orange-400 font-bold";
+        else if (p.statusLevel === 2) badgeClass = "text-yellow-400";
+
+        html += `
+        <tr class="hover:bg-slate-800/40 border-b border-slate-800/40">
+          <td class="py-1.5 px-2 font-mono-tech font-bold text-sky-300">${p.cellId}</td>
+          <td class="py-1.5 px-2 text-slate-300 truncate max-w-[150px]">${p.productTitle}</td>
+          <td class="py-1.5 px-2 text-center font-mono-tech ${badgeClass}">${p.daysLeft} d</td>
+          <td class="py-1.5 px-2 text-center font-mono-tech text-[10px] ${badgeClass}">${p.daysLeft <= 0 ? 'EXPIRED' : (p.daysLeft <= 30 ? 'CRITICAL' : 'ACTIVE')}</td>
+          <td class="py-1.5 px-2 text-center">
+            <button onclick="addToOrderBasket('${p.cellId}', '${p.productTitle.replace(/'/g, "\\'")}', '${p.scale}')" class="text-slate-400 hover:text-sky-400" title="Add to Basket">
+              <i class="fa-solid fa-cart-plus text-xs"></i>
+            </button>
+          </td>
+        </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function transferPermitToBasket(mode) {
+      if (permitInventory.length === 0) return;
+      let cells = [];
+      if (mode === 'critical') {
+        cells = permitInventory.filter(p => p.daysLeft <= 30).map(p => p.cellId);
+      } else {
+        cells = permitInventory.map(p => p.cellId);
+      }
+      if (cells.length > 0) {
+        addCellsToBasket(cells);
+        setSuiteTab('basket');
+      }
+    }
+
+    function copyInventoryCellCodes() {
+      if (permitInventory.length === 0) return;
+      const codes = permitInventory.map(p => p.cellId).join(", ");
+      navigator.clipboard.writeText(codes).then(() => {
+        showToast("Copied", "Inventory codes copied.");
+      });
+    }
+
+    function exportInventoryCSV() {
+      if (permitInventory.length === 0) return;
+      const rows = ["Cell ID,Title,Scale,Expiry Date,Days Left,Status"];
+      permitInventory.forEach(p => {
+        rows.push(`"${p.cellId}","${p.productTitle}","${p.scale}","${p.expiryStr}",${p.daysLeft},"${p.statusLabel}"`);
+      });
+      downloadFile(rows.join("\n") + "\n", `ENC_Inventory_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
+    }
+
+    function exportInventoryPDF() {
+      if (permitInventory.length === 0) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, 595.28, 60, 'F');
+      doc.setTextColor(56, 189, 248);
+      doc.setFontSize(15);
+      doc.setFont('helvetica', 'bold');
+      doc.text("ECDIS ENC PERMIT AUDIT & EXPIRY REPORT", 30, 36);
+
+      const tableData = permitInventory.map((p, idx) => [
+        idx + 1, p.cellId, p.productTitle, p.scale, p.expiryStr, `${p.daysLeft} d`, p.daysLeft <= 0 ? "EXPIRED" : (p.daysLeft <= 30 ? "CRITICAL" : "ACTIVE")
+      ]);
+
+      doc.autoTable({
+        startY: 80,
+        head: [['#', 'Cell ID', 'Title', 'Scale', 'Expiry Date', 'Days Left', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [15, 23, 42] },
+        didDrawPage: function() {
+          doc.setFontSize(8);
+          doc.setTextColor(148, 163, 184);
+          doc.text("Database created by @c.wijaya.t (https://www.instagram.com/c.wijaya.t/)", 30, 820);
+        }
+      });
+      doc.save(`ENC_Permit_Audit_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    // ==============================================
+    // CELL EXTRACTOR MODAL
+    // ==============================================
+    let extractorCells = [];
+    function openCellExtractorModal() {
+      document.getElementById('cellExtractorModal').classList.remove('hidden');
+      document.getElementById('extractorInput').value = "";
+      document.getElementById('extractorOutput').value = "";
+      document.getElementById('extractorCountBadge').innerText = "0 cells detected";
+      extractorCells = [];
+    }
+    function closeCellExtractorModal() {
+      document.getElementById('cellExtractorModal').classList.add('hidden');
+    }
+    function runCellExtractor() {
+      const text = document.getElementById('extractorInput').value;
+      const matches = text.match(/\b[A-Za-z0-9]{8}\b/g) || [];
+      extractorCells = Array.from(new Set(matches.map(c => c.toUpperCase()))).sort();
+      document.getElementById('extractorOutput').value = extractorCells.join(", ");
+      document.getElementById('extractorCountBadge').innerText = `${extractorCells.length} cells detected`;
+    }
+    function addExtractorToBasket() {
+      if (extractorCells.length === 0) return;
+      addCellsToBasket(extractorCells);
+      closeCellExtractorModal();
+      setSuiteTab('basket');
+    }
+
+    // Helper: File Download
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Helper: Toast Notifications
+    function showToast(title, message, type = 'success') {
+      const toast = document.getElementById('suiteToast');
+      const icon = document.getElementById('toastIcon');
+      const msg = document.getElementById('toastMessage');
+
+      msg.innerHTML = `<strong>${title}:</strong> ${message}`;
+      if (type === 'warning') icon.className = "fa-solid fa-triangle-exclamation text-amber-400 text-sm";
+      else icon.className = "fa-solid fa-circle-check text-emerald-400 text-sm";
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // Start on DOM Ready
+    window.addEventListener('DOMContentLoaded', initSuite);
+  </script>
+</body>
+</html>

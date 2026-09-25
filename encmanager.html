@@ -138,13 +138,6 @@
                 </button>
             </div>
 
-            <!-- Vessel Status Info Pill -->
-            <button onclick="openVesselInfoModal()" class="flex items-center space-x-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono-tech transition-colors" title="Click to view/edit ship info">
-                <i class="fa-solid fa-ship text-sky-400"></i>
-                <span class="text-slate-400">Vessel:</span>
-                <span id="navVesselName" class="font-bold text-sky-300">PROSPERA</span>
-                <i class="fa-solid fa-pen-to-square text-[10px] text-slate-500"></i>
-            </button>
         </div>
 
         <!-- ========================================== -->
@@ -256,10 +249,6 @@
                         <span>Copy Full Basket</span>
                     </button>
 
-                    <button onclick="openVesselInfoModal()" class="chip-btn bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" title="Edit vessel information">
-                        <i class="fa-solid fa-ship"></i>
-                        <span>Vessel Info</span>
-                    </button>
                 </div>
             </div>
 
@@ -549,65 +538,7 @@
         </div>
     </footer>
 
-    <!-- ========================================== -->
-    <!-- MODAL 1: VESSEL INFORMATION -->
-    <!-- ========================================== -->
-    <div id="vesselInfoModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel w-full max-w-lg rounded-2xl p-6 border border-white/15 shadow-2xl flex flex-col gap-4">
-            <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-ship text-sky-400"></i>
-                    <span>Vessel & Contact Information</span>
-                </h3>
-                <button onclick="closeVesselInfoModal()" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <p class="text-xs text-slate-400">
-                These details are included in the official ADMIRALTY order file headers (<code class="text-sky-300">#ShipName</code>, <code class="text-sky-300">#ShipType</code>) and generated PDF reports.
-            </p>
 
-            <form id="vesselInfoForm" onsubmit="saveVesselInfo(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Vessel Name (#ShipName)</label>
-                    <input type="text" id="vesselNameInput" required placeholder="e.g. PROSPERA" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none font-mono-tech">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Ship Type (#ShipType)</label>
-                    <input type="text" id="vesselTypeInput" placeholder="e.g. Bulk Carrier / Container" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Vessel Email (#ShipEmail)</label>
-                    <input type="email" id="vesselEmailInput" placeholder="master@vessel.com" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Vessel Phone / Sat (#ShipPhone)</label>
-                    <input type="text" id="vesselPhoneInput" placeholder="+870 773..." class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block text-slate-300 font-semibold mb-1">Owner / Management Company (#OwnerName)</label>
-                    <input type="text" id="ownerNameInput" placeholder="Company Name" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Contact Email (#ContactEmail)</label>
-                    <input type="email" id="contactEmailInput" placeholder="dpa@company.com" class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
-                </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Contact Phone (#ContactPhone)</label>
-                    <input type="text" id="contactPhoneInput" placeholder="+62..." class="w-full bg-slate-950 border border-slate-700 focus:border-sky-400 rounded-lg px-3 py-2 text-white outline-none">
-                </div>
-
-                <div class="sm:col-span-2 flex justify-end gap-2 pt-3 border-t border-white/10 mt-1">
-                    <button type="button" onclick="closeVesselInfoModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold flex items-center gap-1.5 shadow-md">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Save Vessel Info</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- ========================================== -->
     <!-- MODAL 2: CELL EXTRACTOR -->
@@ -719,27 +650,8 @@
         let permitInventory = []; // Array of { cellId, productTitle, scale, expiryDate, expiryStr, daysLeft, statusLevel, statusLabel, selected }
         let permitIssueDate = "";
         let permitFileName = "";
-        
-        let vesselInfo = {
-            ShipName: "PROSPERA",
-            ShipType: "Commercial Vessel",
-            ShipEmail: "",
-            ShipPhone: "",
-            OwnerName: "",
-            ContactEmail: "",
-            ContactPhone: ""
-        };
-
         // Initialize from localStorage
         function initApp() {
-            // Load vessel info
-            const savedVessel = localStorage.getItem('enc_vessel_info');
-            if (savedVessel) {
-                try {
-                    vesselInfo = Object.assign(vesselInfo, JSON.parse(savedVessel));
-                } catch(e){}
-            }
-            updateVesselDisplay();
 
             // Load saved basket if any
             const savedBasket = localStorage.getItem('enc_order_basket');
@@ -966,18 +878,7 @@
         function processImportedText(text, sourceName) {
             if (!text) return;
 
-            // 1. Detect Vessel Name from text (e.g. ECDIS reports)
-            const mVessel = text.match(/Vessel\s*Name:\s*([^,\r\n]+)/i) || text.match(/#ShipName\|([^\r\n]+)/i);
-            if (mVessel && mVessel[1]) {
-                const detectedName = mVessel[1].trim();
-                if (detectedName) {
-                    vesselInfo.ShipName = detectedName;
-                    updateVesselDisplay();
-                    localStorage.setItem('enc_vessel_info', JSON.stringify(vesselInfo));
-                }
-            }
-
-            // 2. Check if official ADMIRALTY tab-delimited basket file
+            // 1. Check if official ADMIRALTY tab-delimited basket file
             const lines = text.trim().split(/\r?\n/);
             const isBasketFormat = lines.some(l => l.startsWith("Product Type\t") || l.startsWith("ENC Units\t"));
 
@@ -1004,15 +905,8 @@
                             selected: false
                         });
                         added++;
-                    } else if (line.startsWith("#")) {
-                        const mMeta = line.match(/^#([A-Za-z]+)\|(.*)$/);
-                        if (mMeta && mMeta[1] in vesselInfo) {
-                            vesselInfo[mMeta[1]] = mMeta[2].trim();
-                        }
                     }
                 });
-                updateVesselDisplay();
-                localStorage.setItem('enc_vessel_info', JSON.stringify(vesselInfo));
                 refreshDuplicatesAndInventory();
                 renderBasketTable();
                 showToast("Basket Imported", `Loaded ${added} chart(s) from ${sourceName}.`);
@@ -1256,19 +1150,9 @@
                 lines.push(`${it.productType}\t${it.productNumber}\t${it.productTitle}\t${it.scale}\t${it.status}`);
             });
 
-            // Metadata block
-            lines.push(`#ShipName|${vesselInfo.ShipName}`);
-            lines.push(`#ShipType|${vesselInfo.ShipType}`);
-            lines.push(`#ShipEmail|${vesselInfo.ShipEmail}`);
-            lines.push(`#ShipPhone|${vesselInfo.ShipPhone}`);
-            lines.push(`#OwnerName|${vesselInfo.OwnerName}`);
-            lines.push(`#ContactEmail|${vesselInfo.ContactEmail}`);
-            lines.push(`#ContactPhone|${vesselInfo.ContactPhone}`);
-
             const content = lines.join("\n") + "\n";
             const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            const safeName = (vesselInfo.ShipName || "VESSEL").replace(/[^a-zA-Z0-9_-]/g, '_');
-            downloadFile(content, `ENC_Order_Basket_${safeName}_${dateStr}.txt`, 'text/plain');
+            downloadFile(content, `ENC_Order_Basket_${dateStr}.txt`, 'text/plain');
             showToast("Exported", "Official ADMIRALTY Order Basket (.txt) saved successfully.");
         }
 
@@ -1286,8 +1170,6 @@
                 format: 'a4'
             });
 
-            const vesselName = vesselInfo.ShipName || "PROSPERA";
-            const vesselType = vesselInfo.ShipType || "Commercial Vessel";
             const total = orderBasket.length;
             const unique = new Set(orderBasket.map(it => it.productNumber)).size;
             const newCharts = orderBasket.filter(it => !it.inInventory).length;
@@ -1308,13 +1190,13 @@
             doc.setTextColor(203, 213, 225);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text("Official UKHO ADMIRALTY / AVCS Format &bull; Generated via Bridge Navigation Suite", 30, 48);
+            doc.text("Official UKHO ADMIRALTY / AVCS Format • Generated via Bridge Navigation Suite", 30, 48);
 
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(244, 63, 94);
             doc.text(`REF: REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`, 450, 32);
 
-            // Vessel Information Box
+            // Requisition Summary Box
             doc.setDrawColor(203, 213, 225);
             doc.setFillColor(248, 250, 252);
             doc.roundedRect(30, 85, 535, 60, 4, 4, 'FD');
@@ -1322,34 +1204,34 @@
             doc.setFontSize(9);
             doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
-            doc.text("Vessel Name:", 40, 102);
+            doc.text("Order Reference:", 40, 102);
             doc.setFont('helvetica', 'normal');
-            doc.text(vesselName, 110, 102);
+            doc.text(`REQ-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`, 130, 102);
 
             doc.setFont('helvetica', 'bold');
-            doc.text("Vessel Type:", 40, 118);
+            doc.text("Order Date & UTC:", 40, 118);
             doc.setFont('helvetica', 'normal');
-            doc.text(vesselType, 110, 118);
+            doc.text(`${dateStr} ${timeStr}`, 130, 118);
 
             doc.setFont('helvetica', 'bold');
-            doc.text("Order Date:", 40, 134);
+            doc.text("Total Order Units:", 40, 134);
             doc.setFont('helvetica', 'normal');
-            doc.text(`${dateStr} ${timeStr}`, 110, 134);
+            doc.text(`${total} Charts (${unique} Unique Cells)`, 130, 134);
 
             doc.setFont('helvetica', 'bold');
-            doc.text("Owner / Manager:", 310, 102);
+            doc.text("New Chart Additions:", 310, 102);
             doc.setFont('helvetica', 'normal');
-            doc.text(vesselInfo.OwnerName || "-", 400, 102);
+            doc.text(`${newCharts} Charts`, 430, 102);
 
             doc.setFont('helvetica', 'bold');
-            doc.text("Contact Email:", 310, 118);
+            doc.text("License Renewals:", 310, 118);
             doc.setFont('helvetica', 'normal');
-            doc.text(vesselInfo.ContactEmail || vesselInfo.ShipEmail || "-", 400, 118);
+            doc.text(`${renewals} Charts`, 430, 118);
 
             doc.setFont('helvetica', 'bold');
-            doc.text("Summary:", 310, 134);
+            doc.text("Generated By:", 310, 134);
             doc.setFont('helvetica', 'normal');
-            doc.text(`${total} Charts (${newCharts} New, ${renewals} Renewals)`, 400, 134);
+            doc.text("ENC Order Manager", 430, 134);
 
             // KPI Summary Row
             const tableData = orderBasket.map((it, idx) => {
@@ -1420,8 +1302,7 @@
                 doc.text("Approved By: Master / Captain", 380, finalY + 52);
             }
 
-            const safeName = (vesselInfo.ShipName || "VESSEL").replace(/[^a-zA-Z0-9_-]/g, '_');
-            doc.save(`ENC_Order_Requisition_${safeName}_${now.toISOString().slice(0, 10)}.pdf`);
+            doc.save(`ENC_Order_Requisition_${now.toISOString().slice(0, 10)}.pdf`);
             showToast("PDF Generated", "Requisition Order PDF generated and downloaded.");
         }
 
@@ -1721,7 +1602,6 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
-            const vesselName = vesselInfo.ShipName || "PROSPERA";
             const now = new Date();
             const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
             const total = permitInventory.length;
@@ -1742,7 +1622,7 @@
             doc.setTextColor(203, 213, 225);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text("Vessel Electronic Chart License Status & Expiry Verification", 30, 48);
+            doc.text("Electronic Navigational Chart License Status & Expiry Verification", 30, 48);
 
             // Meta Info
             doc.setDrawColor(203, 213, 225);
@@ -1752,9 +1632,9 @@
             doc.setFontSize(9);
             doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
-            doc.text("Vessel Name:", 40, 102);
+            doc.text("Audit Report:", 40, 102);
             doc.setFont('helvetica', 'normal');
-            doc.text(vesselName, 110, 102);
+            doc.text("ENC Permit & License Status", 110, 102);
 
             doc.setFont('helvetica', 'bold');
             doc.text("Audit Date:", 40, 118);
@@ -1811,48 +1691,8 @@
                 }
             });
 
-            const safeName = (vesselInfo.ShipName || "VESSEL").replace(/[^a-zA-Z0-9_-]/g, '_');
-            doc.save(`ENC_Permit_Audit_${safeName}_${now.toISOString().slice(0, 10)}.pdf`);
+            doc.save(`ENC_Permit_Audit_${now.toISOString().slice(0, 10)}.pdf`);
             showToast("PDF Exported", "Permit Audit & Expiry Report PDF generated.");
-        }
-
-        // ==========================================
-        // VESSEL INFO MODAL
-        // ==========================================
-        function updateVesselDisplay() {
-            document.getElementById('navVesselName').innerText = vesselInfo.ShipName || "PROSPERA";
-        }
-
-        function openVesselInfoModal() {
-            document.getElementById('vesselNameInput').value = vesselInfo.ShipName || "";
-            document.getElementById('vesselTypeInput').value = vesselInfo.ShipType || "";
-            document.getElementById('vesselEmailInput').value = vesselInfo.ShipEmail || "";
-            document.getElementById('vesselPhoneInput').value = vesselInfo.ShipPhone || "";
-            document.getElementById('ownerNameInput').value = vesselInfo.OwnerName || "";
-            document.getElementById('contactEmailInput').value = vesselInfo.ContactEmail || "";
-            document.getElementById('contactPhoneInput').value = vesselInfo.ContactPhone || "";
-
-            document.getElementById('vesselInfoModal').classList.remove('hidden');
-        }
-
-        function closeVesselInfoModal() {
-            document.getElementById('vesselInfoModal').classList.add('hidden');
-        }
-
-        function saveVesselInfo(e) {
-            e.preventDefault();
-            vesselInfo.ShipName = document.getElementById('vesselNameInput').value.trim() || "PROSPERA";
-            vesselInfo.ShipType = document.getElementById('vesselTypeInput').value.trim();
-            vesselInfo.ShipEmail = document.getElementById('vesselEmailInput').value.trim();
-            vesselInfo.ShipPhone = document.getElementById('vesselPhoneInput').value.trim();
-            vesselInfo.OwnerName = document.getElementById('ownerNameInput').value.trim();
-            vesselInfo.ContactEmail = document.getElementById('contactEmailInput').value.trim();
-            vesselInfo.ContactPhone = document.getElementById('contactPhoneInput').value.trim();
-
-            localStorage.setItem('enc_vessel_info', JSON.stringify(vesselInfo));
-            updateVesselDisplay();
-            closeVesselInfoModal();
-            showToast("Saved", "Vessel details updated successfully.");
         }
 
         // ==========================================
