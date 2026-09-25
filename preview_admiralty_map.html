@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Load initial verified bundle -->
+  <script src="admiralty_data.js"></script>
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: #0b1329; overflow: hidden; }
+    #map { height: 100vh; width: 100%; background: #0f172a; }
+    
+    .adc-sidebar {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.94);
+      color: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.65);
+      width: 330px;
+      max-height: calc(100vh - 50px);
+      overflow-y: auto;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .adc-sidebar::-webkit-scrollbar { width: 5px; }
+    .adc-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    
+    .adc-sidebar h3 { margin: 0 0 3px 0; color: #38bdf8; font-size: 15.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .adc-sidebar p.sub { margin: 0 0 12px 0; font-size: 11px; color: #94a3b8; }
+    
+    .section-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #38bdf8;
+      margin: 12px 0 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 3px;
+    }
+    
+    .control-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .control-item label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .control-item input[type="checkbox"] { accent-color: #38bdf8; width: 14px; height: 14px; cursor: pointer; }
+    .tag { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; font-weight: 600; color: #fff; }
+    
+    .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.45);
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      margin-bottom: 4px;
+    }
+    .search-input:focus { border-color: #38bdf8; }
+
+    .coord-display {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.88);
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 11.5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+
+    #loading-bar {
+      display: none;
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      background: #0284c7;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .leaflet-popup-content-wrapper { background: #1e293b; color: #f8fafc; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+    .leaflet-popup-tip { background: #1e293b; }
+    .leaflet-popup-content { font-size: 12.5px; line-height: 1.5; margin: 12px 14px; }
+    .leaflet-popup-content h4 { margin: 0 0 6px 0; color: #38bdf8; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div id="loading-bar" style="display:none;"><div class="spinner"></div><span id="loading-msg">Memuat data...</span></div>
+
+  <div class="adc-sidebar">
+    <h3>📖 ADMIRALTY Digital Catalogue</h3>
+    <p class="sub">AVCS Folios, Verified ENC Units (Band 1-6), & Publications</p>
+    
+    <input type="text" id="search" class="search-input" placeholder="Cari Sel ENC (ID..., AU..., GB...), NP..." oninput="filterMap(this.value)" />
+
+    <!-- 1. Folios -->
+    <div class="section-title">📂 AVCS Folios</div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_folio_transit" checked onchange="toggleCategory('Folio (Transit)', this.checked)"><span style="color:#facc15;">■</span> Transit Folios</label>
+      <span class="tag" style="background:#854d0e;">3 Folios</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_folio_regional" checked onchange="toggleCategory('Folio (Regional)', this.checked)"><span style="color:#eab308;">■</span> Regional Folios</label>
+      <span class="tag" style="background:#854d0e;">22 Folios</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_folio_port" checked onchange="toggleCategory('Folio (Port)', this.checked)"><span style="color:#ca8a04;">■</span> Port Folios</label>
+      <span class="tag" style="background:#854d0e;">5 Folios</span>
+    </div>
+
+    <!-- 2. ENC Units (All 6 Bands) -->
+    <div class="section-title">🗺️ ENC Units (All 6 Bands)</div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b1" checked onchange="toggleCategory('ENC Band 1 - Overview', this.checked)"><span style="color:#06b6d4;">■</span> Overview (Band 1)</label>
+      <span class="tag" style="background:#0e7490;">272 Sel</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b2" checked onchange="toggleCategory('ENC Band 2 - General', this.checked)"><span style="color:#38bdf8;">■</span> General (Band 2)</label>
+      <span class="tag" style="background:#0369a1;">983 Sel</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b3" checked onchange="toggleCategory('ENC Band 3 - Coastal', this.checked)"><span style="color:#60a5fa;">■</span> Coastal (Band 3)</label>
+      <span class="tag" style="background:#1d4ed8;">2.971 Sel</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b4" onchange="toggleScriptBand('admiralty_enc_band4_approach.js', 'ENC_BAND4_DATA', 'ENC Band 4 - Approach', this.checked)"><span style="color:#818cf8;">■</span> Approach (Band 4)</label>
+      <span class="tag" style="background:#4338ca;">7.993 Sel</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b5" onchange="toggleScriptBand('admiralty_enc_band5_harbour.js', 'ENC_BAND5_DATA', 'ENC Band 5 - Harbour', this.checked)"><span style="color:#a78bfa;">■</span> Harbour (Band 5)</label>
+      <span class="tag" style="background:#6d28d9;">11.707 Sel</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_enc_b6" onchange="toggleScriptBand('admiralty_enc_band6_berthing.js', 'ENC_BAND6_DATA', 'ENC Band 6 - Berthing', this.checked)"><span style="color:#c084fc;">■</span> Berthing (Band 6)</label>
+      <span class="tag" style="background:#7e22ce;">2.451 Sel</span>
+    </div>
+
+    <!-- 3. Official Publications -->
+    <div class="section-title">📚 Publications & Waypoints</div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_sd" onchange="toggleCategory('Sailing Directions (Admiralty Pilots)', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-72)</label>
+      <span class="tag" style="background:#86198f;">80 Area</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_alrs" onchange="toggleCategory('Admiralty List of Radio Signals (ALRS)', this.checked)"><span style="color:#f97316;">■</span> ALRS (Radio Signals)</label>
+      <span class="tag" style="background:#9a3412;">22 Area</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_all" onchange="toggleCategory('Admiralty List of Lights (ALL)', this.checked)"><span style="color:#eab308;">■</span> List of Lights (ALL Vol A-Q)</label>
+      <span class="tag" style="background:#854d0e;">20 Area</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_adll" onchange="toggleCategory('Admiralty Digital List of Lights (ADLL)', this.checked)"><span style="color:#facc15;">■</span> Digital List of Lights (ADLL)</label>
+      <span class="tag" style="background:#a16207;">10 Area</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_att" onchange="toggleCategory('Admiralty Tide Tables (ATT)', this.checked)"><span style="color:#ec4899;">■</span> Tide Tables (ATT)</label>
+      <span class="tag" style="background:#9d174d;">19 Area</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_ports" onchange="toggleCategory('Admiralty Harbours & Ports', this.checked)"><span style="color:#ef4444;">●</span> Harbours & Ports</label>
+      <span class="tag" style="background:#991b1b;">5.197 Pt</span>
+    </div>
+
+    <!-- Quick Author Link -->
+    <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+      <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" style="color: #f472b6; font-size: 11px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+        <i class="fa-brands fa-instagram"></i>
+        <span>Database created by @c.wijaya.t</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="coord-display" id="coords">Lat: 0.0000°, Lon: 0.0000°</div>
+  <div id="map"></div>
+
+  <script>
+    const map = L.map('map', {
+      center: [-2, 118],
+      zoom: 4,
+      minZoom: 2,
+      worldCopyJump: true
+    });
+
+    // 100% Reliable Maritime & Global Basemaps (No 403 / No API Key Required)
+    const esriOcean = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri &bull; GEBCO &bull; NOAA &bull; UKHO'
+    }).addTo(map);
+
+    const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri World Street Map'
+    });
+
+    const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: 'CARTO'
+    });
+
+    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri Satellite'
+    });
+
+    L.control.layers({
+      '🌊 Ocean Bathymetry (Default)': esriOcean,
+      '🗺️ Street & Navigation': esriStreet,
+      '🏙️ Carto Voyager': cartoVoyager,
+      '🛰️ Satellite Imagery': esriSat
+    }, null, { position: 'topright' }).addTo(map);
+
+    // Mouse coordinates tracker
+    map.on('mousemove', (e) => {
+      document.getElementById('coords').innerText = `Lat: ${e.latlng.lat.toFixed(4)}°, Lon: ${e.latlng.lng.toFixed(4)}°`;
+    });
+
+    const categoryStyles = {
+      'Folio (Transit)': { color: '#facc15', fill: '#eab308', weight: 2.2, opacity: 0.15 },
+      'Folio (Regional)': { color: '#eab308', fill: '#ca8a04', weight: 2.0, opacity: 0.12 },
+      'Folio (Port)': { color: '#ca8a04', fill: '#a16207', weight: 2.0, opacity: 0.2 },
+      'ENC Band 1 - Overview': { color: '#06b6d4', fill: '#0891b2', weight: 1.5, opacity: 0.18 },
+      'ENC Band 2 - General': { color: '#38bdf8', fill: '#0284c7', weight: 1.2, opacity: 0.15 },
+      'ENC Band 3 - Coastal': { color: '#60a5fa', fill: '#2563eb', weight: 1.0, opacity: 0.12 },
+      'ENC Band 4 - Approach': { color: '#818cf8', fill: '#4338ca', weight: 0.9, opacity: 0.12 },
+      'ENC Band 5 - Harbour': { color: '#a78bfa', fill: '#6d28d9', weight: 0.8, opacity: 0.12 },
+      'ENC Band 6 - Berthing': { color: '#c084fc', fill: '#7e22ce', weight: 0.8, opacity: 0.12 },
+      'Sailing Directions (Admiralty Pilots)': { color: '#e879f9', fill: '#c026d3', weight: 2.0, opacity: 0.18 },
+      'Admiralty List of Radio Signals (ALRS)': { color: '#f97316', fill: '#ea580c', weight: 2.0, opacity: 0.18 },
+      'Admiralty List of Lights (ALL)': { color: '#eab308', fill: '#ca8a04', weight: 2.0, opacity: 0.18 },
+      'Admiralty Digital List of Lights (ADLL)': { color: '#facc15', fill: '#eab308', weight: 2.0, opacity: 0.18 },
+      'Admiralty Tide Tables (ATT)': { color: '#ec4899', fill: '#db2777', weight: 2.0, opacity: 0.18 },
+      'Admiralty Harbours & Ports': { color: '#ef4444', fill: '#dc2626', weight: 1.0, opacity: 0.85 }
+    };
+
+    const layerGroups = {};
+    const allLayers = [];
+
+    function renderFeatures(features) {
+      features.forEach(feature => {
+        const cat = feature.properties.category || 'Other';
+        if (!layerGroups[cat]) {
+          layerGroups[cat] = L.layerGroup();
+        }
+
+        const style = categoryStyles[cat] || { color: '#94a3b8', fill: '#64748b', weight: 1.2, opacity: 0.15 };
+
+        if (feature.geometry.type === 'Point') {
+          const latlng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+          const marker = L.circleMarker(latlng, {
+            radius: 3.5,
+            color: '#b91c1c',
+            fillColor: '#ef4444',
+            fillOpacity: 0.85,
+            weight: 1
+          });
+          const p = feature.properties;
+          marker.bindPopup(`
+            <div>
+              <h4>⚓ ${p.name}</h4>
+              <span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">Harbour / Port Waypoint</span><br>
+              <b>Negara:</b> ${p.country || '-'}<br>
+              <b>Koordinat:</b> ${latlng[0].toFixed(4)}°, ${latlng[1].toFixed(4)}°
+            </div>
+          `);
+          marker.featureData = feature;
+          marker.addTo(layerGroups[cat]);
+          allLayers.push(marker);
+        } else {
+          const geoLayer = L.geoJSON(feature, {
+            style: {
+              color: style.color,
+              weight: style.weight,
+              fillColor: style.fill,
+              fillOpacity: style.opacity
+            },
+            onEachFeature: (f, layer) => {
+              const p = f.properties;
+              
+              layer.on({
+                mouseover: (e) => {
+                  const l = e.target;
+                  l.setStyle({ weight: style.weight + 1.5, fillOpacity: style.opacity + 0.35 });
+                },
+                mouseout: (e) => {
+                  geoLayer.resetStyle(e.target);
+                }
+              });
+
+              if (p.cell) {
+                layer.bindPopup(`
+                  <div>
+                    <h4>🗺️ Sel ENC: ${p.cell}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">${p.usage_band || p.category}</span><br>
+                    <b>Judul Peta:</b> ${p.title || '-'}<br>
+                    <b>Negara / Agency:</b> ${p.country || '-'}<br>
+                    <b>Skala Kompilasi:</b> ${p.scale || '-'}
+                  </div>
+                `);
+              } else if (p.folio_type) {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📂 ${p.code} - ${p.title}</h4>
+                    <span style="background:${style.color};color:#1e293b;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">AVCS ${p.category}</span><br>
+                    <b>Cakupan Wilayah:</b> ${p.title}<br>
+                    <b>Grup:</b> ${p.group || 'AVCS Folios'}
+                  </div>
+                `);
+              } else {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📖 ${p.code ? p.code + ' - ' : ''}${p.title || p.name}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">${p.category}</span><br>
+                    <b>Kode Publikasi:</b> ${p.code || '-'}<br>
+                    ${p.volume ? `<b>Volume:</b> <span style="color:#facc15;font-weight:bold;">${p.volume}</span><br>` : ''}
+                    <b>Cakupan Wilayah:</b> ${p.description || p.title || '-'}<br>
+                    <b>Grup:</b> ${p.group || 'Admiralty Publications'}
+                  </div>
+                `);
+              }
+            }
+          });
+          geoLayer.featureData = feature;
+          geoLayer.addTo(layerGroups[cat]);
+          allLayers.push(geoLayer);
+        }
+      });
+    }
+
+    function toggleCategory(cat, isVisible) {
+      if (!layerGroups[cat]) return;
+      if (isVisible) {
+        map.addLayer(layerGroups[cat]);
+      } else {
+        map.removeLayer(layerGroups[cat]);
+      }
+    }
+
+    // Dynamic Script Loader for Band 4, 5, 6 (100% Offline CORS-free)
+    function toggleScriptBand(jsFile, varName, categoryName, isVisible) {
+      if (window[varName]) {
+        toggleCategory(categoryName, isVisible);
+        return;
+      }
+      
+      if (isVisible) {
+        showLoading(true, `Memuat ${categoryName}...`);
+        const script = document.createElement('script');
+        script.src = jsFile;
+        script.onload = () => {
+          showLoading(false);
+          if (window[varName]) {
+            renderFeatures(window[varName].features);
+            if (layerGroups[categoryName]) {
+              map.addLayer(layerGroups[categoryName]);
+            }
+          }
+        };
+        script.onerror = () => {
+          showLoading(false);
+          alert(`Gagal memuat ${jsFile}. Pastikan file berada di folder yang sama.`);
+        };
+        document.head.appendChild(script);
+      }
+    }
+
+    function showLoading(show, msg) {
+      const bar = document.getElementById('loading-bar');
+      if (bar) {
+        bar.style.display = show ? 'flex' : 'none';
+        if (msg) document.getElementById('loading-msg').innerText = msg;
+      }
+    }
+
+    function filterMap(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        allLayers.forEach(l => {
+          if (l.setStyle) {
+            const cat = l.featureData ? l.featureData.properties.category : '';
+            const style = categoryStyles[cat] || { opacity: 1, fillOpacity: 0.15 };
+            l.setStyle({ opacity: 1, fillOpacity: style.opacity });
+          }
+        });
+        return;
+      }
+
+      allLayers.forEach(layer => {
+        const props = layer.featureData ? layer.featureData.properties : {};
+        const text = `${props.name || ''} ${props.code || ''} ${props.cell || ''} ${props.title || ''} ${props.description || ''} ${props.country || ''}`.toLowerCase();
+        const matches = text.includes(q);
+        if (layer.setStyle) {
+          layer.setStyle({
+            opacity: matches ? 1 : 0.02,
+            fillOpacity: matches ? 0.6 : 0.01
+          });
+        }
+      });
+    }
+
+    // Initialize initial features
+    if (window.ADMIRALTY_DATA) {
+      renderFeatures(window.ADMIRALTY_DATA.features);
+      // Default active layers on load
+      ['Folio (Transit)', 'Folio (Regional)', 'Folio (Port)', 'ENC Band 1 - Overview', 'ENC Band 2 - General', 'ENC Band 3 - Coastal'].forEach(cat => {
+        if (layerGroups[cat]) layerGroups[cat].addTo(map);
+      });
+    }
+  </script>
+</body>
+</html>

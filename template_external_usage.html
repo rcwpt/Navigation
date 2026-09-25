@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIRALTY Custom Navigation Package - External Integration</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      overflow: hidden;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #0a0f1d;
+    }
+    .sidebar {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 16px 20px;
+      width: 350px;
+      max-height: calc(100vh - 30px);
+      overflow-y: auto;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+    }
+    .sidebar h2 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar p.sub {
+      margin: 0 0 14px 0;
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+    .search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-size: 12.5px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    }
+    .section-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      margin: 12px 0 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 4px;
+    }
+    .control-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .control-item label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tag {
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .unlocode-badge {
+      display: inline-block;
+      background: #0284c7;
+      color: #fff;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-top: 3px;
+    }
+    .leaflet-popup-content-wrapper {
+      background: #1e293b;
+      color: #f8fafc;
+      border-radius: 8px;
+    }
+    .leaflet-popup-tip { background: #1e293b; }
+    .leaflet-popup-content { font-size: 12px; line-height: 1.5; margin: 12px 14px; }
+    .leaflet-popup-content h4 {
+      margin: 0 0 6px 0;
+      color: #38bdf8;
+      font-size: 13.5px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <div class="sidebar">
+    <h2>🗺️ ADMIRALTY Custom Package</h2>
+    <p class="sub">ENC Bands 1-6, Publications (NP), & UN/LOCODE Ports</p>
+    
+    <input type="text" id="searchInput" class="search-input" placeholder="Cari: IDTPP, SGSIN, AU220120, NP31..." oninput="filterData(this.value)">
+
+    <div class="section-title">🗺️ ENC Units (All 6 Bands)</div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_b1" checked onchange="toggleLayer('enc_band1_overview', this.checked)"><span style="color:#06b6d4;">■</span> Overview (Band 1)</label>
+      <span class="tag" style="background:#0e7490;">272</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_b2" checked onchange="toggleLayer('enc_band2_general', this.checked)"><span style="color:#38bdf8;">■</span> General (Band 2)</label>
+      <span class="tag" style="background:#0369a1;">983</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_b3" checked onchange="toggleLayer('enc_band3_coastal', this.checked)"><span style="color:#60a5fa;">■</span> Coastal (Band 3)</label>
+      <span class="tag" style="background:#1d4ed8;">2.971</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_b4" onchange="toggleLayer('enc_band4_approach', this.checked)"><span style="color:#818cf8;">■</span> Approach (Band 4)</label>
+      <span class="tag" style="background:#4338ca;">7.993</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_b5" onchange="toggleLayer('enc_band5_harbour', this.checked)"><span style="color:#a78bfa;">■</span> Harbour (Band 5)</label>
+      <span class="tag" style="background:#6d28d9;">11.707</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_b6" onchange="toggleLayer('enc_band6_berthing', this.checked)"><span style="color:#c084fc;">■</span> Berthing (Band 6)</label>
+      <span class="tag" style="background:#7e22ce;">2.451</span>
+    </div>
+
+    <div class="section-title">📚 Publications & Waypoints</div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_sd" onchange="toggleLayer('sailing_directions', this.checked)"><span style="color:#e879f9;">■</span> Sailing Directions (NP1-72)</label>
+      <span class="tag" style="background:#a21caf;">80</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_alrs" onchange="toggleLayer('alrs_radio_signals', this.checked)"><span style="color:#f97316;">■</span> ALRS (Radio Signals)</label>
+      <span class="tag" style="background:#c2410c;">22</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_all" onchange="toggleLayer('list_of_lights_all', this.checked)"><span style="color:#eab308;">■</span> List of Lights (ALL Vol A-Q)</label>
+      <span class="tag" style="background:#854d0e;">20</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_adll" onchange="toggleLayer('digital_list_of_lights_adll', this.checked)"><span style="color:#facc15;">■</span> Digital List of Lights (ADLL)</label>
+      <span class="tag" style="background:#a16207;">10</span>
+    </div>
+    <div class="control-item">
+      <label><input type="checkbox" id="chk_ports" onchange="toggleLayer('harbours_and_ports', this.checked)"><span style="color:#ef4444;">●</span> Harbours & Ports (UN/LOCODE)</label>
+      <span class="tag" style="background:#b91c1c;">5.197</span>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- LOAD THE PACKAGED FILE -->
+  <script src="admiralty_custom_package.js"></script>
+
+  <script>
+    // 1. Inisialisasi Peta Leaflet dengan Basemap Maritim
+    const map = L.map('map', {
+      center: [-2.5, 118.0],
+      zoom: 5,
+      zoomControl: true,
+      minZoom: 2,
+      maxZoom: 18
+    });
+
+    // Basemap Esri Ocean Bathymetry
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri Ocean Basemap & UKHO',
+      maxZoom: 13
+    }).addTo(map);
+
+    // Style Configuration
+    const styles = {
+      'enc_band1_overview': { color: '#06b6d4', fill: '#0891b2', weight: 1.5, opacity: 0.18 },
+      'enc_band2_general':  { color: '#38bdf8', fill: '#0284c7', weight: 1.2, opacity: 0.15 },
+      'enc_band3_coastal':  { color: '#60a5fa', fill: '#2563eb', weight: 1.0, opacity: 0.12 },
+      'enc_band4_approach': { color: '#818cf8', fill: '#4338ca', weight: 0.9, opacity: 0.12 },
+      'enc_band5_harbour':  { color: '#a78bfa', fill: '#6d28d9', weight: 0.8, opacity: 0.12 },
+      'enc_band6_berthing': { color: '#c084fc', fill: '#7e22ce', weight: 0.8, opacity: 0.12 },
+      'sailing_directions': { color: '#e879f9', fill: '#c026d3', weight: 2.0, opacity: 0.18 },
+      'alrs_radio_signals': { color: '#f97316', fill: '#ea580c', weight: 2.0, opacity: 0.18 },
+      'list_of_lights_all': { color: '#eab308', fill: '#ca8a04', weight: 2.0, opacity: 0.18 },
+      'digital_list_of_lights_adll': { color: '#facc15', fill: '#eab308', weight: 2.0, opacity: 0.18 }
+    };
+
+    const layerGroups = {};
+    const allLayers = [];
+
+    // 2. Fungsi memuat fitur dari paket data
+    function initPackage() {
+      if (!window.ADMIRALTY_CUSTOM_PACKAGE) {
+        alert("Gagal memuat admiralty_custom_package.js. Pastikan file berada di folder yang sama.");
+        return;
+      }
+
+      const pkg = window.ADMIRALTY_CUSTOM_PACKAGE.by_category;
+
+      for (const [key, features] of Object.entries(pkg)) {
+        layerGroups[key] = L.layerGroup();
+        const style = styles[key] || { color: '#94a3b8', fill: '#64748b', weight: 1.0, opacity: 0.15 };
+
+        if (key === 'harbours_and_ports') {
+          // Render titik harbour
+          features.forEach(feat => {
+            const p = feat.properties;
+            const latlng = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
+            const marker = L.circleMarker(latlng, {
+              radius: 3.5,
+              color: '#b91c1c',
+              fillColor: '#ef4444',
+              fillOpacity: 0.85,
+              weight: 1
+            });
+
+            const unlocodeHtml = p.unlocode ? `<span class="unlocode-badge">UN/LOCODE: ${p.unlocode}</span><br>` : '';
+
+            marker.bindPopup(`
+              <div>
+                <h4>⚓ ${p.name}</h4>
+                ${unlocodeHtml}
+                <b>Negara:</b> ${p.country || '-'}<br>
+                <b>Posisi:</b> ${latlng[0].toFixed(4)}°, ${latlng[1].toFixed(4)}°
+              </div>
+            `);
+            marker.featureData = feat;
+            marker.addTo(layerGroups[key]);
+            allLayers.push(marker);
+          });
+        } else {
+          // Render polygon (ENC Bands & Publications)
+          const geoLayer = L.geoJSON(features, {
+            style: {
+              color: style.color,
+              weight: style.weight,
+              fillColor: style.fill,
+              fillOpacity: style.opacity
+            },
+            onEachFeature: (f, layer) => {
+              const p = f.properties;
+              if (p.cell) {
+                layer.bindPopup(`
+                  <div>
+                    <h4>🗺️ Sel ENC: ${p.cell}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:600;">${p.usage_band}</span><br>
+                    <b>Judul:</b> ${p.title || '-'}<br>
+                    <b>Negara:</b> ${p.country || '-'}<br>
+                    <b>Skala:</b> ${p.scale || '-'}
+                  </div>
+                `);
+              } else {
+                layer.bindPopup(`
+                  <div>
+                    <h4>📖 ${p.code ? p.code + ' - ' : ''}${p.title || p.name}</h4>
+                    <span style="background:${style.color};color:#fff;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:600;">${p.category}</span><br>
+                    ${p.volume ? `<b>Volume:</b> <span style="color:#facc15;font-weight:bold;">${p.volume}</span><br>` : ''}
+                    <b>Wilayah:</b> ${p.description || p.title || '-'}
+                  </div>
+                `);
+              }
+              layer.featureData = f;
+              allLayers.push(layer);
+            }
+          });
+          geoLayer.addTo(layerGroups[key]);
+        }
+      }
+
+      // Default active layers on start: Band 1, 2, 3
+      ['enc_band1_overview', 'enc_band2_general', 'enc_band3_coastal'].forEach(k => {
+        if (layerGroups[k]) map.addLayer(layerGroups[k]);
+      });
+    }
+
+    function toggleLayer(key, isVisible) {
+      if (!layerGroups[key]) return;
+      if (isVisible) {
+        map.addLayer(layerGroups[key]);
+      } else {
+        map.removeLayer(layerGroups[key]);
+      }
+    }
+
+    function filterData(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        allLayers.forEach(l => {
+          if (l.setStyle) l.setStyle({ opacity: 1, fillOpacity: 0.15 });
+        });
+        return;
+      }
+
+      allLayers.forEach(l => {
+        const p = l.featureData ? l.featureData.properties : {};
+        const text = `${p.name || ''} ${p.cell || ''} ${p.code || ''} ${p.unlocode || ''} ${p.title || ''} ${p.country || ''}`.toLowerCase();
+        const matches = text.includes(q);
+        if (l.setStyle) {
+          l.setStyle({
+            opacity: matches ? 1 : 0.05,
+            fillOpacity: matches ? 0.7 : 0.01
+          });
+        }
+      });
+    }
+
+    window.onload = initPackage;
+  </script>
+</body>
+</html>

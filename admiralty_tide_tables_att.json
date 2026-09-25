@@ -1,0 +1,769 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "title": "Admiralty Tide Tables (ATT) & TotalTide Official Coverage Areas",
+    "total_features": 19
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ATT_NP201A",
+      "properties": {
+        "name": "NP201A - ATT Vol 1A - UK & English Channel",
+        "code": "NP201A",
+        "title": "ATT Vol 1A - UK & English Channel",
+        "description": "English Channel, Thames Estuary and Southern UK",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -7.0,
+              53.5
+            ],
+            [
+              2.5,
+              53.5
+            ],
+            [
+              2.5,
+              48.5
+            ],
+            [
+              -7.0,
+              48.5
+            ],
+            [
+              -7.0,
+              53.5
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP201B",
+      "properties": {
+        "name": "NP201B - ATT Vol 1B - UK & Ireland",
+        "code": "NP201B",
+        "title": "ATT Vol 1B - UK & Ireland",
+        "description": "Scotland, Irish Sea, Ireland and Northern UK",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -12.0,
+              61.5
+            ],
+            [
+              1.0,
+              61.5
+            ],
+            [
+              1.0,
+              52.0
+            ],
+            [
+              -12.0,
+              52.0
+            ],
+            [
+              -12.0,
+              61.5
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP202",
+      "properties": {
+        "name": "NP202 - ATT Vol 2 - North Atlantic & Arctic",
+        "code": "NP202",
+        "title": "ATT Vol 2 - North Atlantic & Arctic",
+        "description": "North Atlantic Ocean, Arctic Regions and Baltic Sea",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.0,
+              85.0
+            ],
+            [
+              35.0,
+              85.0
+            ],
+            [
+              35.0,
+              45.0
+            ],
+            [
+              -75.0,
+              45.0
+            ],
+            [
+              -75.0,
+              85.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP203",
+      "properties": {
+        "name": "NP203 - ATT Vol 3 - Indian Ocean & South China Sea",
+        "code": "NP203",
+        "title": "ATT Vol 3 - Indian Ocean & South China Sea",
+        "description": "Indian Ocean, Arabian Sea, Bay of Bengal and South China Sea",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              35.0,
+              30.0
+            ],
+            [
+              120.0,
+              30.0
+            ],
+            [
+              120.0,
+              -35.0
+            ],
+            [
+              35.0,
+              -35.0
+            ],
+            [
+              35.0,
+              30.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP204",
+      "properties": {
+        "name": "NP204 - ATT Vol 4 - South Pacific Ocean",
+        "code": "NP204",
+        "title": "ATT Vol 4 - South Pacific Ocean",
+        "description": "South Pacific Ocean, Australia, New Zealand and Pacific Islands",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              110.0,
+              0.0
+            ],
+            [
+              -70.0,
+              0.0
+            ],
+            [
+              -70.0,
+              -55.0
+            ],
+            [
+              110.0,
+              -55.0
+            ],
+            [
+              110.0,
+              0.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP205",
+      "properties": {
+        "name": "NP205 - ATT Vol 5 - South China Sea & Indonesia",
+        "code": "NP205",
+        "title": "ATT Vol 5 - South China Sea & Indonesia",
+        "description": "South China Sea, Indonesia, Malaysia, Singapore, Philippines",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.0,
+              25.0
+            ],
+            [
+              142.0,
+              25.0
+            ],
+            [
+              142.0,
+              -12.0
+            ],
+            [
+              95.0,
+              -12.0
+            ],
+            [
+              95.0,
+              25.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP206",
+      "properties": {
+        "name": "NP206 - ATT Vol 6 - North Pacific Ocean",
+        "code": "NP206",
+        "title": "ATT Vol 6 - North Pacific Ocean",
+        "description": "North Pacific Ocean, Japan, Korea, China and East Coast of Russia",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              115.0,
+              65.0
+            ],
+            [
+              -120.0,
+              65.0
+            ],
+            [
+              -120.0,
+              10.0
+            ],
+            [
+              115.0,
+              10.0
+            ],
+            [
+              115.0,
+              65.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP207",
+      "properties": {
+        "name": "NP207 - ATT Vol 7 - South West Atlantic & South America",
+        "code": "NP207",
+        "title": "ATT Vol 7 - South West Atlantic & South America",
+        "description": "South West Atlantic Ocean and East Coast of South America",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.0,
+              12.0
+            ],
+            [
+              -30.0,
+              12.0
+            ],
+            [
+              -30.0,
+              -60.0
+            ],
+            [
+              -75.0,
+              -60.0
+            ],
+            [
+              -75.0,
+              12.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_NP208",
+      "properties": {
+        "name": "NP208 - ATT Vol 8 - South East Atlantic & Mediterranean",
+        "code": "NP208",
+        "title": "ATT Vol 8 - South East Atlantic & Mediterranean",
+        "description": "South East Atlantic Ocean, West Africa and Mediterranean Sea",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -25.0,
+              46.0
+            ],
+            [
+              36.0,
+              46.0
+            ],
+            [
+              36.0,
+              -38.0
+            ],
+            [
+              -25.0,
+              -38.0
+            ],
+            [
+              -25.0,
+              46.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_1",
+      "properties": {
+        "name": "TotalTide Area 1 - TotalTide Area 1 - UK & Northern Europe",
+        "code": "TotalTide Area 1",
+        "title": "TotalTide Area 1 - UK & Northern Europe",
+        "description": "United Kingdom, English Channel and Northern Europe",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -15.0,
+              65.0
+            ],
+            [
+              12.0,
+              65.0
+            ],
+            [
+              12.0,
+              48.0
+            ],
+            [
+              -15.0,
+              48.0
+            ],
+            [
+              -15.0,
+              65.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_2",
+      "properties": {
+        "name": "TotalTide Area 2 - TotalTide Area 2 - Northern Europe & Baltic",
+        "code": "TotalTide Area 2",
+        "title": "TotalTide Area 2 - Northern Europe & Baltic",
+        "description": "North Coast of Europe, Baltic Sea and Arctic Norway",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              4.0,
+              72.0
+            ],
+            [
+              32.0,
+              72.0
+            ],
+            [
+              32.0,
+              53.0
+            ],
+            [
+              4.0,
+              53.0
+            ],
+            [
+              4.0,
+              72.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_3",
+      "properties": {
+        "name": "TotalTide Area 3 - TotalTide Area 3 - Mediterranean & Black Sea",
+        "code": "TotalTide Area 3",
+        "title": "TotalTide Area 3 - Mediterranean & Black Sea",
+        "description": "Mediterranean Sea, Black Sea and Caspian Sea",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -6.0,
+              48.0
+            ],
+            [
+              55.0,
+              48.0
+            ],
+            [
+              55.0,
+              30.0
+            ],
+            [
+              -6.0,
+              30.0
+            ],
+            [
+              -6.0,
+              48.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_4",
+      "properties": {
+        "name": "TotalTide Area 4 - TotalTide Area 4 - Atlantic Islands & West Africa",
+        "code": "TotalTide Area 4",
+        "title": "TotalTide Area 4 - Atlantic Islands & West Africa",
+        "description": "Atlantic Islands, West Coast of Africa and South Atlantic",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -35.0,
+              40.0
+            ],
+            [
+              20.0,
+              40.0
+            ],
+            [
+              20.0,
+              -40.0
+            ],
+            [
+              -35.0,
+              -40.0
+            ],
+            [
+              -35.0,
+              40.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_5",
+      "properties": {
+        "name": "TotalTide Area 5 - TotalTide Area 5 - Red Sea, Arabian Sea & Persian Gulf",
+        "code": "TotalTide Area 5",
+        "title": "TotalTide Area 5 - Red Sea, Arabian Sea & Persian Gulf",
+        "description": "Red Sea, Arabian Sea, Persian Gulf and North-West Indian Ocean",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              32.0,
+              32.0
+            ],
+            [
+              78.0,
+              32.0
+            ],
+            [
+              78.0,
+              -5.0
+            ],
+            [
+              32.0,
+              -5.0
+            ],
+            [
+              32.0,
+              32.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_6",
+      "properties": {
+        "name": "TotalTide Area 6 - TotalTide Area 6 - Singapore, Malacca & East Asia",
+        "code": "TotalTide Area 6",
+        "title": "TotalTide Area 6 - Singapore, Malacca & East Asia",
+        "description": "Singapore Strait, Malacca Strait, Indonesia, China, Japan and Korea",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              95.0,
+              45.0
+            ],
+            [
+              150.0,
+              45.0
+            ],
+            [
+              150.0,
+              -12.0
+            ],
+            [
+              95.0,
+              -12.0
+            ],
+            [
+              95.0,
+              45.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_7",
+      "properties": {
+        "name": "TotalTide Area 7 - TotalTide Area 7 - Australia & Pacific Islands",
+        "code": "TotalTide Area 7",
+        "title": "TotalTide Area 7 - Australia & Pacific Islands",
+        "description": "Australia, New Zealand, Papua New Guinea and Pacific Islands",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              110.0,
+              5.0
+            ],
+            [
+              -130.0,
+              5.0
+            ],
+            [
+              -130.0,
+              -50.0
+            ],
+            [
+              110.0,
+              -50.0
+            ],
+            [
+              110.0,
+              5.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_8",
+      "properties": {
+        "name": "TotalTide Area 8 - TotalTide Area 8 - Indian Ocean & Bay of Bengal",
+        "code": "TotalTide Area 8",
+        "title": "TotalTide Area 8 - Indian Ocean & Bay of Bengal",
+        "description": "Central & South Indian Ocean, Bay of Bengal and East Africa",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              35.0,
+              25.0
+            ],
+            [
+              105.0,
+              25.0
+            ],
+            [
+              105.0,
+              -45.0
+            ],
+            [
+              35.0,
+              -45.0
+            ],
+            [
+              35.0,
+              25.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_9",
+      "properties": {
+        "name": "TotalTide Area 9 - TotalTide Area 9 - North America (East) & Caribbean",
+        "code": "TotalTide Area 9",
+        "title": "TotalTide Area 9 - North America (East) & Caribbean",
+        "description": "North America East Coast, Gulf of Mexico, Caribbean and South America East Coast",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -100.0,
+              60.0
+            ],
+            [
+              -35.0,
+              60.0
+            ],
+            [
+              -35.0,
+              -55.0
+            ],
+            [
+              -100.0,
+              -55.0
+            ],
+            [
+              -100.0,
+              60.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ATT_TotalTide_Area_10",
+      "properties": {
+        "name": "TotalTide Area 10 - TotalTide Area 10 - North America (West) & Hawaii",
+        "code": "TotalTide Area 10",
+        "title": "TotalTide Area 10 - North America (West) & Hawaii",
+        "description": "North America West Coast, Alaska, Hawaii and Pacific Coast of South America",
+        "category": "Admiralty Tide Tables (ATT)",
+        "group": "Admiralty Publications",
+        "type": "Coverage Area Polygon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -180.0,
+              72.0
+            ],
+            [
+              -70.0,
+              72.0
+            ],
+            [
+              -70.0,
+              -55.0
+            ],
+            [
+              -180.0,
+              -55.0
+            ],
+            [
+              -180.0,
+              72.0
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
