@@ -81,13 +81,14 @@
     <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50/90 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
+                <a href="./index.html" class="flex items-center space-x-3 group" title="Back to Navigation Hub">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg group-hover:bg-blue-700 transition">
                         <i class="fa-solid fa-globe"></i>
                     </div>
-                    <span class="font-bold text-xl tracking-tight text-slate-800">Meteorological <span class="text-blue-600">Hub</span></span>
-                </div>
-                <div class="hidden md:flex space-x-6 text-sm font-semibold text-slate-600">
+                    <span class="font-bold text-xl tracking-tight text-slate-800 group-hover:text-blue-600 transition">Meteorological <span class="text-blue-600">Hub</span></span>
+                </a>
+                <div class="hidden md:flex space-x-6 text-sm font-semibold text-slate-600 items-center">
+                    <a href="./index.html" class="hover:text-blue-600 transition flex items-center"><i class="fa-solid fa-house mr-1.5 text-xs"></i> Hub Home</a>
                     <a href="#analysis" class="hover:text-blue-600 transition"><i class="fa-solid fa-chart-line mr-1"></i> Analysis</a>
                     <a href="#satellite" class="hover:text-blue-600 transition"><i class="fa-solid fa-satellite mr-1"></i> Satellite</a>
                     <a href="#aviation" class="hover:text-blue-600 transition"><i class="fa-solid fa-plane mr-1"></i> Aviation</a>
