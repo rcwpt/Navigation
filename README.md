@@ -1,9 +1,8 @@
 # 🧭 Navigation Hub | Advanced Bridge Dashboard
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frcwpt%2Fnavigation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Vercel](https://img.shields.io/badge/Vercel-Live-black?logo=vercel)](https://navigator-lime.vercel.app/)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-green.svg)](https://rcwpt.github.io/navigation/)
-[![Vercel](https://img.shields.io/badge/Vercel-Deployment%20Ready-black?logo=vercel)](https://vercel.com)
 
 **Navigation Hub** is an advanced, client-side tactical navigation suite and maritime bridge dashboard designed for navigational officers, mariners, and maritime students. It combines ENC/AVCS chart management, voyage route analysis, GMDSS radio operations, meteorological intelligence, and celestial navigation into a single modern dashboard.
 
@@ -61,36 +60,6 @@
 ### 10. 🚀 Unified ENC & ADMIRALTY Voyage Suite (`encsuite.html`)
 - Dual-screen tactical bridge interface: Interactive ADMIRALTY catalogue map paired alongside an ENC permit manager sidebar.
 - Import standard passage routes (`.rtz`, `.csv`, `.gpx`), automatically cross-reference existing permits, and identify missing charts needed for the voyage.
-
----
-
-## 🚀 Deployment to Vercel
-
-### Method 1: 1-Click Button (Recommended)
-Click the button below to deploy this repository directly into your Vercel account:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frcwpt%2Fnavigation)
-
-### Method 2: Import via Vercel Dashboard
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard) and click **"Add New..." > "Project"**.
-2. Select **GitHub** and authorize access to `rcwpt/navigation`.
-3. In the project configuration:
-   - **Framework Preset**: `Other` (Static HTML)
-   - **Root Directory**: `./`
-   - Leave Build Command and Output Directory blank.
-4. Click **Deploy**.
-5. Your app will be live within seconds at `https://<project-name>.vercel.app` (e.g., `https://navigation-hub.vercel.app`).
-
-### Updating the GitHub "About" Website Link
-Once your Vercel project is deployed:
-1. Open your repository at [github.com/rcwpt/navigation](https://github.com/rcwpt/navigation).
-2. Look at the right sidebar under **About**.
-3. Click the ⚙️ (gear/settings) icon next to **About**.
-4. In the **Website** field, enter your new Vercel URL:
-   ```text
-   https://<your-project-name>.vercel.app
-   ```
-5. Click **Save changes**.
 
 ---
 
