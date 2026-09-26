@@ -11,8 +11,8 @@
 
 ## 🌐 Live Deployments
 
-- **Vercel (Primary Web App)**: [Deploy directly to Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frcwpt%2Fnavigation) or visit your deployed domain (e.g. `https://navigation-hub.vercel.app` / `https://rcwpt-navigation.vercel.app`).
-- **GitHub Pages (Backup/Mirror)**: [https://rcwpt.github.io/navigation/](https://rcwpt.github.io/navigation/)
+- **Vercel (Primary App)**: [https://navigator-lime.vercel.app/](https://navigator-lime.vercel.app/)
+- **GitHub Pages (Mirror)**: [https://rcwpt.github.io/navigation/](https://rcwpt.github.io/navigation/)
 
 ---
 
