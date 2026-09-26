@@ -39,9 +39,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
   <!-- Load Initial Admiralty Map Data (Band 1-3, Folios, ALRS, ATT, SD, Harbours) -->
-  <script src="admiralty_data.js"></script>
+  <script src="admiralty_data.js?v=20260926_true_geom_all"></script>
   <!-- Load Catalogue Lookup DB for instant 35,277 chart metadata -->
-  <script src="admiralty_catalogue_db.js"></script>
+  <script src="admiralty_catalogue_db.js?v=20260926_true_geom_all"></script>
 
   <style>
     body, html {
@@ -443,6 +443,17 @@
             </div>
           </div>
 
+          <!-- Basket Map Display Controls -->
+          <div class="flex items-center justify-between bg-rose-950/30 border border-rose-900/40 px-3 py-1.5 rounded-lg text-xs">
+            <label class="flex items-center gap-1.5 cursor-pointer select-none text-slate-300 font-medium">
+              <input type="checkbox" id="chkShowBasketOnMap" checked onchange="toggleBasketMapHighlight(this.checked)" class="rounded bg-slate-900 border-slate-700 text-rose-500">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse"></span> Show Basket on Map (Red)</span>
+            </label>
+            <button onclick="zoomToBasket()" class="px-2.5 py-0.5 rounded bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700/60 text-[11px] font-semibold flex items-center gap-1 transition">
+              <i class="fa-solid fa-crosshairs text-[10px]"></i> Zoom Basket
+            </button>
+          </div>
+
           <!-- Basket Table Container -->
           <div class="bg-slate-900/90 border border-white/10 rounded-xl overflow-hidden flex flex-col">
             <div class="max-h-[380px] overflow-y-auto custom-scrollbar">
@@ -790,6 +801,7 @@
     const allLayers = [];
     let permitLayerGroup;
     let routeLayerGroup;
+    let basketLayerGroup;
 
     // Category Styles
     const categoryStyles = {
@@ -849,6 +861,7 @@
       // Dedicated layer groups
       permitLayerGroup = L.layerGroup().addTo(map);
       routeLayerGroup = L.layerGroup().addTo(map);
+      basketLayerGroup = L.layerGroup().addTo(map);
 
       // Coordinate tracker
       map.on('mousemove', (e) => {
@@ -1223,6 +1236,116 @@
           layer.setStyle({ opacity: matches ? 1 : 0.02, fillOpacity: matches ? 0.6 : 0.01 });
         }
       });
+    }
+
+    // ==============================================
+    // BASKET ON MAP HIGHLIGHT & ZOOM
+    // ==============================================
+    function updateBasketMapHighlight() {
+      if (!basketLayerGroup) return;
+      basketLayerGroup.clearLayers();
+      const chk = document.getElementById('chkShowBasketOnMap');
+      const showBasket = chk ? chk.checked : true;
+      if (!showBasket || orderBasket.length === 0) return;
+
+      const basketSet = new Set(orderBasket.map(it => it.productNumber.toUpperCase()));
+
+      // Check if any basket items belong to Band 4, 5, or 6 and ensure loaded
+      const bandsToLoad = new Set();
+      basketSet.forEach(cid => {
+        if (cid.length >= 3) {
+          const b = cid[2];
+          if (b === '4' && !window.ENC_BAND4_DATA) bandsToLoad.add(4);
+          else if (b === '5' && !window.ENC_BAND5_DATA) bandsToLoad.add(5);
+          else if (b === '6' && !window.ENC_BAND6_DATA) bandsToLoad.add(6);
+        }
+      });
+
+      if (bandsToLoad.size > 0) {
+        bandsToLoad.forEach(b => {
+          const info = SCRIPT_BANDS[`chk_enc_b${b}`];
+          if (info) toggleScriptBand(info.js, info.varName, info.cat, true);
+        });
+      }
+
+      // Draw all matching cells in RED (matching Admiralty Shopping Basket display)
+      const rendered = new Set();
+      allLayers.forEach(l => {
+        if (l.featureData && l.featureData.properties && l.featureData.properties.cell) {
+          const cid = l.featureData.properties.cell.toUpperCase();
+          if (basketSet.has(cid)) {
+            const p = l.featureData.properties;
+            const highlightPoly = L.geoJSON(l.featureData, {
+              style: {
+                color: '#ef4444',
+                weight: 2.8,
+                fillColor: '#ef4444',
+                fillOpacity: 0.25,
+                dashArray: null
+              }
+            });
+
+            highlightPoly.bindPopup(`
+              <div>
+                <h4>🛒 Basket ENC: ${cid}</h4>
+                <span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">In Shopping Basket</span>
+                <div style="margin-top:5px;font-size:11px;">
+                  <b>Title:</b> ${p.title || '-'}<br>
+                  <b>Scale:</b> ${p.scale || '-'}<br>
+                  <b>Agency:</b> ${p.country || '-'}<br>
+                  <b>Band:</b> ${p.usage_band || p.category}
+                </div>
+              </div>
+            `);
+
+            highlightPoly.addTo(basketLayerGroup);
+            rendered.add(cid);
+          }
+        }
+      });
+    }
+
+    function toggleBasketMapHighlight(checked) {
+      if (checked) updateBasketMapHighlight();
+      else if (basketLayerGroup) basketLayerGroup.clearLayers();
+    }
+
+    function zoomToBasket() {
+      if (basketLayerGroup && basketLayerGroup.getLayers().length > 0) {
+        const group = L.featureGroup(basketLayerGroup.getLayers());
+        map.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 9 });
+      } else {
+        showToast("Basket Empty", "No charts currently displayed in basket to zoom to.", "info");
+      }
+    }
+
+    function zoomToCell(cellId) {
+      const cid = (cellId || '').trim().toUpperCase();
+      let found = false;
+      allLayers.forEach(l => {
+        if (l.featureData && l.featureData.properties && l.featureData.properties.cell) {
+          if (l.featureData.properties.cell.toUpperCase() === cid) {
+            if (l.getBounds) {
+              map.fitBounds(l.getBounds(), { padding: [60, 60], maxZoom: 10 });
+              if (l.openPopup) l.openPopup();
+              found = true;
+            }
+          }
+        }
+      });
+      if (!found) {
+        if (cid.length >= 3 && ['4','5','6'].includes(cid[2])) {
+          const b = cid[2];
+          const info = SCRIPT_BANDS[`chk_enc_b${b}`];
+          if (info) {
+            showLoading(true, `Loading Band ${b} for ${cid}...`);
+            toggleScriptBand(info.js, info.varName, info.cat, true);
+            setTimeout(() => { zoomToCell(cellId); }, 1000);
+          }
+        } else {
+          showToast("Chart Not Loaded", `Chart ${cid} is not currently active on map. Enable its layer in Catalogue Layers.`, "info");
+        }
+      }
     }
 
     // ==============================================
@@ -1889,6 +2012,7 @@
       document.getElementById('basketCountBadge').innerText = total;
 
       document.getElementById('permitCountBadge').innerText = permitInventory.length;
+      updateBasketMapHighlight();
     }
 
     function renderBasketTable() {
@@ -1922,7 +2046,7 @@
           <td class="py-1.5 px-2.5 text-center">
             <input type="checkbox" ${it.selected ? 'checked' : ''} onchange="orderBasket[${idx}].selected = this.checked; renderBasketTable();" class="rounded bg-slate-950 border-slate-700 text-sky-500">
           </td>
-          <td class="py-1.5 px-2 font-mono-tech font-bold text-sky-300">${it.productNumber}</td>
+          <td class="py-1.5 px-2 font-mono-tech font-bold text-sky-300 hover:text-rose-300 cursor-pointer transition flex items-center gap-1" onclick="zoomToCell('${it.productNumber}')" title="Click to zoom to true ENC polygon">${it.productNumber} <i class="fa-solid fa-crosshairs text-[9px] text-slate-500 opacity-60"></i></td>
           <td class="py-1.5 px-2 text-slate-300 truncate max-w-[150px]">${it.productTitle}</td>
           <td class="py-1.5 px-2 text-center">${statusBadge}</td>
           <td class="py-1.5 px-2 text-center">

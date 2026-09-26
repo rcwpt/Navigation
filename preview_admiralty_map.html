@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIRALTY Digital Catalogue - Official Folios, ENC Units (Band 1-6) & Publications</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <!-- Load initial verified bundle -->
-  <script src="admiralty_data.js"></script>
+  <script src="admiralty_data.js?v=20260926_true_geom_all"></script>
   <style>
     body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: #0b1329; overflow: hidden; }
     #map { height: 100vh; width: 100%; background: #0f172a; }
@@ -199,14 +199,6 @@
     <div class="control-item">
       <label><input type="checkbox" id="chk_ports" onchange="toggleCategory('Admiralty Harbours & Ports', this.checked)"><span style="color:#ef4444;">●</span> Harbours & Ports</label>
       <span class="tag" style="background:#991b1b;">5.197 Pt</span>
-    </div>
-
-    <!-- Quick Author Link -->
-    <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
-      <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" style="color: #f472b6; font-size: 11px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-        <i class="fa-brands fa-instagram"></i>
-        <span>Database created by @c.wijaya.t</span>
-      </a>
     </div>
   </div>
 
