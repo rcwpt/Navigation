@@ -1161,12 +1161,29 @@ function collectVesselInputs() {
 }
 
 function updateSquatDisplay(sq) {
-  if (!sq) return;
-  document.getElementById('disp-cb').innerText = `Cb: ${sq.vessel.blockCoefficient.toFixed(3)}`;
-  document.getElementById('disp-squat-open').innerText = `${sq.squatOpenSea.toFixed(2)} m`;
-  document.getElementById('disp-squat-shallow').innerText = `${sq.squatShallow.toFixed(2)} m`;
-  document.getElementById('disp-dynamic-draft').innerText = `${sq.dynamicDraftShallow.toFixed(2)} m`;
-  document.getElementById('disp-net-ukc').innerText = `${sq.ukcShallow.toFixed(2)} m`;
+  if (!sq || !sq.vessel) return;
+  const cb = sq.vessel.blockCoefficient || 0.84;
+  const sqOpen = sq.squatOpenSea || 0;
+  const sqShallow = sq.squatShallow || 0;
+  const maxDraft = sq.vessel.maxDraft || 7.8;
+  const totalDepth = sq.totalWaterDepth || 27.0;
+  const dynDraft = maxDraft + sqShallow;
+  const netUkc = totalDepth - dynDraft;
+
+  const cbEl = document.getElementById('disp-cb');
+  if (cbEl) cbEl.innerText = `Cb: ${cb.toFixed(3)}`;
+
+  const sqOpenEl = document.getElementById('disp-squat-open');
+  if (sqOpenEl) sqOpenEl.innerText = `${sqOpen.toFixed(2)} m`;
+
+  const sqShallowEl = document.getElementById('disp-squat-shallow');
+  if (sqShallowEl) sqShallowEl.innerText = `${sqShallow.toFixed(2)} m`;
+
+  const dynDraftEl = document.getElementById('disp-dynamic-draft');
+  if (dynDraftEl) dynDraftEl.innerText = `${dynDraft.toFixed(2)} m`;
+
+  const netUkcEl = document.getElementById('disp-net-ukc');
+  if (netUkcEl) netUkcEl.innerText = `${netUkc.toFixed(2)} m`;
 }
 
 // --- CORE PASSAGE PROCESSOR ---
@@ -1215,10 +1232,12 @@ function updateSidebarIntelUI() {
   // Ports
   const depPort = pubs?.nearestDeparturePort;
   const arrPort = pubs?.nearestArrivalPort;
+  const depDist = depPort ? (depPort.distanceNM != null ? depPort.distanceNM : depPort.distanceNm) : null;
+  const arrDist = arrPort ? (arrPort.distanceNM != null ? arrPort.distanceNM : arrPort.distanceNm) : null;
   document.getElementById('intel-dep-port').innerText = depPort ? `${depPort.name} (${depPort.country})` : '-';
-  document.getElementById('intel-dep-dist').innerText = depPort ? `${depPort.distanceNm.toFixed(1)} NM from WP1` : '-';
+  document.getElementById('intel-dep-dist').innerText = depDist != null ? `${depDist.toFixed(1)} NM from WP1` : '-';
   document.getElementById('intel-arr-port').innerText = arrPort ? `${arrPort.name} (${arrPort.country})` : '-';
-  document.getElementById('intel-arr-dist').innerText = arrPort ? `${arrPort.distanceNm.toFixed(1)} NM from End` : '-';
+  document.getElementById('intel-arr-dist').innerText = arrDist != null ? `${arrDist.toFixed(1)} NM from End` : '-';
 
   // NAVAREAs
   const navList = document.getElementById('intel-navarea-list');
@@ -1356,6 +1375,26 @@ function renderMapRoute() {
     circle.addTo(window.overlays.route);
   });
 
+  // Highlight Traversed Admiralty Publications (Pilots / NP Polygons)
+  if (STATE.spatialResults.pubs && STATE.spatialResults.pubs.sailingDirections) {
+    STATE.spatialResults.pubs.sailingDirections.forEach(sd => {
+      if (sd.feature) {
+        L.geoJSON(sd.feature, {
+          style: {
+            color: '#1d4ed8',
+            weight: 2.4,
+            dashArray: '6,4',
+            fillColor: '#2563eb',
+            fillOpacity: 0.18
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindTooltip(`📘 ${sd.code}: ${sd.title || ''} (Traversed Enroute)`, { sticky: true });
+          }
+        }).addTo(window.overlays.route);
+      }
+    });
+  }
+
   // Fit map bounds to route
   if (window.map) {
     window.map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
@@ -1373,10 +1412,13 @@ function renderReportDocument() {
   document.getElementById('rpt-voyage-no').innerText = v.voyageNo || '-';
   document.getElementById('rpt-dep-port').innerText = pubs?.nearestDeparturePort?.name || '-';
   document.getElementById('rpt-arr-port').innerText = pubs?.nearestArrivalPort?.name || '-';
+  const dFwd = typeof v.draftFwd === 'number' ? v.draftFwd.toFixed(2) : (v.draftFwd || '7.20');
+  const dAft = typeof v.draftAft === 'number' ? v.draftAft.toFixed(2) : (v.draftAft || '7.80');
+  const spd = typeof v.speed === 'number' ? v.speed.toFixed(1) : (v.speed || '12.0');
   document.getElementById('rpt-dim').innerText = `${v.length} × ${v.beam} m`;
-  document.getElementById('rpt-draft').innerText = `${v.draftFwd.toFixed(2)} / ${v.draftAft.toFixed(2)} m`;
+  document.getElementById('rpt-draft').innerText = `${dFwd} / ${dAft} m`;
   document.getElementById('rpt-total-dist').innerText = `${totalDist.toFixed(2)} NM`;
-  document.getElementById('rpt-speed').innerText = `${v.speed.toFixed(1)} kts`;
+  document.getElementById('rpt-speed').innerText = `${spd} kts`;
 
   // Zones
   document.getElementById('rpt-navareas').innerText = navareas && navareas.length > 0
@@ -1573,142 +1615,6 @@ function initBackgroundLayers() {
   }
 }
 
-// --- SETUP APPLICATION & LEAFLET MAP ON DOM READY ---
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Leaflet Map
-  try {
-    window.map = L.map('map', {
-      center: [15.0, 125.0],
-      zoom: 4,
-      minZoom: 2,
-      zoomControl: false,
-      worldCopyJump: true
-    });
-
-    L.control.zoom({ position: 'topright' }).addTo(window.map);
-    L.control.scale({ imperial: true, metric: true, position: 'bottomleft' }).addTo(window.map);
-
-    // Basemaps (Default: OpenStreetMap)
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(window.map);
-
-    const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      attribution: '&copy; CartoDB & OpenStreetMap'
-    });
-
-    const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      attribution: '&copy; CartoDB & OpenStreetMap'
-    });
-
-    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
-      attribution: '&copy; Esri, Maxar'
-    });
-
-    const baseLayers = {
-      "🗺️ OpenStreetMap (Standard)": osmLayer,
-      "🧭 CartoDB Voyager (Nav Style)": cartoVoyager,
-      "🌙 CartoDB Dark (ECDIS Marine Night)": cartoDark,
-      "🛰️ Esri Satellite Imagery": esriSat
-    };
-
-    // Overlay Layer Groups
-    window.overlays = {
-      route: L.layerGroup().addTo(window.map),
-      eca: L.layerGroup().addTo(window.map),
-      war: L.layerGroup().addTo(window.map),
-      tss: L.layerGroup().addTo(window.map),
-      asl: L.layerGroup().addTo(window.map),
-      atba: L.layerGroup().addTo(window.map),
-      navarea: L.layerGroup().addTo(window.map),
-      pubs: L.layerGroup().addTo(window.map),
-      pssa: L.layerGroup(),
-      piracy: L.layerGroup()
-    };
-
-    L.control.layers(baseLayers, {
-      "🚢 Route & Waypoint Track": window.overlays.route,
-      "🌿 ECA Zones (Emission)": window.overlays.eca,
-      "⚠️ JWC War Risk Areas": window.overlays.war,
-      "🔷 Traffic Schemes (TSS)": window.overlays.tss,
-      "🟪 Archipelagic Lanes (ASL)": window.overlays.asl,
-      "🚫 Areas to be Avoided (ATBA)": window.overlays.atba,
-      "🌐 NAVAREA Boundaries": window.overlays.navarea,
-      "📚 Admiralty Publications (Pilots)": window.overlays.pubs,
-      "🌊 Sensitive Areas (PSSA)": window.overlays.pssa,
-      "🏴‍☠️ Piracy Reporting Zones": window.overlays.piracy
-    }, { position: 'topright', collapsed: false }).addTo(window.map);
-
-    // Sync leaflet overlay control with sidebar checkboxes
-    window.map.on('overlayadd', (e) => {
-      for (let k in window.overlays) {
-        if (window.overlays[k] === e.layer) {
-          const chk = document.getElementById('layer-chk-' + k);
-          if (chk) chk.checked = true;
-        }
-      }
-    });
-    window.map.on('overlayremove', (e) => {
-      for (let k in window.overlays) {
-        if (window.overlays[k] === e.layer) {
-          const chk = document.getElementById('layer-chk-' + k);
-          if (chk) chk.checked = false;
-        }
-      }
-    });
-
-    // Cursor coordinates HUD
-    window.map.on('mousemove', (e) => {
-      const lat = e.latlng.lat;
-      const lon = e.latlng.lng;
-      if (window.RouteConverter) {
-        document.getElementById('hud-lat').innerText = RouteConverter.formatDMS(lat, true);
-        document.getElementById('hud-lon').innerText = RouteConverter.formatDMS(lon, false);
-      }
-    });
-
-    // Initialize all background maritime datasets
-    initBackgroundLayers();
-
-  } catch (err) {
-    console.error('Leaflet initialization error:', err);
-  }
-
-  // Populate 31 export format options
-  populateExportFormats();
-
-  // Setup Drag and Drop
-  const dropZone = document.getElementById('drop-zone');
-  if (dropZone) {
-    ['dragenter', 'dragover'].forEach(name => {
-      dropZone.addEventListener(name, (e) => {
-        e.preventDefault();
-        dropZone.classList.add('border-sky-600', 'bg-sky-100');
-      });
-    });
-    ['dragleave', 'drop'].forEach(name => {
-      dropZone.addEventListener(name, (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('border-sky-600', 'bg-sky-100');
-      });
-    });
-    dropZone.addEventListener('drop', (e) => {
-      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        loadRouteFromFile(e.dataTransfer.files[0]);
-      }
-    });
-  }
-
-  // Auto load User 99 WPTs Voyage
-  setTimeout(() => {
-    loadUserVoyage();
-  }, 400);
-});
-
 // --- LOAD USER ROUTE PRESET (V2608B CNTZO-PGPOM WEATHER 2 - 99 WPTs) ---
 const USER_99_WPTS = [
   {"id":"WP001","lat":32.31178,"lon":119.82737,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},
@@ -1883,6 +1789,143 @@ function loadSampleVoyage() {
   processRoute('V2608C CNZOS-PGPOM VIA TW-PH', sample);
 }
 window.loadSampleVoyage = loadSampleVoyage;
+
+// --- SETUP APPLICATION & LEAFLET MAP ON DOM READY ---
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Leaflet Map
+  try {
+    window.map = L.map('map', {
+      center: [15.0, 125.0],
+      zoom: 4,
+      minZoom: 2,
+      zoomControl: false,
+      worldCopyJump: true
+    });
+
+    L.control.zoom({ position: 'topright' }).addTo(window.map);
+    L.control.scale({ imperial: true, metric: true, position: 'bottomleft' }).addTo(window.map);
+
+    // Basemaps (Default: OpenStreetMap)
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(window.map);
+
+    const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; CartoDB & OpenStreetMap'
+    });
+
+    const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; CartoDB & OpenStreetMap'
+    });
+
+    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: '&copy; Esri, Maxar'
+    });
+
+    const baseLayers = {
+      "🗺️ OpenStreetMap (Standard)": osmLayer,
+      "🧭 CartoDB Voyager (Nav Style)": cartoVoyager,
+      "🌙 CartoDB Dark (ECDIS Marine Night)": cartoDark,
+      "🛰️ Esri Satellite Imagery": esriSat
+    };
+
+    // Overlay Layer Groups
+    window.overlays = {
+      route: L.layerGroup().addTo(window.map),
+      eca: L.layerGroup().addTo(window.map),
+      war: L.layerGroup().addTo(window.map),
+      tss: L.layerGroup().addTo(window.map),
+      asl: L.layerGroup().addTo(window.map),
+      atba: L.layerGroup().addTo(window.map),
+      navarea: L.layerGroup().addTo(window.map),
+      pubs: L.layerGroup().addTo(window.map),
+      pssa: L.layerGroup(),
+      piracy: L.layerGroup()
+    };
+
+    L.control.layers(baseLayers, {
+      "🚢 Route & Waypoint Track": window.overlays.route,
+      "🌿 ECA Zones (Emission)": window.overlays.eca,
+      "⚠️ JWC War Risk Areas": window.overlays.war,
+      "🔷 Traffic Schemes (TSS)": window.overlays.tss,
+      "🟪 Archipelagic Lanes (ASL)": window.overlays.asl,
+      "🚫 Areas to be Avoided (ATBA)": window.overlays.atba,
+      "🌐 NAVAREA Boundaries": window.overlays.navarea,
+      "📚 Admiralty Publications (Pilots)": window.overlays.pubs,
+      "🌊 Sensitive Areas (PSSA)": window.overlays.pssa,
+      "🏴‍☠️ Piracy Reporting Zones": window.overlays.piracy
+    }, { position: 'topright', collapsed: false }).addTo(window.map);
+
+    // Sync leaflet overlay control with sidebar checkboxes
+    window.map.on('overlayadd', (e) => {
+      for (let k in window.overlays) {
+        if (window.overlays[k] === e.layer) {
+          const chk = document.getElementById('layer-chk-' + k);
+          if (chk) chk.checked = true;
+        }
+      }
+    });
+    window.map.on('overlayremove', (e) => {
+      for (let k in window.overlays) {
+        if (window.overlays[k] === e.layer) {
+          const chk = document.getElementById('layer-chk-' + k);
+          if (chk) chk.checked = false;
+        }
+      }
+    });
+
+    // Cursor coordinates HUD
+    window.map.on('mousemove', (e) => {
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+      if (window.RouteConverter) {
+        document.getElementById('hud-lat').innerText = RouteConverter.formatDMS(lat, true);
+        document.getElementById('hud-lon').innerText = RouteConverter.formatDMS(lon, false);
+      }
+    });
+
+    // Initialize all background maritime datasets
+    initBackgroundLayers();
+
+  } catch (err) {
+    console.error('Leaflet initialization error:', err);
+  }
+
+  // Populate 31 export format options
+  populateExportFormats();
+
+  // Setup Drag and Drop
+  const dropZone = document.getElementById('drop-zone');
+  if (dropZone) {
+    ['dragenter', 'dragover'].forEach(name => {
+      dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-sky-600', 'bg-sky-100');
+      });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-sky-600', 'bg-sky-100');
+      });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        loadRouteFromFile(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  // Auto load User 99 WPTs Voyage
+  setTimeout(() => {
+    loadUserVoyage();
+  }, 400);
+});
+
 </script>
 
 </body>
