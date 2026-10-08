@@ -22,6 +22,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>if (typeof L === 'undefined') document.write('<script src="leaflet.js"><\/script>');</script>
 
+  <!-- TINY WORLD MAP (100% Offline Vector Base Map) -->
+  <script src="tiny-world-all-10000.js"></script>
+
   <!-- TURF.JS (CDN with Local Fallback) -->
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
   <script>if (typeof turf === 'undefined') document.write('<script src="turf.min.js"><\/script>');</script>
@@ -251,6 +254,38 @@
     }
     .vpf-row-war {
       background-color: #fef2f2 !important;
+    }
+    .ukc-yellow {
+      background-color: #fef08a !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .ukc-blue {
+      background-color: #00b0f0 !important;
+      color: white !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .header-bg {
+      background-color: #f1f5f9 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .header-blue-bg {
+      background-color: #e0f2fe !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .som-table {
+      width: 100%;
+      border-collapse: collapse !important;
+      border: 1px solid #000;
+      font-size: 8pt;
+      margin-bottom: 2px;
+    }
+    .som-table th, .som-table td {
+      border: 1px solid #000;
+      padding: 2.5px 4.5px;
     }
 
     /* MAP HUD & BADGES */
@@ -521,8 +556,50 @@
           </div>
         </div>
         <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-200">
-          <span>* Tersimpan di localStorage browser Anda</span>
+          <span>* Saved locally in browser localStorage</span>
           <span class="text-emerald-600 font-semibold" id="vessel-save-status"></span>
+        </div>
+      </div>
+
+      <!-- PORT UKC CONDITIONS (DEP & ARR) -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 space-y-2.5">
+        <div class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span>⚓</span> Port UKC Conditions (Dep & Arr)
+          </div>
+          <span class="text-[9.5px] font-mono text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">10% Draft Policy</span>
+        </div>
+
+        <div class="space-y-2">
+          <!-- Departure Port Conditions -->
+          <div class="bg-slate-50 p-2 rounded border border-slate-200 space-y-1">
+            <span class="text-[10px] font-bold text-blue-900 uppercase block">Departure Port (Dep)</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[9.5px] font-semibold text-slate-500 uppercase">Water Depth (m)</label>
+                <input type="number" step="0.1" id="ukc-in-dep-depth" oninput="saveVesselToStorage()" class="w-full text-xs border border-slate-300 rounded px-2 py-1 font-mono bg-white" value="15.0">
+              </div>
+              <div>
+                <label class="block text-[9.5px] font-semibold text-slate-500 uppercase">Tidal Height (m)</label>
+                <input type="number" step="0.1" id="ukc-in-dep-tide" oninput="saveVesselToStorage()" class="w-full text-xs border border-slate-300 rounded px-2 py-1 font-mono bg-white" value="1.5">
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrival Port Conditions -->
+          <div class="bg-slate-50 p-2 rounded border border-slate-200 space-y-1">
+            <span class="text-[10px] font-bold text-emerald-900 uppercase block">Arrival Port (Arr)</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[9.5px] font-semibold text-slate-500 uppercase">Water Depth (m)</label>
+                <input type="number" step="0.1" id="ukc-in-arr-depth" oninput="saveVesselToStorage()" class="w-full text-xs border border-slate-300 rounded px-2 py-1 font-mono bg-white" value="16.0">
+              </div>
+              <div>
+                <label class="block text-[9.5px] font-semibold text-slate-500 uppercase">Tidal Height (m)</label>
+                <input type="number" step="0.1" id="ukc-in-arr-tide" oninput="saveVesselToStorage()" class="w-full text-xs border border-slate-300 rounded px-2 py-1 font-mono bg-white" value="2.0">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -532,40 +609,29 @@
           <span>📐</span> Squat & UKC Mathematical Criteria
         </div>
         <div>
-          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Squat Formula Formula Standard</label>
-          <select id="squat-criteria" class="w-full text-xs border border-slate-300 rounded px-2 py-1.5 bg-slate-50">
-            <option value="auto">Auto (Barrass - Open & Confined Waters)</option>
-            <option value="open">Barrass Open Waters: S = Cb × V² / 100</option>
-            <option value="confined">Barrass Confined Waters: S = 2 × Cb × V² / 100</option>
-            <option value="eryuzlu">Eryuzlu Shallow Water Formula</option>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Squat Calculation Criteria</label>
+          <select id="squat-criteria" onchange="recalculateSquat()" class="w-full text-xs border border-slate-300 rounded px-2 py-1.5 bg-slate-50">
+            <option value="auto">Auto (Distance ≤ 15 NM: Shallow, > 15 NM: Open Sea)</option>
+            <option value="open">Open Sea Formula: Squat = Cb × V² / 100</option>
+            <option value="confined">Shallow / Confined Waters: Squat = Cb × V² / 50</option>
           </select>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 uppercase">Charted Depth (m)</label>
-            <input type="number" step="0.5" id="env-chart-depth" class="w-full text-xs border border-slate-300 rounded px-2 py-1 font-mono" value="25.0">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 uppercase">Min Tide Height (m)</label>
-            <input type="number" step="0.1" id="env-tide-height" class="w-full text-xs border border-slate-300 rounded px-2 py-1 font-mono" value="2.0">
-          </div>
-        </div>
         <button onclick="recalculateSquat()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs py-1.5 px-3 rounded shadow-xs cursor-pointer">
-          🔄 Recalculate Squat & VPF
+          🔄 Recalculate UKC & VPF
         </button>
       </div>
 
-      <!-- SQUAT RESULTS PREVIEW -->
+      <!-- SQUAT & UKC RESULTS PREVIEW -->
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs space-y-1.5">
         <div class="font-bold text-blue-900 border-b border-blue-200 pb-1 flex justify-between">
           <span>Squat & UKC Output</span>
           <span class="font-mono" id="disp-cb">Cb: 0.840</span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
-          <div>Open Water Squat: <strong class="text-blue-900 font-mono" id="disp-squat-open">1.21 m</strong></div>
-          <div>Shallow Water Squat: <strong class="text-rose-700 font-mono" id="disp-squat-shallow">2.42 m</strong></div>
-          <div>Dynamic Draft: <strong class="text-slate-900 font-mono" id="disp-dynamic-draft">9.01 m</strong></div>
-          <div>Net UKC: <strong class="text-emerald-700 font-mono" id="disp-net-ukc">17.99 m</strong></div>
+          <div>Open Sea Squat: <strong class="text-blue-900 font-mono" id="disp-squat-open">1.21 m</strong></div>
+          <div>Shallow Squat: <strong class="text-rose-700 font-mono" id="disp-squat-shallow">2.42 m</strong></div>
+          <div>Dep Net UKC: <strong class="text-emerald-700 font-mono" id="disp-dep-ukc">7.50 m</strong></div>
+          <div>Arr Net UKC: <strong class="text-emerald-700 font-mono" id="disp-arr-ukc">8.30 m</strong></div>
         </div>
       </div>
     </div>
@@ -707,6 +773,26 @@
 
     <!-- TAB 4: LAYER CONTROL (FULL MARITIME SPATIAL SUITE) -->
     <div class="tab-pane flex-1 overflow-y-auto p-4 space-y-2.5" id="tab-layers">
+      <!-- REPORT MAP BASE STYLE SELECTOR -->
+      <div class="bg-blue-50/70 border border-blue-200 rounded-lg p-2.5 space-y-1.5 mb-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
+            <span>🗺️</span> Report Map Style
+          </span>
+          <span class="text-[9px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded">A4 Page 2</span>
+        </div>
+        <select id="sel-report-map-style" onchange="changeReportMapStyle(this.value)" class="w-full text-xs border border-blue-300 rounded px-2 py-1.5 bg-white font-medium text-slate-800 cursor-pointer">
+          <option value="tiny_nautical" selected>🌍 TinyWorldMap Nautical (Offline Vector - Default)</option>
+          <option value="tiny_standard">🗺️ TinyWorldMap Standard Vector</option>
+          <option value="tiny_dark">🌙 TinyWorldMap Dark Vector</option>
+          <option value="osm">🗺️ OpenStreetMap Standard</option>
+          <option value="carto_voyager">🧭 CartoDB Voyager (Marine Nav Style)</option>
+          <option value="carto_dark">🌙 CartoDB Dark (ECDIS Night)</option>
+          <option value="esri_sat">🛰️ Esri Satellite Imagery</option>
+        </select>
+        <p class="text-[9.5px] text-slate-500 italic">Selects the cartographic style rendered on Page 2 of the printable Passage Report.</p>
+      </div>
+
       <div class="text-xs font-bold text-slate-800 uppercase tracking-wide border-b pb-1">Map Layers & Overlays</div>
       
       <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
@@ -820,7 +906,19 @@
       </div>
 
       <div class="flex items-center gap-3 text-xs">
-        <span class="text-slate-400 hidden sm:inline" id="topbar-summary-text">Ready</span>
+        <div class="hidden sm:flex items-center gap-1.5 text-slate-300">
+          <label for="topbar-report-map-style" class="text-[11px] text-slate-400 font-semibold">Report Map:</label>
+          <select id="topbar-report-map-style" onchange="changeReportMapStyle(this.value)" class="text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1 cursor-pointer">
+            <option value="tiny_nautical" selected>🌍 TinyWorld Nautical</option>
+            <option value="tiny_standard">🗺️ TinyWorld Standard</option>
+            <option value="tiny_dark">🌙 TinyWorld Dark</option>
+            <option value="osm">🗺️ OpenStreetMap</option>
+            <option value="carto_voyager">🧭 Carto Voyager</option>
+            <option value="carto_dark">🌙 Carto Dark</option>
+            <option value="esri_sat">🛰️ Esri Satellite</option>
+          </select>
+        </div>
+        <span class="text-slate-400 hidden md:inline" id="topbar-summary-text">Ready</span>
         <button onclick="printReportDocument()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-file-pdf"></i> Export PDF
         </button>
@@ -945,159 +1043,517 @@
         </div>
       </div>
 
-      <!-- A4 PAGE 2: MAP, SQUAT/UKC, PUBLICATIONS, NAVAREAS & MARITIME WATERS -->
-      <div class="report-paper space-y-4 report-page-break" id="report-page-2">
+      <!-- A4 PAGE 2: ROUTE MAP & MARITIME SPATIAL INTELLIGENCE -->
+      <div class="report-paper space-y-3.5 report-page-break" id="report-page-2">
         <!-- PAGE 2 HEADER -->
         <div class="border-b border-slate-300 pb-2 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-blue-900 font-bold text-xs uppercase tracking-wider">Passage Plan Enroute Analysis</span>
-            <span class="text-[10px] text-slate-400 font-mono">• Section 2 & 3</span>
+            <span class="text-blue-900 font-bold text-xs uppercase tracking-wider">Passage Plan Spatial Analysis</span>
+            <span class="text-[10px] text-slate-400 font-mono">• Section 2: Enroute Geographic Intelligence</span>
           </div>
-          <div class="text-[10px] text-slate-500 font-mono" id="rpt-page2-vessel-ref">-</div>
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] text-slate-500 font-mono" id="rpt-page2-vessel-ref">-</span>
+            <span class="text-[9.5px] font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Page 2 of 3</span>
+          </div>
         </div>
 
         <!-- 2. ROUTE OVERVIEW MAP -->
-        <div class="space-y-1.5">
+        <div class="space-y-1">
           <div class="flex items-center justify-between border-b border-slate-200 pb-1">
             <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
-              <span>🗺️</span> PASSAGE ROUTE OVERVIEW MAP
+              <span>🗺️</span> PASSAGE ROUTE OVERVIEW MAP (WGS84)
             </h3>
-            <span class="text-[9.5px] text-slate-500 font-mono">WGS84 • Cartographic Scale</span>
+            <span class="text-[9.5px] text-slate-500 font-mono" id="rpt-map-style-tag">TinyWorldMap Nautical • 100% Offline Vector</span>
           </div>
-          <div class="border border-slate-300 rounded overflow-hidden bg-slate-100 shadow-xs relative" style="width: 100%; height: 350px;">
+          <div class="border border-slate-300 rounded overflow-hidden bg-slate-100 shadow-xs relative" style="width: 100%; height: 375px;">
             <div id="doc-map-inner" style="width: 100%; height: 100%;"></div>
           </div>
           <div class="text-[9px] text-slate-600 flex justify-between font-medium pt-0.5">
             <span>* Green: Departure Port | Red: Arrival Port | Emerald: ECA Waters | Crimson: War Risk Area | Blue: Sailing Directions NP</span>
-            <span class="text-slate-400 font-mono">Continuous Antimeridian Cartography</span>
+            <span class="text-slate-400 font-mono">Continuous Antimeridian Coverage</span>
           </div>
         </div>
 
-        <!-- 3. SQUAT & UKC CALCULATION SUMMARY CARD -->
-        <div class="border border-slate-300 rounded-lg p-3 bg-slate-50 text-xs space-y-2">
-          <div class="flex items-center justify-between border-b border-slate-200 pb-1">
-            <span class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
-              <span>📐</span> Under Keel Clearance (UKC) & Dynamic Squat Analysis
-            </span>
-            <span class="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200" id="rpt-cb">Cb = -</span>
-          </div>
-          <div class="text-[10px] text-slate-600 font-mono bg-white p-2 rounded border border-slate-200 flex justify-between">
-            <span>Formula (Open Sea): Squat = Cb × (V² / 100)</span>
-            <span>Formula (Shallow/Confined): Squat = 2 × Cb × (V² / 100)</span>
-          </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-            <div class="bg-white p-2 rounded border border-rose-200">
-              <span class="text-[9.5px] text-rose-800 font-semibold block">Shallow Squat</span>
-              <strong class="text-rose-700 font-mono text-sm" id="rpt-sq-shallow">-</strong>
-            </div>
-            <div class="bg-white p-2 rounded border border-amber-200">
-              <span class="text-[9.5px] text-amber-800 font-semibold block">Open Sea Squat</span>
-              <strong class="text-amber-700 font-mono text-sm" id="rpt-sq-opensea">-</strong>
-            </div>
-            <div class="bg-white p-2 rounded border border-slate-200">
-              <span class="text-[9.5px] text-slate-600 font-semibold block">Static Max Draft</span>
-              <strong class="text-slate-800 font-mono text-sm" id="rpt-max-draft">-</strong>
-            </div>
-            <div class="bg-white p-2 rounded border border-emerald-200">
-              <span class="text-[9.5px] text-emerald-800 font-semibold block">Available Depth</span>
-              <strong class="text-emerald-700 font-mono text-sm" id="rpt-water-depth">-</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. MARITIME SPATIAL INTELLIGENCE & PUBLICATIONS REPORT -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <!-- 3. MARITIME SPATIAL INTELLIGENCE SUMMARY (GRID 2x2) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
           <!-- ECA ZONES & DISTANCE -->
-          <div class="border border-emerald-200 rounded-lg p-2.5 bg-emerald-50/30 space-y-1.5">
+          <div class="border border-emerald-200 rounded-lg p-2.5 bg-emerald-50/30 space-y-1">
             <div class="font-bold text-emerald-950 border-b border-emerald-200 pb-1 flex items-center justify-between">
               <span class="flex items-center gap-1.5"><span>🌿</span> Emission Control Areas (ECA)</span>
               <span class="text-[9.5px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-bold" id="rpt-eca-dist">0.0 NM</span>
             </div>
-            <div class="space-y-1 text-[11px]">
-              <div><span class="font-semibold text-slate-600">Active ECA Waters:</span> <span class="font-bold text-emerald-800 ml-1" id="rpt-eca-zones">None</span></div>
+            <div class="space-y-0.5 text-[11px]">
+              <div><span class="font-semibold text-slate-600">Traversed ECA Waters:</span> <span class="font-bold text-emerald-800 ml-1" id="rpt-eca-zones">None</span></div>
               <div class="text-[9.5px] text-slate-500 italic">* MARPOL Annex VI: Low-sulfur fuel (≤0.10% m/m) changeover mandatory upon entry.</div>
             </div>
           </div>
 
           <!-- NAVAREAs TRAVERSED -->
-          <div class="border border-amber-200 rounded-lg p-2.5 bg-amber-50/30 space-y-1.5">
+          <div class="border border-amber-200 rounded-lg p-2.5 bg-amber-50/30 space-y-1">
             <div class="font-bold text-amber-950 border-b border-amber-200 pb-1 flex items-center justify-between">
               <span class="flex items-center gap-1.5"><span>🌐</span> NAVAREAs Traversed</span>
               <span class="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono font-bold">IMO / IHO WWNWS</span>
             </div>
             <div class="text-[11px]">
-              <span class="font-semibold text-slate-600">Broadcast Areas:</span>
+              <span class="font-semibold text-slate-600">Broadcast Warning Areas:</span>
               <span class="font-bold text-slate-900 ml-1" id="rpt-navareas">-</span>
             </div>
           </div>
 
-          <!-- PERAIRAN & STRAITS / WILAYAH DILALUI -->
-          <div class="border border-blue-200 rounded-lg p-2.5 bg-blue-50/30 space-y-1.5">
+          <!-- TRAVERSED MARITIME WATERS & STRAITS -->
+          <div class="border border-blue-200 rounded-lg p-2.5 bg-blue-50/30 space-y-1">
             <div class="font-bold text-blue-950 border-b border-blue-200 pb-1 flex items-center justify-between">
-              <span class="flex items-center gap-1.5"><span>🌊</span> Perairan & Wilayah Dilalui</span>
-              <span class="text-[9.5px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono font-bold">Regional Waters</span>
+              <span class="flex items-center gap-1.5"><span>🌊</span> Traversed Maritime Waters & Straits</span>
+              <span class="text-[9.5px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono font-bold">Regional Seas</span>
             </div>
             <div class="text-[11px]">
-              <span class="font-semibold text-slate-600">Seas & Straits:</span>
+              <span class="font-semibold text-slate-600">Regional Waters:</span>
               <span class="font-bold text-blue-900 ml-1" id="rpt-waters-straits">-</span>
             </div>
           </div>
 
           <!-- WAR RISK & SECURITY -->
-          <div class="border border-rose-200 rounded-lg p-2.5 bg-rose-50/30 space-y-1.5">
+          <div class="border border-rose-200 rounded-lg p-2.5 bg-rose-50/30 space-y-1">
             <div class="font-bold text-rose-950 border-b border-rose-200 pb-1 flex items-center justify-between">
               <span class="flex items-center gap-1.5"><span>⚠️</span> War Risk & Security Areas</span>
               <span class="text-[9.5px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-mono font-bold">JWC Listed</span>
             </div>
             <div class="text-[11px]">
-              <span class="font-semibold text-slate-600">Perils Areas:</span>
+              <span class="font-semibold text-slate-600">Listed High-Risk Areas:</span>
               <span class="font-bold text-rose-700 ml-1" id="rpt-war-zones">None</span>
             </div>
           </div>
         </div>
 
-        <!-- ADMIRALTY PUBLICATIONS MANDATORY CARD -->
-        <div class="border border-slate-300 rounded-lg p-2.5 bg-white space-y-1.5">
+        <!-- 4. ADMIRALTY PUBLICATIONS MANDATORY CARD WITH FULL COMPLETE TITLES -->
+        <div class="border border-slate-300 rounded-lg p-3 bg-white space-y-2">
           <div class="font-bold text-slate-900 border-b border-slate-200 pb-1 flex items-center justify-between">
             <span class="flex items-center gap-1.5"><span>📚</span> Required Admiralty Publications (UKHO Official)</span>
-            <span class="text-[9.5px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">SOLAS Chapter V Coverage</span>
+            <span class="text-[9.5px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">SOLAS Chapter V Carriage Requirements</span>
           </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] pt-1">
-            <div class="bg-slate-50 p-2 rounded border border-slate-200">
-              <span class="text-[9.5px] text-blue-700 font-bold uppercase block">Pilots (NP)</span>
-              <span class="font-bold text-slate-800 block truncate" id="rpt-pilots">-</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10.5px]">
+            <!-- Sailing Directions (Pilots) -->
+            <div class="bg-blue-50/40 p-2 rounded border border-blue-200 space-y-1">
+              <div class="text-[10px] text-blue-800 font-bold uppercase flex items-center justify-between">
+                <span>📖 Admiralty Sailing Directions (Pilots NP)</span>
+                <span class="text-[9px] bg-blue-100 text-blue-800 px-1 rounded font-mono" id="rpt-pilots-count">0 Titles</span>
+              </div>
+              <div class="space-y-0.5 max-h-24 overflow-y-auto" id="rpt-pilots-list">
+                <span class="text-slate-400 italic">None traversed</span>
+              </div>
             </div>
-            <div class="bg-slate-50 p-2 rounded border border-slate-200">
-              <span class="text-[9.5px] text-amber-700 font-bold uppercase block">List of Lights (ALL)</span>
-              <span class="font-bold text-slate-800 block truncate" id="rpt-lights">-</span>
+
+            <!-- List of Lights -->
+            <div class="bg-amber-50/40 p-2 rounded border border-amber-200 space-y-1">
+              <div class="text-[10px] text-amber-800 font-bold uppercase flex items-center justify-between">
+                <span>💡 Admiralty List of Lights (ALL)</span>
+                <span class="text-[9px] bg-amber-100 text-amber-800 px-1 rounded font-mono" id="rpt-lights-count">0 Volumes</span>
+              </div>
+              <div class="space-y-0.5 max-h-24 overflow-y-auto" id="rpt-lights-list">
+                <span class="text-slate-400 italic">None traversed</span>
+              </div>
             </div>
-            <div class="bg-slate-50 p-2 rounded border border-slate-200">
-              <span class="text-[9.5px] text-purple-700 font-bold uppercase block">Radio Signals (ALRS)</span>
-              <span class="font-bold text-slate-800 block truncate" id="rpt-alrs">-</span>
+
+            <!-- Radio Signals (ALRS) -->
+            <div class="bg-purple-50/40 p-2 rounded border border-purple-200 space-y-1">
+              <div class="text-[10px] text-purple-800 font-bold uppercase flex items-center justify-between">
+                <span>📻 Admiralty List of Radio Signals (ALRS)</span>
+                <span class="text-[9px] bg-purple-100 text-purple-800 px-1 rounded font-mono" id="rpt-alrs-count">0 Volumes</span>
+              </div>
+              <div class="space-y-0.5 max-h-24 overflow-y-auto" id="rpt-alrs-list">
+                <span class="text-slate-400 italic">None traversed</span>
+              </div>
             </div>
-            <div class="bg-slate-50 p-2 rounded border border-slate-200">
-              <span class="text-[9.5px] text-teal-700 font-bold uppercase block">Tide Tables (ATT)</span>
-              <span class="font-bold text-slate-800 block truncate" id="rpt-att">-</span>
+
+            <!-- Tide Tables (ATT) -->
+            <div class="bg-teal-50/40 p-2 rounded border border-teal-200 space-y-1">
+              <div class="text-[10px] text-teal-800 font-bold uppercase flex items-center justify-between">
+                <span>🌊 Admiralty Tide Tables (ATT)</span>
+                <span class="text-[9px] bg-teal-100 text-teal-800 px-1 rounded font-mono" id="rpt-att-count">0 Volumes</span>
+              </div>
+              <div class="space-y-0.5 max-h-24 overflow-y-auto" id="rpt-att-list">
+                <span class="text-slate-400 italic">None traversed</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- SIGNATURE BLOCK -->
-        <div class="grid grid-cols-3 gap-6 pt-6 border-t-2 border-slate-300 text-center text-xs">
+      <!-- A4 PAGE 3: UNDER KEEL CLEARANCE (UKC) & DYNAMIC SQUAT CALCULATION SHEET (FROM SIR-099 REPLICA) -->
+      <div class="report-paper space-y-2.5 report-page-break" id="report-page-3">
+        <!-- SOM HEADER TABLE -->
+        <table class="w-full border-collapse border border-black text-[8.5pt] text-center mb-0.5">
+          <tr>
+            <td rowspan="2" width="22%" class="border border-black p-1 align-middle header-bg font-semibold">船舶操作手册<br>Shipboard Operation Manual</td>
+            <td rowspan="2" width="53%" class="border border-black p-1 align-middle text-[11.5pt] font-bold header-bg">UNDER KEEL CLEARANCE (UKC) CALCULATION</td>
+            <td width="8%" class="border border-black p-0.5 header-bg font-semibold">版本<br>Version</td>
+            <td width="9%" class="border border-black p-0.5 header-bg font-semibold">修改编号<br>Amend No.</td>
+            <td width="8%" class="border border-black p-0.5 header-bg font-semibold">页码<br>Page</td>
+          </tr>
+          <tr>
+            <td class="border border-black p-0.5 font-bold">1.0</td>
+            <td class="border border-black p-0.5">-</td>
+            <td class="border border-black p-0.5 font-bold">3 of 3</td>
+          </tr>
+          <tr>
+            <td class="border border-black p-0.5 text-left header-bg font-semibold" colspan="2">生效日期 Date of Effective: In Accordance with SMS Protocol</td>
+            <td class="border border-black p-0.5 header-bg text-right font-mono text-[8pt]" colspan="3" id="ukc-doc-date">Date: --</td>
+          </tr>
+        </table>
+
+        <!-- SOM POLICY & FORMULA TABLE -->
+        <table class="som-table">
+          <tbody>
+            <tr>
+              <td colspan="2" class="border border-black p-0.5 text-center bg-slate-50 w-[40%]" style="background-color: #f8fafc !important;"></td>
+              <td colspan="4" class="border border-black p-0.5 text-center font-bold tracking-widest header-blue-bg w-[60%]">UKC SAFETY MARGIN POLICY</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="border border-black p-0.5 leading-tight font-medium">In shallow waters (Depth less<br>than twice the draft of the vessel)</td>
+              <td colspan="4" class="border border-black p-0.5 text-center font-medium">10% of vessel's static draft at the time and place in question</td>
+            </tr>
+            <tr>
+              <td colspan="2" rowspan="2" class="border border-black p-0.5 font-bold text-[7.8pt] text-center align-middle uppercase bg-slate-100" style="background-color: #f1f5f9 !important;">
+                UKC = WATER DEEP + TIDAL HEIGHT<br>- DRAFT - SQUAT
+              </td>
+              <td colspan="2" class="border border-black p-0.5 text-center font-semibold text-[7.8pt] bg-slate-50 w-[30%]" style="background-color: #f8fafc !important;">
+                Shallow Water: Squat = Cb × (V² / 50)
+              </td>
+              <td colspan="2" rowspan="2" class="border border-black p-0.5 text-center font-bold text-[8pt] align-middle bg-slate-100 w-[30%]" style="background-color: #f1f5f9 !important;">
+                Cb = VOL / (L × B × d)
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" class="border border-black p-0.5 text-center font-semibold text-[7.8pt] bg-slate-50" style="background-color: #f8fafc !important;">
+                Open sea: Squat = Cb × (V² / 100)
+              </td>
+            </tr>
+
+            <!-- HYDRODYNAMIC PARAMETERS ROW -->
+            <tr>
+              <th class="border border-black p-0.5 text-center header-bg w-[15%]">Cb</th>
+              <td class="border border-black p-0.5 font-semibold text-blue-900 w-[20%]">Block co-efficient</td>
+              <td class="border border-black p-0.5 text-center font-bold font-mono w-[15%]" id="ukc-cb-val">0.00000000</td>
+              <th class="border border-black p-0.5 text-center header-bg w-[15%]">L</th>
+              <td class="border border-black p-0.5 font-semibold text-blue-900 w-[20%]">Water line length (<span id="ukc-l-disp">0</span> M)</td>
+              <td class="border border-black p-0.5 text-center font-bold font-mono w-[15%]" id="ukc-l-val">0</td>
+            </tr>
+            <tr>
+              <th class="border border-black p-0.5 text-center header-bg">V</th>
+              <td class="border border-black p-0.5 font-semibold text-blue-900">Ship speed (KT)</td>
+              <td class="border border-black p-0.5 text-center font-bold font-mono" id="ukc-v-val">-</td>
+              <th class="border border-black p-0.5 text-center header-bg">B</th>
+              <td class="border border-black p-0.5 font-semibold text-blue-900">Beam at centre (<span id="ukc-b-disp">-</span> M)</td>
+              <td class="border border-black p-0.5 text-center font-bold font-mono" id="ukc-b-val">-</td>
+            </tr>
+            <tr>
+              <th class="border border-black p-0.5 text-center header-bg">VOL</th>
+              <td class="border border-black p-0.5 font-semibold text-blue-900">Displacement (<span id="ukc-vol-disp">-</span> MT)</td>
+              <td class="border border-black p-0.5 text-center font-bold font-mono" id="ukc-vol-val">-</td>
+              <th class="border border-black p-0.5 text-center header-bg">d</th>
+              <td class="border border-black p-0.5 font-bold">Static Draft (M)</td>
+              <td class="border border-black p-0.5 text-center font-bold font-mono ukc-yellow shadow-inner" id="ukc-d-val">-</td>
+            </tr>
+
+            <!-- RESULTS ROW -->
+            <tr>
+              <td colspan="6" class="p-0.5 font-bold text-[8.5pt] uppercase border border-black text-center tracking-wide text-white bg-slate-800" style="background-color: #1e293b !important; color: white !important;">
+                <i class="fa-solid fa-calculator inline relative mr-1"></i> <span id="ukc-title-ports">-</span> : UKC CALCULATION RESULT
+              </td>
+            </tr>
+            <tr>
+              <th colspan="2" class="border border-black p-0.5 uppercase font-bold text-center header-blue-bg text-blue-900" id="ukc-dep-name">DEPARTURE</th>
+              <td colspan="4" class="border border-black p-0.5 font-semibold text-center text-blue-900 text-[7.8pt] font-mono" id="ukc-dep-string">UKC=M (WATER DEEP + TIDE - SQUAT - DRAFT = M)</td>
+            </tr>
+            <tr>
+              <th colspan="2" class="border border-black p-0.5 uppercase font-bold text-center header-blue-bg text-blue-900" id="ukc-arr-name">ARRIVAL</th>
+              <td colspan="4" class="border border-black p-0.5 font-semibold text-center text-blue-900 text-[7.8pt] font-mono" id="ukc-arr-string">UKC=M (WATER DEEP + TIDE - SQUAT - DRAFT = M)</td>
+            </tr>
+
+            <!-- SQUAT BREAKDOWN TABLE -->
+            <tr>
+              <td colspan="6" class="border border-black p-0">
+                <table class="w-full text-center border-collapse text-[7.8pt]">
+                  <tr class="header-bg">
+                    <th class="border border-black p-0.5 w-[20%]">SQUAT</th>
+                    <th class="border border-black p-0.5 w-[20%]">Type</th>
+                    <th class="border border-black p-0.5 w-[20%]">Value (M)</th>
+                    <th class="border border-black p-0.5 w-[20%]">Port</th>
+                    <th class="border border-black p-0.5 w-[10%]">Depth</th>
+                    <th class="border border-black p-0.5 w-[10%]">Tide</th>
+                  </tr>
+                  <tr>
+                    <td rowspan="2" class="border border-black p-0.5 font-bold align-middle bg-slate-50" style="background-color: #f8fafc !important;">SQUAT VALUES</td>
+                    <td class="border border-black p-0.5 font-semibold">Shallow Water</td>
+                    <td class="border border-black p-0.5 font-bold text-red-700 font-mono" id="ukc-sq-sh-val">0.000</td>
+                    <td class="border border-black p-0.5 font-bold uppercase" id="ukc-dep-name-2">DEP</td>
+                    <td class="border border-black p-0.5 font-bold font-mono ukc-yellow" id="ukc-dep-depth-val">0.00 M</td>
+                    <td class="border border-black p-0.5 font-bold font-mono text-emerald-700" id="ukc-dep-tide-val">+0.00 M</td>
+                  </tr>
+                  <tr>
+                    <td class="border border-black p-0.5 font-semibold">Open Sea</td>
+                    <td class="border border-black p-0.5 font-bold text-red-700 font-mono" id="ukc-sq-op-val">0.000</td>
+                    <td class="border border-black p-0.5 font-bold uppercase" id="ukc-arr-name-2">ARR</td>
+                    <td class="border border-black p-0.5 font-bold font-mono ukc-yellow" id="ukc-arr-depth-val">0.00 M</td>
+                    <td class="border border-black p-0.5 font-bold font-mono text-emerald-700" id="ukc-arr-tide-val">+0.00 M</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- FINAL UKC ROW -->
+            <tr>
+              <th colspan="2" class="border border-black p-0.5 font-bold text-right text-[8pt] uppercase bg-slate-100" style="background-color: #f1f5f9 !important;" id="ukc-dep-name-3">DEPARTURE UKC FINAL</th>
+              <td colspan="4" class="border border-black p-0.5 text-center font-bold text-xs tracking-wider ukc-blue shadow-inner" id="ukc-dep-final">0.00 M</td>
+            </tr>
+            <tr>
+              <th colspan="2" class="border border-black p-0.5 font-bold text-right text-[8pt] uppercase bg-slate-100" style="background-color: #f1f5f9 !important;" id="ukc-arr-name-3">ARRIVAL UKC FINAL</th>
+              <td colspan="4" class="border border-black p-0.5 text-center font-bold text-xs tracking-wider ukc-blue shadow-inner" id="ukc-arr-final">0.00 M</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- STACKED VERTICAL SHIP SKETCHES (SVG PROFILES EXACT FROM SIR-099) -->
+        <div class="w-full space-y-1.5 mt-0.5">
+          <!-- 1. DEPARTURE UKC PROFILE (TOP SKETCH) -->
+          <div class="border border-black rounded-sm bg-white p-0.5 shadow-sm">
+            <div class="text-center font-bold text-[8pt] mb-0.5 uppercase text-blue-950 flex justify-between px-2 bg-blue-50 py-0.5 border-b border-slate-300" style="background-color: #eff6ff !important;">
+              <span id="dep-svg-port-title">DEPARTURE UKC PROFILE</span>
+              <span class="text-emerald-700 font-bold" id="dep-svg-badge-title">UKC: -</span>
+            </div>
+            <svg viewBox="0 0 740 140" style="width: 100%; height: 98px; font-family: Inter, sans-serif; -webkit-print-color-adjust: exact !important;">
+              <defs>
+                <linearGradient id="seaGradDep" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.85"/>
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0.25"/>
+                </linearGradient>
+                <pattern id="sandHatchDep" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="8" stroke="#ca8a04" stroke-width="1.2" opacity="0.6"/>
+                </pattern>
+              </defs>
+
+              <!-- Sky Area -->
+              <rect x="0" y="0" width="740" height="48" fill="#f0f9ff"/>
+
+              <!-- Water Column -->
+              <rect x="0" y="48" width="740" height="70" fill="url(#seaGradDep)"/>
+
+              <!-- Sea Surface Wave Line -->
+              <path d="M 0 48 Q 25 45 50 48 T 100 48 T 150 48 T 200 48 T 250 48 T 300 48 T 350 48 T 400 48 T 450 48 T 500 48 T 550 48 T 600 48 T 650 48 T 700 48 T 740 48" fill="none" stroke="#0284c7" stroke-width="2"/>
+
+              <!-- Seabed Sediment & Base -->
+              <rect x="0" y="118" width="740" height="22" fill="#fef08a"/>
+              <rect x="0" y="118" width="740" height="22" fill="url(#sandHatchDep)"/>
+              <line x1="0" y1="118" x2="740" y2="118" stroke="#a16207" stroke-width="2.5"/>
+              <text x="370" y="133" font-size="9" fill="#854d0e" font-weight="bold" text-anchor="middle" letter-spacing="2">SEABED / CHANNEL BOTTOM</text>
+
+              <!-- SHIP HULL PROFILE (Commercial Merchant Vessel) -->
+              <rect x="75" y="68" width="8" height="22" fill="#334155" rx="1"/>
+              <circle cx="85" cy="80" r="6" fill="#d97706"/>
+              <ellipse cx="85" cy="76" rx="2" ry="4" fill="#b45309" transform="rotate(30 85 76)"/>
+              <ellipse cx="85" cy="84" rx="2" ry="4" fill="#b45309" transform="rotate(-30 85 84)"/>
+
+              <!-- Underwater Hull -->
+              <path d="M 80 48 L 80 78 Q 85 92 110 93 L 590 93 Q 625 93 638 82 Q 648 70 644 58 Q 640 48 632 48 Z" fill="#991b1b" stroke="#7f1d1d" stroke-width="1.5"/>
+              <ellipse cx="636" cy="83" rx="10" ry="6" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/>
+
+              <!-- Topside Hull -->
+              <path d="M 80 48 L 82 24 L 590 23 L 632 20 Q 638 28 635 38 L 632 48 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+              <line x1="80" y1="48" x2="632" y2="48" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="8,3"/>
+
+              <!-- Forecastle Head -->
+              <path d="M 580 23 L 632 20 L 634 14 L 580 17 Z" fill="#334155"/>
+              <circle cx="618" cy="27" r="2.5" fill="#f59e0b" stroke="#000" stroke-width="0.5"/>
+              <line x1="633" y1="14" x2="633" y2="6" stroke="#475569" stroke-width="1.5"/>
+
+              <!-- Cargo Hatches -->
+              <rect x="230" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="300" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="370" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="440" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="510" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              
+              <!-- Deck Cranes -->
+              <rect x="218" y="10" width="6" height="13" fill="#cbd5e1" stroke="#334155" stroke-width="0.5"/>
+              <line x1="221" y1="10" x2="260" y2="2" stroke="#f59e0b" stroke-width="1.8"/>
+              <rect x="358" y="10" width="6" height="13" fill="#cbd5e1" stroke="#334155" stroke-width="0.5"/>
+              <line x1="361" y1="10" x2="400" y2="2" stroke="#f59e0b" stroke-width="1.8"/>
+              <rect x="498" y="10" width="6" height="13" fill="#cbd5e1" stroke="#334155" stroke-width="0.5"/>
+              <line x1="501" y1="10" x2="540" y2="2" stroke="#f59e0b" stroke-width="1.8"/>
+
+              <!-- Superstructure / Bridge -->
+              <rect x="110" y="15" width="85" height="9" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              <rect x="116" y="7" width="75" height="8" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              <rect x="120" y="0" width="68" height="7" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              
+              <rect x="128" y="1.5" width="54" height="3.5" fill="#38bdf8" stroke="#0284c7" stroke-width="0.5"/>
+              <circle cx="130" cy="11" r="1.2" fill="#38bdf8"/>
+              <circle cx="145" cy="11" r="1.2" fill="#38bdf8"/>
+              <circle cx="160" cy="11" r="1.2" fill="#38bdf8"/>
+              <circle cx="175" cy="11" r="1.2" fill="#38bdf8"/>
+
+              <!-- Mast & Funnel -->
+              <line x1="154" y1="0" x2="154" y2="-6" stroke="#334155" stroke-width="1.5"/>
+              <line x1="148" y1="-4" x2="160" y2="-4" stroke="#0284c7" stroke-width="2"/>
+              <circle cx="168" cy="-2" r="2.5" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              <path d="M 96 15 L 99 2 L 109 2 L 107 15 Z" fill="#dc2626" stroke="#991b1b" stroke-width="1"/>
+              <rect x="98.5" y="2" width="10" height="3" fill="#0f172a"/>
+              <text x="103" y="11" font-size="5" fill="#ffffff" font-weight="bold" text-anchor="middle">★</text>
+
+              <!-- Dimensions -->
+              <line x1="42" y1="48" x2="42" y2="118" stroke="#0284c7" stroke-width="2"/>
+              <polygon points="42,48 38,55 46,55" fill="#0284c7"/>
+              <polygon points="42,118 38,111 46,111" fill="#0284c7"/>
+              <rect x="16" y="70" width="54" height="24" fill="#0284c7" rx="3" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))"/>
+              <text x="43" y="80" font-size="7" fill="#ffffff" font-weight="bold" text-anchor="middle">DEPTH</text>
+              <text x="43" y="90" font-size="9" fill="#ffffff" font-weight="bold" text-anchor="middle" id="svg-dep-depth">-</text>
+
+              <line x1="688" y1="48" x2="688" y2="93" stroke="#dc2626" stroke-width="2"/>
+              <polygon points="688,48 684,55 692,55" fill="#dc2626"/>
+              <polygon points="688,93 684,86 692,86" fill="#dc2626"/>
+              <rect x="662" y="58" width="52" height="24" fill="#dc2626" rx="3" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))"/>
+              <text x="688" y="68" font-size="7" fill="#ffffff" font-weight="bold" text-anchor="middle">DRAFT</text>
+              <text x="688" y="78" font-size="9" fill="#ffffff" font-weight="bold" text-anchor="middle" id="svg-dep-draft">-</text>
+
+              <rect x="250" y="93" width="240" height="25" fill="#22c55e" fill-opacity="0.25" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="370" y1="93" x2="370" y2="118" stroke="#16a34a" stroke-width="2.5"/>
+              <polygon points="370,93 366,99 374,99" fill="#16a34a"/>
+              <polygon points="370,118 366,112 374,112" fill="#16a34a"/>
+              
+              <rect x="320" y="95" width="100" height="20" fill="#059669" rx="3" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>
+              <text x="370" y="108" font-size="9.5" fill="#ffffff" font-weight="bold" text-anchor="middle" id="svg-dep-ukc">UKC: -</text>
+              <text x="370" y="41" font-size="9" fill="#ffffff" font-weight="bold" letter-spacing="3" text-anchor="middle" id="svg-dep-vessel">-</text>
+            </svg>
+          </div>
+
+          <!-- 2. ARRIVAL UKC PROFILE (BOTTOM SKETCH) -->
+          <div class="border border-black rounded-sm bg-white p-0.5 shadow-sm">
+            <div class="text-center font-bold text-[8pt] mb-0.5 uppercase text-blue-950 flex justify-between px-2 bg-blue-50 py-0.5 border-b border-slate-300" style="background-color: #eff6ff !important;">
+              <span id="arr-svg-port-title">ARRIVAL UKC PROFILE</span>
+              <span class="text-emerald-700 font-bold" id="arr-svg-badge-title">UKC: -</span>
+            </div>
+            <svg viewBox="0 0 740 140" style="width: 100%; height: 98px; font-family: Inter, sans-serif; -webkit-print-color-adjust: exact !important;">
+              <defs>
+                <linearGradient id="seaGradArr" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.85"/>
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0.25"/>
+                </linearGradient>
+                <pattern id="sandHatchArr" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="8" stroke="#ca8a04" stroke-width="1.2" opacity="0.6"/>
+                </pattern>
+              </defs>
+
+              <!-- Sky Area -->
+              <rect x="0" y="0" width="740" height="48" fill="#f0f9ff"/>
+
+              <!-- Water Column -->
+              <rect x="0" y="48" width="740" height="70" fill="url(#seaGradArr)"/>
+
+              <!-- Sea Surface Wave Line -->
+              <path d="M 0 48 Q 25 45 50 48 T 100 48 T 150 48 T 200 48 T 250 48 T 300 48 T 350 48 T 400 48 T 450 48 T 500 48 T 550 48 T 600 48 T 650 48 T 700 48 T 740 48" fill="none" stroke="#0284c7" stroke-width="2"/>
+
+              <!-- Seabed Sediment & Base -->
+              <rect x="0" y="118" width="740" height="22" fill="#fef08a"/>
+              <rect x="0" y="118" width="740" height="22" fill="url(#sandHatchArr)"/>
+              <line x1="0" y1="118" x2="740" y2="118" stroke="#a16207" stroke-width="2.5"/>
+              <text x="370" y="133" font-size="9" fill="#854d0e" font-weight="bold" text-anchor="middle" letter-spacing="2">SEABED / CHANNEL BOTTOM</text>
+
+              <!-- SHIP HULL PROFILE (Commercial Merchant Vessel) -->
+              <rect x="75" y="68" width="8" height="22" fill="#334155" rx="1"/>
+              <circle cx="85" cy="80" r="6" fill="#d97706"/>
+              <ellipse cx="85" cy="76" rx="2" ry="4" fill="#b45309" transform="rotate(30 85 76)"/>
+              <ellipse cx="85" cy="84" rx="2" ry="4" fill="#b45309" transform="rotate(-30 85 84)"/>
+
+              <!-- Underwater Hull -->
+              <path d="M 80 48 L 80 78 Q 85 92 110 93 L 590 93 Q 625 93 638 82 Q 648 70 644 58 Q 640 48 632 48 Z" fill="#991b1b" stroke="#7f1d1d" stroke-width="1.5"/>
+              <ellipse cx="636" cy="83" rx="10" ry="6" fill="#b91c1c" stroke="#7f1d1d" stroke-width="1"/>
+
+              <!-- Topside Hull -->
+              <path d="M 80 48 L 82 24 L 590 23 L 632 20 Q 638 28 635 38 L 632 48 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+              <line x1="80" y1="48" x2="632" y2="48" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="8,3"/>
+
+              <!-- Forecastle Head -->
+              <path d="M 580 23 L 632 20 L 634 14 L 580 17 Z" fill="#334155"/>
+              <circle cx="618" cy="27" r="2.5" fill="#f59e0b" stroke="#000" stroke-width="0.5"/>
+              <line x1="633" y1="14" x2="633" y2="6" stroke="#475569" stroke-width="1.5"/>
+
+              <!-- Cargo Hatches -->
+              <rect x="230" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="300" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="370" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="440" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              <rect x="510" y="18" width="55" height="5" fill="#475569" stroke="#0f172a" stroke-width="1"/>
+              
+              <!-- Deck Cranes -->
+              <rect x="218" y="10" width="6" height="13" fill="#cbd5e1" stroke="#334155" stroke-width="0.5"/>
+              <line x1="221" y1="10" x2="260" y2="2" stroke="#f59e0b" stroke-width="1.8"/>
+              <rect x="358" y="10" width="6" height="13" fill="#cbd5e1" stroke="#334155" stroke-width="0.5"/>
+              <line x1="361" y1="10" x2="400" y2="2" stroke="#f59e0b" stroke-width="1.8"/>
+              <rect x="498" y="10" width="6" height="13" fill="#cbd5e1" stroke="#334155" stroke-width="0.5"/>
+              <line x1="501" y1="10" x2="540" y2="2" stroke="#f59e0b" stroke-width="1.8"/>
+
+              <!-- Superstructure / Bridge -->
+              <rect x="110" y="15" width="85" height="9" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              <rect x="116" y="7" width="75" height="8" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              <rect x="120" y="0" width="68" height="7" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              
+              <rect x="128" y="1.5" width="54" height="3.5" fill="#38bdf8" stroke="#0284c7" stroke-width="0.5"/>
+              <circle cx="130" cy="11" r="1.2" fill="#38bdf8"/>
+              <circle cx="145" cy="11" r="1.2" fill="#38bdf8"/>
+              <circle cx="160" cy="11" r="1.2" fill="#38bdf8"/>
+              <circle cx="175" cy="11" r="1.2" fill="#38bdf8"/>
+
+              <!-- Mast & Funnel -->
+              <line x1="154" y1="0" x2="154" y2="-6" stroke="#334155" stroke-width="1.5"/>
+              <line x1="148" y1="-4" x2="160" y2="-4" stroke="#0284c7" stroke-width="2"/>
+              <circle cx="168" cy="-2" r="2.5" fill="#ffffff" stroke="#334155" stroke-width="1"/>
+              <path d="M 96 15 L 99 2 L 109 2 L 107 15 Z" fill="#dc2626" stroke="#991b1b" stroke-width="1"/>
+              <rect x="98.5" y="2" width="10" height="3" fill="#0f172a"/>
+              <text x="103" y="11" font-size="5" fill="#ffffff" font-weight="bold" text-anchor="middle">★</text>
+
+              <!-- Dimensions -->
+              <line x1="42" y1="48" x2="42" y2="118" stroke="#0284c7" stroke-width="2"/>
+              <polygon points="42,48 38,55 46,55" fill="#0284c7"/>
+              <polygon points="42,118 38,111 46,111" fill="#0284c7"/>
+              <rect x="16" y="70" width="54" height="24" fill="#0284c7" rx="3" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))"/>
+              <text x="43" y="80" font-size="7" fill="#ffffff" font-weight="bold" text-anchor="middle">DEPTH</text>
+              <text x="43" y="90" font-size="9" fill="#ffffff" font-weight="bold" text-anchor="middle" id="svg-arr-depth">-</text>
+
+              <line x1="688" y1="48" x2="688" y2="93" stroke="#dc2626" stroke-width="2"/>
+              <polygon points="688,48 684,55 692,55" fill="#dc2626"/>
+              <polygon points="688,93 684,86 692,86" fill="#dc2626"/>
+              <rect x="662" y="58" width="52" height="24" fill="#dc2626" rx="3" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))"/>
+              <text x="688" y="68" font-size="7" fill="#ffffff" font-weight="bold" text-anchor="middle">DRAFT</text>
+              <text x="688" y="78" font-size="9" fill="#ffffff" font-weight="bold" text-anchor="middle" id="svg-arr-draft">-</text>
+
+              <rect x="250" y="93" width="240" height="25" fill="#22c55e" fill-opacity="0.25" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="370" y1="93" x2="370" y2="118" stroke="#16a34a" stroke-width="2.5"/>
+              <polygon points="370,93 366,99 374,99" fill="#16a34a"/>
+              <polygon points="370,118 366,112 374,112" fill="#16a34a"/>
+              
+              <rect x="320" y="95" width="100" height="20" fill="#059669" rx="3" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>
+              <text x="370" y="108" font-size="9.5" fill="#ffffff" font-weight="bold" text-anchor="middle" id="svg-arr-ukc">UKC: -</text>
+              <text x="370" y="41" font-size="9" fill="#ffffff" font-weight="bold" letter-spacing="3" text-anchor="middle" id="svg-arr-vessel">-</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- BRIDGE TEAM SIGNATURE BLOCK -->
+        <div class="grid grid-cols-3 gap-6 pt-3 border-t-2 border-slate-300 text-center text-xs mt-1">
           <div>
-            <div class="h-10 border-b border-dashed border-slate-400"></div>
+            <div class="h-8 border-b border-dashed border-slate-400"></div>
             <div class="font-bold text-slate-900 mt-1">Prepared by Navigating Officer (2/O)</div>
-            <div class="text-[9.5px] text-slate-500">Routeing & Appraisal</div>
+            <div class="text-[9px] text-slate-500">Routeing & Dynamic Squat Appraisal</div>
           </div>
           <div>
-            <div class="h-10 border-b border-dashed border-slate-400"></div>
+            <div class="h-8 border-b border-dashed border-slate-400"></div>
             <div class="font-bold text-slate-900 mt-1">Checked by Chief Officer (C/O)</div>
-            <div class="text-[9.5px] text-slate-500">Navigation & Safety Audit</div>
+            <div class="text-[9px] text-slate-500">Under Keel Clearance & Safety Audit</div>
           </div>
           <div>
-            <div class="h-10 border-b border-dashed border-slate-400"></div>
+            <div class="h-8 border-b border-dashed border-slate-400"></div>
             <div class="font-bold text-slate-900 mt-1">Approved by Master</div>
-            <div class="text-[9.5px] text-slate-500">Commanding Officer</div>
+            <div class="text-[9px] text-slate-500">Commanding Officer</div>
           </div>
         </div>
       </div>
@@ -1132,6 +1588,11 @@ window.STATE = {
     chartedDepth: 25.0,
     tideHeight: 2.0
   },
+  reportMapStyle: 'tiny_nautical',
+  ukcDepDepth: 15.0,
+  ukcDepTide: 1.5,
+  ukcArrDepth: 16.0,
+  ukcArrTide: 2.0,
   spatialResults: {
     navareas: [],
     p2p: null,
@@ -1335,7 +1796,19 @@ function loadVesselFromStorage() {
         if (data.draftAft != null && data.draftAft > 0) document.getElementById('vessel-draft-aft').value = data.draftAft;
         if (data.volume != null && data.volume > 0) document.getElementById('vessel-volume').value = data.volume;
         if (data.speed != null && data.speed > 0) document.getElementById('vessel-speed').value = data.speed;
+        if (data.depDepth != null) { const el = document.getElementById('ukc-in-dep-depth'); if (el) el.value = data.depDepth; }
+        if (data.depTide != null) { const el = document.getElementById('ukc-in-dep-tide'); if (el) el.value = data.depTide; }
+        if (data.arrDepth != null) { const el = document.getElementById('ukc-in-arr-depth'); if (el) el.value = data.arrDepth; }
+        if (data.arrTide != null) { const el = document.getElementById('ukc-in-arr-tide'); if (el) el.value = data.arrTide; }
       }
+    }
+    const savedMapStyle = localStorage.getItem('route_planner_report_map_style');
+    if (savedMapStyle) {
+      STATE.reportMapStyle = savedMapStyle;
+      const sel1 = document.getElementById('sel-report-map-style');
+      if (sel1) sel1.value = savedMapStyle;
+      const sel2 = document.getElementById('topbar-report-map-style');
+      if (sel2) sel2.value = savedMapStyle;
     }
   } catch (err) {
     console.warn('localStorage read error:', err);
@@ -1347,7 +1820,14 @@ window.loadVesselFromStorage = loadVesselFromStorage;
 function saveVesselToStorage() {
   collectVesselInputs();
   try {
-    localStorage.setItem(STORAGE_KEY_VESSEL, JSON.stringify(STATE.vessel));
+    const toSave = {
+      ...STATE.vessel,
+      depDepth: STATE.ukcDepDepth,
+      depTide: STATE.ukcDepTide,
+      arrDepth: STATE.ukcArrDepth,
+      arrTide: STATE.ukcArrTide
+    };
+    localStorage.setItem(STORAGE_KEY_VESSEL, JSON.stringify(toSave));
     const statusEl = document.getElementById('vessel-save-status');
     if (statusEl) {
       statusEl.innerText = '💾 Saved';
@@ -1357,6 +1837,7 @@ function saveVesselToStorage() {
     console.warn('localStorage write error:', err);
   }
   recalculateSquat();
+  if (typeof renderReportDocument === 'function') renderReportDocument();
 }
 window.saveVesselToStorage = saveVesselToStorage;
 
@@ -1371,8 +1852,17 @@ function clearVesselStorage() {
     });
     const spdEl = document.getElementById('vessel-speed');
     if (spdEl) spdEl.value = '12.0';
+    const ddEl = document.getElementById('ukc-in-dep-depth');
+    if (ddEl) ddEl.value = '15.0';
+    const dtEl = document.getElementById('ukc-in-dep-tide');
+    if (dtEl) dtEl.value = '1.5';
+    const adEl = document.getElementById('ukc-in-arr-depth');
+    if (adEl) adEl.value = '16.0';
+    const atEl = document.getElementById('ukc-in-arr-tide');
+    if (atEl) atEl.value = '2.0';
     collectVesselInputs();
     recalculateSquat();
+    if (typeof renderReportDocument === 'function') renderReportDocument();
   }
 }
 window.clearVesselStorage = clearVesselStorage;
@@ -1582,6 +2072,16 @@ function collectVesselInputs() {
   STATE.squatOptions.squatCriteria = document.getElementById('squat-criteria')?.value || 'auto';
   STATE.squatOptions.chartedDepth = parseFloat(document.getElementById('env-chart-depth')?.value) || 25.0;
   STATE.squatOptions.tideHeight = parseFloat(document.getElementById('env-tide-height')?.value) || 2.0;
+
+  const depDepthVal = parseFloat(document.getElementById('ukc-in-dep-depth')?.value);
+  const depTideVal = parseFloat(document.getElementById('ukc-in-dep-tide')?.value);
+  const arrDepthVal = parseFloat(document.getElementById('ukc-in-arr-depth')?.value);
+  const arrTideVal = parseFloat(document.getElementById('ukc-in-arr-tide')?.value);
+
+  STATE.ukcDepDepth = !isNaN(depDepthVal) ? depDepthVal : 15.0;
+  STATE.ukcDepTide = !isNaN(depTideVal) ? depTideVal : 1.5;
+  STATE.ukcArrDepth = !isNaN(arrDepthVal) ? arrDepthVal : 16.0;
+  STATE.ukcArrTide = !isNaN(arrTideVal) ? arrTideVal : 2.0;
 }
 
 function updateSquatDisplay(sq) {
@@ -1864,6 +2364,79 @@ function renderMapRoute() {
   }
 }
 
+// --- TINY WORLD MAP THEMES & REPORT BASEMAP STYLES ---
+const TINY_THEMES = {
+  nautical: {
+    background: { style: { fillStyle: '#bfe3f7' } },
+    country_borders: { style: { fillStyle: '#fffdf5', strokeStyle: '#94a3b8', lineWidth: 1 } },
+    lakes: { style: { fillStyle: '#bfe3f7', strokeStyle: '#94a3b8', lineJoin: 'round' } },
+    country_labels: { style: { fillStyle: '#1e293b', strokeStyle: 'rgba(255,255,255,0.9)', lineWidth: 3, font: 'bold 12px Inter, sans-serif' } },
+    city_labels: { style: { fillStyle: '#334155', strokeStyle: 'rgba(255,255,255,0.9)', lineWidth: 2.5, font: '10px Inter, sans-serif' } }
+  },
+  standard: {
+    background: { style: { fillStyle: '#aad3df' } },
+    country_borders: { style: { fillStyle: '#fdf9f1', strokeStyle: '#b4a6ae', lineWidth: 1 } },
+    lakes: { style: { fillStyle: '#aad3df', strokeStyle: '#b4a6ae', lineJoin: 'round' } },
+    country_labels: { style: { fillStyle: 'black', strokeStyle: 'rgba(255,255,255,.8)', lineWidth: 3, font: 'bold 12px Inter, sans-serif' } },
+    city_labels: { style: { fillStyle: 'black', strokeStyle: 'rgba(255,255,255,.8)', lineWidth: 2.5, font: '10px Inter, sans-serif' } }
+  },
+  dark: {
+    background: { style: { fillStyle: '#0f172a' } },
+    country_borders: { style: { fillStyle: '#1e293b', strokeStyle: '#334155', lineWidth: 1 } },
+    lakes: { style: { fillStyle: '#0f172a', strokeStyle: '#334155', lineJoin: 'round' } },
+    country_labels: { style: { fillStyle: '#f1f5f9', strokeStyle: '#0f172a', lineWidth: 3, font: 'bold 12px Inter, sans-serif' } },
+    city_labels: { style: { fillStyle: '#94a3b8', strokeStyle: '#0f172a', lineWidth: 2, font: '10px Inter, sans-serif' } }
+  }
+};
+
+function createDocMapLayer(style) {
+  if (style === 'tiny_nautical' || style === 'tiny_standard' || style === 'tiny_dark') {
+    if (typeof L.GridLayer.TinyWorld === 'function') {
+      const themeKey = style.replace('tiny_', '');
+      return new L.GridLayer.TinyWorld({
+        render: TINY_THEMES[themeKey] || TINY_THEMES.nautical,
+        maxZoom: 18
+      });
+    }
+  }
+  if (style === 'osm') {
+    return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 });
+  }
+  if (style === 'carto_voyager') {
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 18 });
+  }
+  if (style === 'carto_dark') {
+    return L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 });
+  }
+  if (style === 'esri_sat') {
+    return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+  }
+  // Fallback default to TinyWorld nautical
+  if (typeof L.GridLayer.TinyWorld === 'function') {
+    return new L.GridLayer.TinyWorld({ render: TINY_THEMES.nautical, maxZoom: 18 });
+  }
+  return L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 18 });
+}
+
+function changeReportMapStyle(newStyle) {
+  STATE.reportMapStyle = newStyle;
+  const sel1 = document.getElementById('sel-report-map-style');
+  if (sel1 && sel1.value !== newStyle) sel1.value = newStyle;
+  const sel2 = document.getElementById('topbar-report-map-style');
+  if (sel2 && sel2.value !== newStyle) sel2.value = newStyle;
+  try {
+    localStorage.setItem('route_planner_report_map_style', newStyle);
+  } catch (e) {}
+
+  if (window.docMap) {
+    if (window.docBaseTileLayer) {
+      window.docMap.removeLayer(window.docBaseTileLayer);
+    }
+    window.docBaseTileLayer = createDocMapLayer(newStyle).addTo(window.docMap);
+  }
+}
+window.changeReportMapStyle = changeReportMapStyle;
+
 // --- RENDER ROUTE MAP OVERVIEW IN A4 REPORT (DOC MAP) ---
 function initOrUpdateDocMap() {
   const container = document.getElementById('doc-map-inner');
@@ -1876,10 +2449,8 @@ function initOrUpdateDocMap() {
       preferCanvas: true
     }).setView([15.0, 125.0], 3);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 18
-    }).addTo(window.docMap);
-
+    const style = STATE.reportMapStyle || 'tiny_nautical';
+    window.docBaseTileLayer = createDocMapLayer(style).addTo(window.docMap);
     window.docMapGroup = L.layerGroup().addTo(window.docMap);
   }
 
@@ -1946,20 +2517,35 @@ function renderReportDocument() {
   const v = STATE.vessel;
   const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
   const activePorts = getActivePorts();
+  const depPortName = activePorts.dep ? activePorts.dep.name : 'Departure Port';
+  const arrPortName = activePorts.arr ? activePorts.arr.name : 'Arrival Port';
 
   const hasDimensions = STATE.vessel.length && STATE.vessel.beam;
-  document.getElementById('rpt-date-disp').innerText = `Date: ${new Date().toISOString().slice(0, 10)}`;
-  document.getElementById('rpt-vessel-name').innerText = v.name || '-';
-  document.getElementById('rpt-voyage-no').innerText = v.voyageNo || '-';
-  document.getElementById('rpt-dep-port').innerText = activePorts.dep ? `${activePorts.dep.name}${activePorts.dep.country ? ' (' + activePorts.dep.country + ')' : ''}` : '-';
-  document.getElementById('rpt-arr-port').innerText = activePorts.arr ? `${activePorts.arr.name}${activePorts.arr.country ? ' (' + activePorts.arr.country + ')' : ''}` : '-';
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+
+  // --- PAGE 1: VOYAGE PARTICULARS & VPF TABLE ---
+  const rptDateDisp = document.getElementById('rpt-date-disp');
+  if (rptDateDisp) rptDateDisp.innerText = `Date: ${todayDateStr}`;
+  const rptVesName = document.getElementById('rpt-vessel-name');
+  if (rptVesName) rptVesName.innerText = v.name || '-';
+  const rptVoy = document.getElementById('rpt-voyage-no');
+  if (rptVoy) rptVoy.innerText = v.voyageNo || '-';
+  const rptDep = document.getElementById('rpt-dep-port');
+  if (rptDep) rptDep.innerText = activePorts.dep ? `${activePorts.dep.name}${activePorts.dep.country ? ' (' + activePorts.dep.country + ')' : ''}` : '-';
+  const rptArr = document.getElementById('rpt-arr-port');
+  if (rptArr) rptArr.innerText = activePorts.arr ? `${activePorts.arr.name}${activePorts.arr.country ? ' (' + activePorts.arr.country + ')' : ''}` : '-';
+
   const dFwd = typeof v.draftFwd === 'number' && v.draftFwd > 0 ? v.draftFwd.toFixed(2) : '-';
   const dAft = typeof v.draftAft === 'number' && v.draftAft > 0 ? v.draftAft.toFixed(2) : '-';
   const spd = typeof v.speed === 'number' && v.speed > 0 ? v.speed.toFixed(1) : '12.0';
-  document.getElementById('rpt-dim').innerText = hasDimensions ? `${v.length} × ${v.beam} m` : '-';
-  document.getElementById('rpt-draft').innerText = (dFwd !== '-' || dAft !== '-') ? `${dFwd} / ${dAft} m` : '-';
-  document.getElementById('rpt-total-dist').innerText = `${totalDist.toFixed(2)} NM`;
-  document.getElementById('rpt-speed').innerText = `${spd} kts`;
+  const rptDim = document.getElementById('rpt-dim');
+  if (rptDim) rptDim.innerText = hasDimensions ? `${v.length} × ${v.beam} m` : '-';
+  const rptDraft = document.getElementById('rpt-draft');
+  if (rptDraft) rptDraft.innerText = (dFwd !== '-' || dAft !== '-') ? `${dFwd} / ${dAft} m` : '-';
+  const rptTotDist = document.getElementById('rpt-total-dist');
+  if (rptTotDist) rptTotDist.innerText = `${totalDist.toFixed(2)} NM`;
+  const rptSpd = document.getElementById('rpt-speed');
+  if (rptSpd) rptSpd.innerText = `${spd} kts`;
 
   // Page 2 Vessel reference
   const p2Ref = document.getElementById('rpt-page2-vessel-ref');
@@ -1967,14 +2553,18 @@ function renderReportDocument() {
 
   // Zones & ECA
   const ecaDist = p2p ? p2p.ecaDistance.toFixed(1) : '0.0';
-  document.getElementById('rpt-eca-dist').innerText = `${ecaDist} NM`;
-  document.getElementById('rpt-eca-zones').innerText = p2p && p2p.ecaZonesTraversed && p2p.ecaZonesTraversed.length > 0
+  const rptEcaDist = document.getElementById('rpt-eca-dist');
+  if (rptEcaDist) rptEcaDist.innerText = `${ecaDist} NM`;
+  const rptEcaZones = document.getElementById('rpt-eca-zones');
+  if (rptEcaZones) rptEcaZones.innerText = p2p && p2p.ecaZonesTraversed && p2p.ecaZonesTraversed.length > 0
     ? p2p.ecaZonesTraversed.join(', ')
     : 'None';
-  document.getElementById('rpt-navareas').innerText = navareas && navareas.length > 0
+  const rptNav = document.getElementById('rpt-navareas');
+  if (rptNav) rptNav.innerText = navareas && navareas.length > 0
     ? navareas.map(n => n.code + ' (' + n.name + ')').join(', ')
     : 'None';
-  document.getElementById('rpt-war-zones').innerText = p2p && p2p.warZonesTraversed && p2p.warZonesTraversed.length > 0
+  const rptWar = document.getElementById('rpt-war-zones');
+  if (rptWar) rptWar.innerText = p2p && p2p.warZonesTraversed && p2p.warZonesTraversed.length > 0
     ? p2p.warZonesTraversed.join(', ')
     : 'None (Safe Navigation)';
 
@@ -1986,21 +2576,86 @@ function renderReportDocument() {
   const watersEl = document.getElementById('rpt-waters-straits');
   if (watersEl) watersEl.innerText = watersList.length > 0 ? Array.from(new Set(watersList)).join(' • ') : 'Open Ocean Waters';
 
-  // Publications
-  document.getElementById('rpt-pilots').innerText = pubs?.sailingDirections && pubs.sailingDirections.length > 0
-    ? pubs.sailingDirections.map(s => s.code).join(', ')
-    : 'None';
-  document.getElementById('rpt-lights').innerText = pubs?.listOfLights && pubs.listOfLights.length > 0
-    ? pubs.listOfLights.map(l => l.code).join(', ')
-    : 'None';
-  document.getElementById('rpt-alrs').innerText = pubs?.radioSignals && pubs.radioSignals.length > 0
-    ? pubs.radioSignals.map(r => r.code).join(', ')
-    : 'None';
-  document.getElementById('rpt-att').innerText = pubs?.tideTables && pubs.tideTables.length > 0
-    ? pubs.tideTables.map(t => t.code).join(', ')
-    : 'None';
+  // --- OFFICIAL ADMIRALTY PUBLICATIONS (FULL OFFICIAL TITLES) ---
+  const pilotsListEl = document.getElementById('rpt-pilots-list');
+  const pilotsCountEl = document.getElementById('rpt-pilots-count');
+  if (pilotsListEl) {
+    if (pubs?.sailingDirections && pubs.sailingDirections.length > 0) {
+      if (pilotsCountEl) pilotsCountEl.innerText = `${pubs.sailingDirections.length} Titles`;
+      pilotsListEl.innerHTML = pubs.sailingDirections.map(s => `
+        <div class="flex items-baseline gap-1.5 py-0.5 border-b border-blue-100 last:border-none">
+          <span class="font-mono font-bold text-blue-900 shrink-0">${s.code}</span>
+          <span class="text-slate-700 truncate" title="${s.title || ''}">${s.title || 'Admiralty Sailing Directions'}</span>
+        </div>
+      `).join('');
+    } else {
+      if (pilotsCountEl) pilotsCountEl.innerText = '0 Titles';
+      pilotsListEl.innerHTML = '<span class="text-slate-400 italic">None traversed</span>';
+    }
+  }
 
-  // Squat & UKC Analysis Card
+  const lightsListEl = document.getElementById('rpt-lights-list');
+  const lightsCountEl = document.getElementById('rpt-lights-count');
+  if (lightsListEl) {
+    if (pubs?.listOfLights && pubs.listOfLights.length > 0) {
+      if (lightsCountEl) lightsCountEl.innerText = `${pubs.listOfLights.length} Volumes`;
+      lightsListEl.innerHTML = pubs.listOfLights.map(l => `
+        <div class="flex items-baseline gap-1.5 py-0.5 border-b border-amber-100 last:border-none">
+          <span class="font-mono font-bold text-amber-900 shrink-0">${l.code}</span>
+          <span class="text-slate-700 truncate" title="${l.title || ''}">${l.title || 'Admiralty List of Lights'}</span>
+        </div>
+      `).join('');
+    } else {
+      if (lightsCountEl) lightsCountEl.innerText = '0 Volumes';
+      lightsListEl.innerHTML = '<span class="text-slate-400 italic">None traversed</span>';
+    }
+  }
+
+  const alrsListEl = document.getElementById('rpt-alrs-list');
+  const alrsCountEl = document.getElementById('rpt-alrs-count');
+  if (alrsListEl) {
+    if (pubs?.radioSignals && pubs.radioSignals.length > 0) {
+      if (alrsCountEl) alrsCountEl.innerText = `${pubs.radioSignals.length} Volumes`;
+      alrsListEl.innerHTML = pubs.radioSignals.map(r => `
+        <div class="flex items-baseline gap-1.5 py-0.5 border-b border-purple-100 last:border-none">
+          <span class="font-mono font-bold text-purple-900 shrink-0">${r.code}</span>
+          <span class="text-slate-700 truncate" title="${r.title || ''}">${r.title || 'Admiralty List of Radio Signals'}</span>
+        </div>
+      `).join('');
+    } else {
+      if (alrsCountEl) alrsCountEl.innerText = '0 Volumes';
+      alrsListEl.innerHTML = '<span class="text-slate-400 italic">None traversed</span>';
+    }
+  }
+
+  const attListEl = document.getElementById('rpt-att-list');
+  const attCountEl = document.getElementById('rpt-att-count');
+  if (attListEl) {
+    if (pubs?.tideTables && pubs.tideTables.length > 0) {
+      if (attCountEl) attCountEl.innerText = `${pubs.tideTables.length} Volumes`;
+      attListEl.innerHTML = pubs.tideTables.map(t => `
+        <div class="flex items-baseline gap-1.5 py-0.5 border-b border-teal-100 last:border-none">
+          <span class="font-mono font-bold text-teal-900 shrink-0">${t.code}</span>
+          <span class="text-slate-700 truncate" title="${t.title || ''}">${t.title || 'Admiralty Tide Tables'}</span>
+        </div>
+      `).join('');
+    } else {
+      if (attCountEl) attCountEl.innerText = '0 Volumes';
+      attListEl.innerHTML = '<span class="text-slate-400 italic">None traversed</span>';
+    }
+  }
+
+  // Also maintain concise overview spans
+  const rptPilots = document.getElementById('rpt-pilots');
+  if (rptPilots) rptPilots.innerText = pubs?.sailingDirections?.length ? pubs.sailingDirections.map(s => s.code).join(', ') : 'None';
+  const rptLights = document.getElementById('rpt-lights');
+  if (rptLights) rptLights.innerText = pubs?.listOfLights?.length ? pubs.listOfLights.map(l => l.code).join(', ') : 'None';
+  const rptAlrs = document.getElementById('rpt-alrs');
+  if (rptAlrs) rptAlrs.innerText = pubs?.radioSignals?.length ? pubs.radioSignals.map(r => r.code).join(', ') : 'None';
+  const rptAtt = document.getElementById('rpt-att');
+  if (rptAtt) rptAtt.innerText = pubs?.tideTables?.length ? pubs.tideTables.map(t => t.code).join(', ') : 'None';
+
+  // Squat & UKC Analysis Card (Page 1)
   if (squatUkc && squatUkc.vessel && hasDimensions) {
     document.getElementById('rpt-cb').innerText = `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}`;
     document.getElementById('rpt-sq-shallow').innerText = `${squatUkc.squatShallow.toFixed(2)} m`;
@@ -2015,7 +2670,7 @@ function renderReportDocument() {
     document.getElementById('rpt-water-depth').innerText = `-`;
   }
 
-  // VPF Table Rows
+  // VPF Table Rows (Page 1)
   const tbody = document.getElementById('rpt-vpf-tbody');
   tbody.innerHTML = '';
 
@@ -2054,6 +2709,157 @@ function renderReportDocument() {
       tbody.appendChild(tr);
     });
   }
+
+  // --- PAGE 3: UNDER KEEL CLEARANCE (UKC) & DYNAMIC SQUAT CALCULATION SHEET ---
+  const ukcDateEl = document.getElementById('ukc-doc-date');
+  if (ukcDateEl) ukcDateEl.innerText = `Date: ${todayDateStr}`;
+
+  // Hydrodynamic parameters
+  const L = v.length || 0;
+  const B = v.beam || 0;
+  const V = v.speed || 12.0;
+  const VOL = v.volume || 0;
+  const dF = v.draftFwd || 0;
+  const dA = v.draftAft || 0;
+  const maxDraft = Math.max(dF, dA) || 7.8;
+
+  let cb = 0;
+  if (L > 0 && B > 0 && maxDraft > 0 && VOL > 0) {
+    cb = VOL / (L * B * maxDraft);
+  } else if (squatUkc?.vessel?.blockCoefficient) {
+    cb = squatUkc.vessel.blockCoefficient;
+  } else {
+    cb = 0.84;
+  }
+
+  const sqShallow = cb * (Math.pow(V, 2) / 50);
+  const sqOpen = cb * (Math.pow(V, 2) / 100);
+
+  // Depth & Tide inputs from sidebar
+  const depDepth = typeof STATE.ukcDepDepth === 'number' ? STATE.ukcDepDepth : (parseFloat(document.getElementById('ukc-in-dep-depth')?.value) || 15.0);
+  const depTide = typeof STATE.ukcDepTide === 'number' ? STATE.ukcDepTide : (parseFloat(document.getElementById('ukc-in-dep-tide')?.value) || 1.5);
+  const arrDepth = typeof STATE.ukcArrDepth === 'number' ? STATE.ukcArrDepth : (parseFloat(document.getElementById('ukc-in-arr-depth')?.value) || 16.0);
+  const arrTide = typeof STATE.ukcArrTide === 'number' ? STATE.ukcArrTide : (parseFloat(document.getElementById('ukc-in-arr-tide')?.value) || 2.0);
+
+  // UKC = Water Depth + Tide Height - Static Draft - Squat
+  const ukcDep = (depDepth + depTide) - maxDraft - sqShallow;
+  const ukcArr = (arrDepth + arrTide) - maxDraft - sqShallow;
+  const minRequiredUkc = 0.10 * maxDraft;
+
+  // Hydrodynamic values in SOM Table
+  const cbEl = document.getElementById('ukc-cb-val');
+  if (cbEl) cbEl.innerText = cb > 0 ? cb.toFixed(8) : '0.00000000';
+  const lDisp = document.getElementById('ukc-l-disp');
+  if (lDisp) lDisp.innerText = L ? L.toFixed(1) : '0';
+  const lVal = document.getElementById('ukc-l-val');
+  if (lVal) lVal.innerText = L ? L.toFixed(2) : '-';
+  const vVal = document.getElementById('ukc-v-val');
+  if (vVal) vVal.innerText = V.toFixed(1);
+  const bDisp = document.getElementById('ukc-b-disp');
+  if (bDisp) bDisp.innerText = B ? B.toFixed(1) : '-';
+  const bVal = document.getElementById('ukc-b-val');
+  if (bVal) bVal.innerText = B ? B.toFixed(2) : '-';
+  const volDisp = document.getElementById('ukc-vol-disp');
+  if (volDisp) volDisp.innerText = VOL ? VOL.toLocaleString() : '-';
+  const volVal = document.getElementById('ukc-vol-val');
+  if (volVal) volVal.innerText = VOL ? VOL.toLocaleString() : '-';
+  const dVal = document.getElementById('ukc-d-val');
+  if (dVal) dVal.innerText = maxDraft.toFixed(2) + ' M';
+
+  // Port Titles & Result Strings
+  const titlePorts = document.getElementById('ukc-title-ports');
+  if (titlePorts) titlePorts.innerText = `${depPortName.toUpperCase()} → ${arrPortName.toUpperCase()}`;
+
+  const depNameEl = document.getElementById('ukc-dep-name');
+  if (depNameEl) depNameEl.innerText = `DEPARTURE (${depPortName.toUpperCase()})`;
+  const arrNameEl = document.getElementById('ukc-arr-name');
+  if (arrNameEl) arrNameEl.innerText = `ARRIVAL (${arrPortName.toUpperCase()})`;
+  const depName2 = document.getElementById('ukc-dep-name-2');
+  if (depName2) depName2.innerText = depPortName.toUpperCase().slice(0, 8);
+  const arrName2 = document.getElementById('ukc-arr-name-2');
+  if (arrName2) arrName2.innerText = arrPortName.toUpperCase().slice(0, 8);
+  const depName3 = document.getElementById('ukc-dep-name-3');
+  if (depName3) depName3.innerText = `DEPARTURE UKC FINAL (${depPortName.toUpperCase()})`;
+  const arrName3 = document.getElementById('ukc-arr-name-3');
+  if (arrName3) arrName3.innerText = `ARRIVAL UKC FINAL (${arrPortName.toUpperCase()})`;
+
+  // Squat and Depth breakdown
+  const sqShEl = document.getElementById('ukc-sq-sh-val');
+  if (sqShEl) sqShEl.innerText = sqShallow.toFixed(3);
+  const sqOpEl = document.getElementById('ukc-sq-op-val');
+  if (sqOpEl) sqOpEl.innerText = sqOpen.toFixed(3);
+
+  const depDepthValEl = document.getElementById('ukc-dep-depth-val');
+  if (depDepthValEl) depDepthValEl.innerText = `${depDepth.toFixed(2)} M`;
+  const depTideValEl = document.getElementById('ukc-dep-tide-val');
+  if (depTideValEl) depTideValEl.innerText = `${depTide >= 0 ? '+' : ''}${depTide.toFixed(2)} M`;
+  const arrDepthValEl = document.getElementById('ukc-arr-depth-val');
+  if (arrDepthValEl) arrDepthValEl.innerText = `${arrDepth.toFixed(2)} M`;
+  const arrTideValEl = document.getElementById('ukc-arr-tide-val');
+  if (arrTideValEl) arrTideValEl.innerText = `${arrTide >= 0 ? '+' : ''}${arrTide.toFixed(2)} M`;
+
+  // Formula strings
+  const depStrEl = document.getElementById('ukc-dep-string');
+  if (depStrEl) depStrEl.innerText = `UKC=${ukcDep.toFixed(2)}M (${depDepth.toFixed(1)} + ${depTide.toFixed(1)} - ${sqShallow.toFixed(2)} - ${maxDraft.toFixed(2)} = ${ukcDep.toFixed(2)}M)`;
+  const arrStrEl = document.getElementById('ukc-arr-string');
+  if (arrStrEl) arrStrEl.innerText = `UKC=${ukcArr.toFixed(2)}M (${arrDepth.toFixed(1)} + ${arrTide.toFixed(1)} - ${sqShallow.toFixed(2)} - ${maxDraft.toFixed(2)} = ${ukcArr.toFixed(2)}M)`;
+
+  // Final UKC values
+  const depFinalEl = document.getElementById('ukc-dep-final');
+  if (depFinalEl) {
+    depFinalEl.innerText = `${ukcDep.toFixed(2)} M`;
+    depFinalEl.style.backgroundColor = ukcDep >= minRequiredUkc ? '#dbeafe' : '#fee2e2';
+    depFinalEl.style.color = ukcDep >= minRequiredUkc ? '#1e3a8a' : '#991b1b';
+  }
+  const arrFinalEl = document.getElementById('ukc-arr-final');
+  if (arrFinalEl) {
+    arrFinalEl.innerText = `${ukcArr.toFixed(2)} M`;
+    arrFinalEl.style.backgroundColor = ukcArr >= minRequiredUkc ? '#dbeafe' : '#fee2e2';
+    arrFinalEl.style.color = ukcArr >= minRequiredUkc ? '#1e3a8a' : '#991b1b';
+  }
+
+  // Sidebar Preview Badges
+  const dispDepUkc = document.getElementById('disp-dep-ukc');
+  if (dispDepUkc) dispDepUkc.innerText = `${ukcDep.toFixed(2)} m`;
+  const dispArrUkc = document.getElementById('disp-arr-ukc');
+  if (dispArrUkc) dispArrUkc.innerText = `${ukcArr.toFixed(2)} m`;
+
+  // --- DUAL SVG VESSEL PROFILE VISUALIZATIONS ---
+  // 1. Departure SVG Profile
+  const depSvgPortTitle = document.getElementById('dep-svg-port-title');
+  if (depSvgPortTitle) depSvgPortTitle.innerText = `DEPARTURE UKC PROFILE - ${depPortName.toUpperCase()}`;
+  const depSvgBadgeTitle = document.getElementById('dep-svg-badge-title');
+  if (depSvgBadgeTitle) {
+    const isSafe = ukcDep >= minRequiredUkc;
+    depSvgBadgeTitle.innerText = `UKC: ${ukcDep.toFixed(2)} M (${isSafe ? 'SAFE' : 'CRITICAL'})`;
+    depSvgBadgeTitle.className = isSafe ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold';
+  }
+  const svgDepDepth = document.getElementById('svg-dep-depth');
+  if (svgDepDepth) svgDepDepth.textContent = `${(depDepth + depTide).toFixed(1)} M`;
+  const svgDepDraft = document.getElementById('svg-dep-draft');
+  if (svgDepDraft) svgDepDraft.textContent = `${maxDraft.toFixed(2)} M`;
+  const svgDepUkc = document.getElementById('svg-dep-ukc');
+  if (svgDepUkc) svgDepUkc.textContent = `UKC: ${ukcDep.toFixed(2)} M`;
+  const svgDepVessel = document.getElementById('svg-dep-vessel');
+  if (svgDepVessel) svgDepVessel.textContent = `M/V ${v.name || 'VESSEL'}`;
+
+  // 2. Arrival SVG Profile
+  const arrSvgPortTitle = document.getElementById('arr-svg-port-title');
+  if (arrSvgPortTitle) arrSvgPortTitle.innerText = `ARRIVAL UKC PROFILE - ${arrPortName.toUpperCase()}`;
+  const arrSvgBadgeTitle = document.getElementById('arr-svg-badge-title');
+  if (arrSvgBadgeTitle) {
+    const isSafe = ukcArr >= minRequiredUkc;
+    arrSvgBadgeTitle.innerText = `UKC: ${ukcArr.toFixed(2)} M (${isSafe ? 'SAFE' : 'CRITICAL'})`;
+    arrSvgBadgeTitle.className = isSafe ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold';
+  }
+  const svgArrDepth = document.getElementById('svg-arr-depth');
+  if (svgArrDepth) svgArrDepth.textContent = `${(arrDepth + arrTide).toFixed(1)} M`;
+  const svgArrDraft = document.getElementById('svg-arr-draft');
+  if (svgArrDraft) svgArrDraft.textContent = `${maxDraft.toFixed(2)} M`;
+  const svgArrUkc = document.getElementById('svg-arr-ukc');
+  if (svgArrUkc) svgArrUkc.textContent = `UKC: ${ukcArr.toFixed(2)} M`;
+  const svgArrVessel = document.getElementById('svg-arr-vessel');
+  if (svgArrVessel) svgArrVessel.textContent = `M/V ${v.name || 'VESSEL'}`;
 
   // Also update doc map snapshot
   initOrUpdateDocMap();

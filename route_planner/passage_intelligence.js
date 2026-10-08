@@ -428,9 +428,10 @@
             if (geom && !segmentIntersectsGeometry(p1, p2, geom)) continue;
             const name = lt.properties?.name || lt.properties?.title || 'List of Lights';
             const code = lt.properties?.code || lt.properties?.letter || name;
+            const title = lt.properties?.title || `${code} - ${name}`;
             if (!seenLights.has(code)) {
               seenLights.add(code);
-              res.listOfLights.push({ code, name, feature: lt });
+              res.listOfLights.push({ code, name, title, feature: lt });
             }
             break;
           }
