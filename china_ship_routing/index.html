@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>China Ship Routing - Coastal Routeing Systems & Public Routes</title>
+  
+  <!-- LEAFLET CSS (Local with CDN fallback) -->
+  <link rel="stylesheet" href="leaflet.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';">
+  
+  <style>
+    :root {
+      --navy-950: #070e17;
+      --navy-900: #0a192f;
+      --navy-800: #112240;
+      --navy-700: #1e3a5f;
+      --navy-600: #233554;
+      --navy-100: #e6f1ff;
+      --teal-accent: #00d2d3;
+      --gold-accent: #feca57;
+      --sep-zone-color: #8e44ad;
+      --sep-line-color: #be2edd;
+      --boundary-color: #0984e3;
+      --prec-color: #d35400;
+      --junc-color: #27ae60;
+      --outer-color: #00b894;
+      --inner-color: #0984e3;
+      --warn-color: #d63031;
+      --sidebar-width: 440px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--navy-950);
+      color: #334155;
+      overflow: hidden;
+    }
+
+    #app-container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      width: var(--sidebar-width);
+      height: 100%;
+      background: #ffffff;
+      border-right: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    .sidebar-header {
+      background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+      color: #ffffff;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--teal-accent);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #ffffff;
+    }
+
+    .lang-toggle-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .lang-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .doc-badge {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 0.68rem;
+      background: rgba(0, 210, 211, 0.18);
+      color: var(--teal-accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 210, 211, 0.35);
+    }
+
+    /* STATS SUMMARY BAR */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: var(--navy-900);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 10px;
+      text-align: center;
+      color: #fff;
+      gap: 4px;
+    }
+
+    .stat-item .stat-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gold-accent);
+    }
+
+    .stat-item .stat-lbl {
+      font-size: 0.60rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* SEARCH & FILTER */
+    .filter-section {
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--navy-700);
+      box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+
+    .section-select {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      background-color: #ffffff;
+      color: #1e293b;
+      cursor: pointer;
+    }
+
+    .layer-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .layer-chip {
+      font-size: 0.68rem;
+      padding: 3px 7px;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      font-weight: 500;
+    }
+
+    .layer-chip.active {
+      background: var(--navy-800);
+      color: #ffffff;
+      border-color: var(--navy-800);
+    }
+
+    .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* SCROLLABLE LIST */
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+      background: #f8fafc;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .section-card-header {
+      padding: 8px 12px;
+      background: #edf2f7;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .section-card-header:hover {
+      background: #e2e8f0;
+    }
+
+    .sec-title-main {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--navy-900);
+    }
+
+    .sec-title-sub {
+      font-size: 0.68rem;
+      color: #64748b;
+    }
+
+    .sec-badge-count {
+      font-size: 0.66rem;
+      background: #cbd5e1;
+      color: #1e293b;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .section-card-body {
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .scheme-item {
+      padding: 6px 8px;
+      border-radius: 5px;
+      border: 1px solid #f1f5f9;
+      background: #f8fafc;
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+    }
+
+    .scheme-item:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      transform: translateX(2px);
+    }
+
+    .scheme-item.selected {
+      background: var(--navy-100);
+      border-color: var(--boundary-color);
+      font-weight: 600;
+      color: var(--navy-900);
+    }
+
+    .scheme-item-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .scheme-tag {
+      font-size: 0.62rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .tag-tss { background: var(--sep-line-color); }
+    .tag-prec { background: var(--prec-color); }
+    .tag-junc { background: var(--junc-color); }
+    .tag-outer { background: var(--outer-color); }
+    .tag-inner { background: var(--inner-color); }
+    .tag-warn { background: var(--warn-color); }
+
+    /* INSPECTOR DRAWER / PANEL */
+    #detail-panel {
+      padding: 10px 14px;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      max-height: 250px;
+      overflow-y: auto;
+      font-size: 0.76rem;
+    }
+
+    #detail-panel h4 {
+      font-size: 0.85rem;
+      color: var(--navy-900);
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      margin-top: 4px;
+    }
+
+    .detail-table th, .detail-table td {
+      padding: 4px 6px;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+
+    .detail-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .coords-table {
+      max-height: 120px;
+      font-family: monospace;
+      font-size: 0.68rem;
+    }
+
+    /* FOOTER */
+    .sidebar-footer {
+      padding: 10px 14px;
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--navy-800);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-700);
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--navy-800);
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    /* MAP CONTAINER */
+    #map {
+      flex: 1;
+      height: 100%;
+      background: #0b192c;
+      position: relative;
+    }
+
+    /* TOGGLE SIDEBAR BUTTON */
+    #sidebar-toggle {
+      position: absolute;
+      top: 14px;
+      left: calc(var(--sidebar-width) + 14px);
+      z-index: 1001;
+      background: #ffffff;
+      color: var(--navy-900);
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      border-radius: 6px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: left 0.3s ease;
+    }
+
+    #sidebar.collapsed + #sidebar-toggle {
+      left: 14px;
+    }
+
+    /* MAP FLOATING CONTROLS */
+    .map-badge-overlay {
+      position: absolute;
+      top: 14px;
+      right: 60px;
+      z-index: 999;
+      background: rgba(10, 25, 47, 0.9);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .map-badge-overlay .engine-tag {
+      background: #00b894;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.62rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* BOTTOM COORDINATE HUD */
+    #coord-hud {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background: rgba(10, 25, 47, 0.92);
+      backdrop-filter: blur(8px);
+      color: #f1f5f9;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-family: monospace;
+      border: 1px solid rgba(255,255,255,0.2);
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: flex;
+      gap: 14px;
+    }
+
+    #coord-hud span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* POPUP STYLING */
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      font-size: 0.80rem;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-content {
+      margin: 0 !important;
+      line-height: 1.45;
+    }
+
+    .popup-box {
+      min-width: 290px;
+      max-width: 380px;
+    }
+
+    .popup-header {
+      background: var(--navy-900);
+      color: #fff;
+      padding: 9px 13px;
+    }
+
+    .popup-header h3 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--teal-accent);
+    }
+
+    .popup-header p {
+      font-size: 0.70rem;
+      color: #cbd5e1;
+    }
+
+    .popup-body {
+      padding: 10px 13px;
+      background: #fff;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .popup-badge {
+      display: inline-block;
+      font-size: 0.63rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .popup-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.73rem;
+      padding: 3px 0;
+      border-bottom: 1px dotted #e2e8f0;
+    }
+
+    .popup-meta-label {
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .popup-meta-value {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .warning-alert-box {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      margin: 6px 0;
+      font-weight: 600;
+    }
+
+    /* DIRECTION CHEVRON MARKER */
+    .lane-arrow-icon {
+      color: #ffffff;
+      background: rgba(14, 116, 144, 0.95);
+      border: 1px solid #38bdf8;
+      border-radius: 12px;
+      padding: 2px 7px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      white-space: nowrap;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-width: 100vw;
+      }
+      #sidebar-toggle {
+        left: calc(100vw - 44px);
+      }
+      #sidebar.collapsed + #sidebar-toggle {
+        left: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app-container">
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="header-top">
+        <div class="sidebar-title">
+          <span>⚓ China Ship Routing</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <a href="../index.html" class="lang-toggle-btn" style="text-decoration: none; display: flex; align-items: center; gap: 4px;" title="Back to Bridge Hub">⮌ Hub</a>
+          <button id="lang-btn" class="lang-toggle-btn" title="Toggle Language / 切换语言">中 / EN</button>
+        </div>
+      </div>
+      <div class="sidebar-subtitle" id="hdr-sub">China Coastal Ship Routeing Systems & Public Routes</div>
+      <div class="doc-badge" id="hdr-badge">PRC MSA Official System • Huatai Circular [2026] 02 • CGCS2000</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-val" id="stat-sec">6</div>
+        <div class="stat-lbl" id="lbl-sec">Sections</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="stat-tss">30</div>
+        <div class="stat-lbl" id="lbl-tss">TSS Schemes</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="stat-routes" style="color: #00d2d3;">23</div>
+        <div class="stat-lbl" id="lbl-routes">National Routes</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="stat-prec">10</div>
+        <div class="stat-lbl" id="lbl-prec">Precautionary</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="stat-warn" style="color: #ff7675;">2</div>
+        <div class="stat-lbl" id="lbl-warn">Warning Zones</div>
+      </div>
+    </div>
+
+    <!-- SEARCH & FILTER -->
+    <div class="filter-section">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" class="search-input" placeholder="Search routes, schemes, waypoints (e.g. Tianjin, Yellow, 010°)...">
+      </div>
+
+      <select id="section-select" class="section-select">
+        <option value="all">🌐 All Routing Systems & Public Routes</option>
+        <optgroup label="⚓ Liaoning Coastal Routeing (辽宁沿海定线制)">
+          <option value="1">1. North of Yellow Sea (黄海北部)</option>
+          <option value="2">2. Laotieshan Channel to N. Bohai (渤海北部)</option>
+          <option value="3">3. Laotieshan Channel to NW. Bohai (渤海西北部)</option>
+          <option value="4">4. Laotieshan Channel to W. Bohai - Liaoning (渤海西部)</option>
+          <option value="5">5. Dalian Port Dashanshan Channel (大连港大三山)</option>
+          <option value="6">6. Laotieshan Channel (老铁山水道)</option>
+        </optgroup>
+        <optgroup label="🚢 National Coastal Public Routes (全国沿海公共航路)">
+          <option value="national_outer">7. National Outer Public Routes (沿海外航路 - 10)</option>
+          <option value="national_inner">8. National Inner Public Routes (沿海内航路 - 13)</option>
+        </optgroup>
+        <optgroup label="⚠️ Navigation Warnings (航行警示区)">
+          <option value="warning_zones">9. Zhejiang/Zhoushan Warning Zones (警示区 - 2)</option>
+        </optgroup>
+      </select>
+
+      <div class="layer-chips">
+        <span class="layer-chip active" data-type="national_outer">
+          <span class="chip-dot" style="background: var(--outer-color);"></span><span class="chip-text">National Outer</span>
+        </span>
+        <span class="layer-chip active" data-type="national_inner">
+          <span class="chip-dot" style="background: var(--inner-color);"></span><span class="chip-text">National Inner</span>
+        </span>
+        <span class="layer-chip active" data-type="warning_zones">
+          <span class="chip-dot" style="background: var(--warn-color);"></span><span class="chip-text">Warning Zones</span>
+        </span>
+        <span class="layer-chip active" data-type="sep_zones">
+          <span class="chip-dot" style="background: var(--sep-zone-color);"></span><span class="chip-text">Separation Zones</span>
+        </span>
+        <span class="layer-chip active" data-type="sep_lines">
+          <span class="chip-dot" style="background: var(--sep-line-color);"></span><span class="chip-text">Separation Lines</span>
+        </span>
+        <span class="layer-chip active" data-type="boundaries">
+          <span class="chip-dot" style="background: var(--boundary-color);"></span><span class="chip-text">Boundaries</span>
+        </span>
+        <span class="layer-chip active" data-type="precautionary">
+          <span class="chip-dot" style="background: var(--prec-color);"></span><span class="chip-text">Precautionary</span>
+        </span>
+        <span class="layer-chip active" data-type="junctions">
+          <span class="chip-dot" style="background: var(--junc-color);"></span><span class="chip-text">Junctions</span>
+        </span>
+        <span class="layer-chip active" data-type="flow_arrows">
+          <span class="chip-dot" style="background: #38bdf8;"></span><span class="chip-text">Flow Headings</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- HIERARCHICAL LIST -->
+    <div class="sidebar-content" id="schemes-list">
+      <!-- Populated via JavaScript -->
+    </div>
+
+    <!-- INSPECTOR / DETAILS -->
+    <div id="detail-panel">
+      <h4>
+        <span id="detail-title">Feature Inspector / Details</span>
+        <button id="btn-copy-coords" class="btn btn-outline" style="padding: 2px 6px; font-size: 0.68rem; display: none;">📋 Copy Coordinates</button>
+      </h4>
+      <div id="detail-content" style="color: #64748b;">
+        Click on any navigation route, TSS scheme, or warning zone to inspect coordinates, courses, distances, corridor widths, and navigation notices.
+      </div>
+    </div>
+
+    <!-- FOOTER / ACTIONS -->
+    <div class="sidebar-footer">
+      <button class="btn btn-outline" id="btn-reset-view">🎯 Fit All</button>
+      <button class="btn btn-primary" id="btn-download-json">📥 Download JSON</button>
+      <button class="btn btn-outline" id="btn-download-geojson">🗺️ GeoJSON</button>
+    </div>
+  </aside>
+
+  <!-- SIDEBAR TOGGLE BUTTON -->
+  <button id="sidebar-toggle" title="Toggle Sidebar">◀</button>
+
+  <!-- MAP CONTAINER -->
+  <main id="map"></main>
+
+  <!-- MAP BADGE OVERLAY -->
+  <div class="map-badge-overlay">
+    <div>
+      <strong>China Ship Routing</strong>
+      <span style="font-size: 0.68rem; color: #a0aec0; margin-left: 6px;">Full Coastal Network</span>
+    </div>
+    <span class="engine-tag" id="basemap-tag">TINY WORLD MAP</span>
+  </div>
+
+  <!-- REALTIME CURSOR HUD -->
+  <div id="coord-hud">
+    <span>🌐 Lat: <strong id="hud-lat">38°45'00.00"N</strong></span>
+    <span>Lng: <strong id="hud-lng">121°30'00.00"E</strong></span>
+    <span>DD: <strong id="hud-dd">38.750000, 121.500000</strong></span>
+  </div>
+</div>
+
+<!-- LEAFLET JS (Local with CDN fallback) -->
+<script src="leaflet.js" onerror="this.onerror=null;this.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';"></script>
+
+<!-- TINY WORLD MAP SCRIPT (Local with CDN fallback) -->
+<script src="tiny-world-all-10000.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/tinyworldmap/tiny-world-map@master/dist/v3/tiny-world-all-10000.js';"></script>
+
+<!-- DATASET SCRIPT (Local data.js fallback) -->
+<script src="data.js"></script>
+
+<script>
+(function() {
+  // --- 1. LANGUAGE STATE ---
+  let currentLang = 'en'; // DEFAULT IS ENGLISH
+
+  const i18n = {
+    en: {
+      title: "⚓ China Ship Routing",
+      sub: "China Coastal Ship Routeing Systems & Public Routes (中国船舶定线制与全国沿海公共航路)",
+      badge: "PRC MSA Official System • Huatai Circular [2026] 02 • CGCS2000",
+      lblSec: "Sections",
+      lblTss: "TSS Schemes",
+      lblRoutes: "National Routes",
+      lblPrec: "Precautionary",
+      lblWarn: "Warning Zones",
+      searchPlaceholder: "Search routes, schemes, waypoints (e.g. Tianjin, Yellow, 010°)...",
+      allSections: "🌐 All Routing Systems & Public Routes",
+      natOuter: "National Outer",
+      natInner: "National Inner",
+      warnZones: "Warning Zones",
+      sepZones: "Separation Zones",
+      sepLines: "Separation Lines",
+      boundaries: "Boundaries",
+      precAreas: "Precautionary",
+      junctions: "Junctions",
+      flowHeadings: "Flow Headings",
+      inspectorTitle: "Feature Inspector / Details",
+      inspectorDefault: "Click on any navigation route, TSS scheme, or warning zone to inspect coordinates, courses, distances, corridor widths, and navigation notices.",
+      fitAll: "🎯 Fit All",
+      downloadJson: "📥 Download JSON",
+      downloadGeojson: "🗺️ GeoJSON",
+      copyCoords: "📋 Copy Coordinates",
+      copied: "✅ Copied!",
+      schemeTagTss: "TSS",
+      schemeTagPrec: "PREC",
+      schemeTagJunc: "JUNC",
+      schemeTagOuter: "OUTER",
+      schemeTagInner: "INNER",
+      schemeTagWarn: "WARNING",
+      noResults: "No matching routes or schemes found",
+      radius: "Radius",
+      centerCoords: "Center Point",
+      coordsSequence: "Waypoints / Coordinates",
+      trafficLanesTitle: "Traffic Lanes",
+      flowLabel: "Course/Flow",
+      widthLabel: "Width",
+      lengthLabel: "Length",
+      regulationsTitle: "Applicable Regulations",
+      chartsTitle: "Reference Charts",
+      corridorWidth: "Corridor Width",
+      connectedTss: "Connected TSS",
+      course: "Course",
+      distance: "Distance",
+      statusNotice: "Notice / Restriction",
+      cardOuterTitle: "China National Outer Public Routes",
+      cardOuterSub: "沿海南北大通道外航路 (10 Routes)",
+      cardInnerTitle: "China National Inner Public Routes",
+      cardInnerSub: "沿海南北大通道内航路 (13 Routes)",
+      cardWarnTitle: "Navigation Warning / No-Sail Zones",
+      cardWarnSub: "浙江/舟山沿海水域航行警示区 (2 Zones)"
+    },
+    zh: {
+      title: "⚓ 中国沿海船舶定线制",
+      sub: "中国沿海船舶定线制与全国沿海公共航路 (China Ship Routing & Public Routes)",
+      badge: "中国海事局官方规范 • 华泰海事通函 [2026] 02 • CGCS2000",
+      lblSec: "定线航区",
+      lblTss: "分道通航制",
+      lblRoutes: "公共航路",
+      lblPrec: "警戒区",
+      lblWarn: "航行警示区",
+      searchPlaceholder: "搜索航路、分道通航、警示区 (例: 天津, 警戒区, 010°)...",
+      allSections: "🌐 全网定线制与公共航路",
+      natOuter: "沿海外航路",
+      natInner: "沿海内航路",
+      warnZones: "航行警示区",
+      sepZones: "分隔带",
+      sepLines: "分隔线",
+      boundaries: "边界线",
+      precAreas: "警戒区",
+      junctions: "连接处",
+      flowHeadings: "航向标",
+      inspectorTitle: "航道属性详情 / Inspector",
+      inspectorDefault: "点击地图图元或列表中方案以查看经纬度、转向点、航向距离、航道宽度与航行通告规定。",
+      fitAll: "🎯 全图居中",
+      downloadJson: "📥 下载 JSON",
+      downloadGeojson: "🗺️ GeoJSON",
+      copyCoords: "📋 复制坐标",
+      copied: "✅ 已复制!",
+      schemeTagTss: "分道",
+      schemeTagPrec: "警戒",
+      schemeTagJunc: "连接",
+      schemeTagOuter: "外航路",
+      schemeTagInner: "内航路",
+      schemeTagWarn: "警示区",
+      noResults: "没有找到匹配的定线制方案或航路",
+      radius: "半径",
+      centerCoords: "圆心坐标",
+      coordsSequence: "关键转向点 / 坐标序列",
+      trafficLanesTitle: "通航分道",
+      flowLabel: "主交通流向",
+      widthLabel: "航道宽度",
+      lengthLabel: "长度",
+      regulationsTitle: "航行特别规定",
+      chartsTitle: "参考海图",
+      corridorWidth: "航路宽度",
+      connectedTss: "连接分道通航制",
+      course: "航向",
+      distance: "航程",
+      statusNotice: "航行限制 / 通告",
+      cardOuterTitle: "全国沿海南北大通道外航路",
+      cardOuterSub: "China National Outer Public Routes (10 条)",
+      cardInnerTitle: "全国沿海南北大通道内航路",
+      cardInnerSub: "China National Inner Public Routes (13 条)",
+      cardWarnTitle: "航行警示通告 / 禁止驶入区域",
+      cardWarnSub: "浙江/舟山水域黄色/橙色警示区 (2 处)"
+    }
+  };
+
+  // --- 2. DATA INITIALIZATION ---
+  let DATA = window.ROUTING_DATA;
+
+  // --- 3. LEAFLET MAP INITIALIZATION ---
+  const mapCenter = DATA && DATA.metadata && DATA.metadata.center ? [DATA.metadata.center[1], DATA.metadata.center[0]] : [32.0, 122.0];
+  const map = L.map('map', {
+    center: mapCenter,
+    zoom: 7,
+    minZoom: 3,
+    maxZoom: 18,
+    zoomControl: false,
+    worldCopyJump: true
+  });
+
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  L.control.scale({ imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
+
+  // --- 4. LEAFLET BASE MAP LAYERS ---
+  const baseLayers = {};
+  let defaultBase;
+
+  // 1. Tiny World Map Layer (From tinyworldmap)
+  if (typeof L.GridLayer.TinyWorld !== 'undefined') {
+    const tinyWorldLayer = new L.GridLayer.TinyWorld({ maxZoom: 19 });
+    baseLayers["🌍 Tiny World Map (Offline Vector)"] = tinyWorldLayer;
+    defaultBase = tinyWorldLayer;
+  }
+
+  // 2. OpenStreetMap Standard Layer
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  });
+  baseLayers["🗺️ OpenStreetMap (Standard)"] = osmLayer;
+
+  // 3. CartoDB Voyager (Navigation Style)
+  const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; CartoDB & OpenStreetMap'
+  });
+  baseLayers["🧭 CartoDB Voyager (Nav Style)"] = cartoVoyager;
+
+  // 4. CartoDB Dark Matter (Marine Night / ECDIS)
+  const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; CartoDB & OpenStreetMap'
+  });
+  baseLayers["🌙 CartoDB Dark (ECDIS Marine Night)"] = cartoDark;
+
+  // 5. Esri World Imagery (High-Resolution Satellite)
+  const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, Maxar, Earthstar Geographics'
+  });
+  baseLayers["🛰️ Esri Satellite Imagery"] = esriSat;
+
+  // Set default basemap
+  if (defaultBase) {
+    defaultBase.addTo(map);
+    document.getElementById('basemap-tag').innerText = 'TINY WORLD MAP';
+  } else {
+    osmLayer.addTo(map);
+    document.getElementById('basemap-tag').innerText = 'OPENSTREETMAP';
+  }
+
+  // --- 5. OVERLAY LAYERS ---
+  const layerGroups = {
+    national_outer: L.layerGroup().addTo(map),
+    national_inner: L.layerGroup().addTo(map),
+    warning_zones: L.layerGroup().addTo(map),
+    sep_zones: L.layerGroup().addTo(map),
+    sep_lines: L.layerGroup().addTo(map),
+    boundaries: L.layerGroup().addTo(map),
+    precautionary: L.layerGroup().addTo(map),
+    junctions: L.layerGroup().addTo(map),
+    flow_arrows: L.layerGroup().addTo(map)
+  };
+
+  // OpenSeaMap Marine Seamarks Overlay
+  const openSeaMap = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: 'Map data: &copy; OpenSeaMap contributors'
+  }).addTo(map);
+
+  const overlayMaps = {
+    "🌊 OpenSeaMap Marine Seamarks": openSeaMap,
+    "🚢 National Outer Routes": layerGroups.national_outer,
+    "⛴️ National Inner Routes": layerGroups.national_inner,
+    "⚠️ No-Sail Warning Zones": layerGroups.warning_zones,
+    "🟪 Separation Zones": layerGroups.sep_zones,
+    "🟣 Separation Lines": layerGroups.sep_lines,
+    "🟦 Boundary Lines": layerGroups.boundaries,
+    "🟧 Precautionary Areas": layerGroups.precautionary,
+    "🟩 Junction Areas": layerGroups.junctions,
+    "🧭 Traffic Flow Headings": layerGroups.flow_arrows
+  };
+
+  L.control.layers(baseLayers, overlayMaps, { position: 'topright', collapsed: true }).addTo(map);
+
+  map.on('baselayerchange', function(e) {
+    if (e.name.includes('Tiny')) document.getElementById('basemap-tag').innerText = 'TINY WORLD MAP';
+    else if (e.name.includes('Voyager')) document.getElementById('basemap-tag').innerText = 'CARTO VOYAGER';
+    else if (e.name.includes('Dark')) document.getElementById('basemap-tag').innerText = 'ECDIS NIGHT';
+    else if (e.name.includes('Satellite')) document.getElementById('basemap-tag').innerText = 'SATELLITE';
+    else document.getElementById('basemap-tag').innerText = 'OPENSTREETMAP';
+  });
+
+  // --- 6. DMS CONVERTER ---
+  function ddToDms(dd, isLat) {
+    const abs = Math.abs(dd);
+    const deg = Math.floor(abs);
+    const minFloat = (abs - deg) * 60;
+    const min = Math.floor(minFloat);
+    const sec = ((minFloat - min) * 60).toFixed(2);
+    const hem = isLat ? (dd >= 0 ? 'N' : 'S') : (dd >= 0 ? 'E' : 'W');
+    return `${deg}°${min.toString().padStart(2, '0')}′${sec.padStart(5, '0')}″${hem}`;
+  }
+
+  // --- 7. POPUP BUILDER ---
+  function createPopupHtml(feature) {
+    const p = feature.properties;
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+    
+    let typeName = isEn ? (p.feature_type_en || 'Navigation Feature') : '通航图元';
+    let badgeClass = 'tag-tss';
+    if (p.feature_type === 'national_outer_route') { badgeClass = 'tag-outer'; }
+    else if (p.feature_type === 'national_inner_route') { badgeClass = 'tag-inner'; }
+    else if (p.feature_type === 'no_sail_warning_zone') { badgeClass = 'tag-warn'; }
+    else if (p.feature_type === 'tss_separation_zone') { badgeClass = 'tag-tss'; }
+    else if (p.feature_type === 'tss_separation_line') { badgeClass = 'tag-tss'; }
+    else if (p.feature_type === 'tss_boundary') { badgeClass = 'tag-tss'; }
+    else if (p.feature_type === 'precautionary_area') { badgeClass = 'tag-prec'; }
+    else if (p.feature_type === 'junction_area') { badgeClass = 'tag-junc'; }
+
+    const secName = isEn ? (p.section_name_en || p.section_name_zh) : p.section_name_zh;
+    const schemeName = isEn ? (p.feature_name_en || p.scheme_name_en || p.feature_name) : (p.feature_name || p.scheme_name_zh);
+
+    let metaRows = `
+      <div class="popup-meta-row"><span class="popup-meta-label">${isEn ? 'Section / Category' : '所属航区/分类'}:</span><span class="popup-meta-value">${secName || ''}</span></div>
+      <div class="popup-meta-row"><span class="popup-meta-label">${isEn ? 'Name' : '名称'}:</span><span class="popup-meta-value">${schemeName || ''}</span></div>
+    `;
+
+    if (p.width_nm) {
+      metaRows += `<div class="popup-meta-row"><span class="popup-meta-label">${t.corridorWidth}:</span><span class="popup-meta-value">${p.width_nm} NM</span></div>`;
+    }
+    if (p.radius_nm) {
+      metaRows += `<div class="popup-meta-row"><span class="popup-meta-label">${t.radius}:</span><span class="popup-meta-value">${p.radius_nm} NM (${(p.radius_nm * 1.852).toFixed(2)} km)</span></div>`;
+    }
+
+    let alertHtml = '';
+    if (p.feature_type === 'no_sail_warning_zone') {
+      alertHtml = `
+        <div class="warning-alert-box">
+          ⚠️ <strong>${isEn ? 'WARNING: VESSELS CAN NOT SAIL INTO THIS ZONE' : '警告: 禁止任何船舶驶入该区域'}</strong>
+          <div style="font-weight: normal; margin-top: 3px;">${p.description || ''}</div>
+        </div>
+      `;
+    }
+
+    let coordsList = '';
+    const geom = feature.geometry;
+    let pts = [];
+    if (geom.type === 'LineString') pts = geom.coordinates;
+    else if (geom.type === 'Polygon') pts = geom.coordinates[0];
+    else if (geom.type === 'Point') pts = [geom.coordinates];
+
+    if (pts && pts.length > 0) {
+      coordsList = `
+        <div style="margin-top: 8px;">
+          <strong style="font-size: 0.70rem; color: #475569;">${t.coordsSequence} (${pts.length}):</strong>
+          <table class="detail-table coords-table">
+            <tr><th>#</th><th>Lng (E)</th><th>Lat (N)</th><th>DMS</th></tr>
+            ${pts.map((pt, i) => `<tr><td>${i+1}</td><td>${pt[0].toFixed(5)}°</td><td>${pt[1].toFixed(5)}°</td><td>${ddToDms(pt[1], true)}, ${ddToDms(pt[0], false)}</td></tr>`).join('')}
+          </table>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="popup-box">
+        <div class="popup-header">
+          <h3>${schemeName || 'Ship Routeing'}</h3>
+          <p>${secName || ''}</p>
+        </div>
+        <div class="popup-body">
+          <span class="popup-badge ${badgeClass}">${typeName}</span>
+          ${alertHtml}
+          ${metaRows}
+          ${coordsList}
+        </div>
+      </div>
+    `;
+  }
+
+  // --- 8. LOAD AND RENDER FEATURES ---
+  function renderAllFeatures() {
+    if (!DATA || !DATA.geojson || !DATA.geojson.features) return;
+
+    // Clear old layers
+    Object.values(layerGroups).forEach(lg => lg.clearLayers());
+
+    DATA.geojson.features.forEach((feat) => {
+      const p = feat.properties;
+      const fType = p.feature_type;
+      let layer;
+
+      if (fType === 'national_outer_route') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#00b894',
+            weight: 4,
+            opacity: 0.95,
+            dashArray: '8, 5'
+          }
+        });
+        layer.addTo(layerGroups.national_outer);
+      } else if (fType === 'national_inner_route') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#0984e3',
+            weight: 3.5,
+            opacity: 0.95,
+            dashArray: '6, 4'
+          }
+        });
+        layer.addTo(layerGroups.national_inner);
+      } else if (fType === 'no_sail_warning_zone') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: p.stroke || '#d63031',
+            weight: 3,
+            opacity: 1.0,
+            fillColor: p.fill || '#e17055',
+            fillOpacity: p.fill_opacity || 0.45,
+            dashArray: '5, 5'
+          }
+        });
+        layer.addTo(layerGroups.warning_zones);
+      } else if (fType === 'tss_separation_zone') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#8e44ad',
+            weight: 2,
+            opacity: 0.9,
+            fillColor: '#9b59b6',
+            fillOpacity: 0.35,
+            dashArray: '4, 4'
+          }
+        });
+        layer.addTo(layerGroups.sep_zones);
+      } else if (fType === 'tss_separation_line') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#be2edd',
+            weight: 3.5,
+            opacity: 0.95,
+            dashArray: '8, 6'
+          }
+        });
+        layer.addTo(layerGroups.sep_lines);
+      } else if (fType === 'tss_boundary') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#0984e3',
+            weight: 2,
+            opacity: 0.85,
+            dashArray: '5, 5'
+          }
+        });
+        layer.addTo(layerGroups.boundaries);
+      } else if (fType === 'precautionary_area') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#d35400',
+            weight: 2.5,
+            opacity: 0.9,
+            fillColor: '#e67e22',
+            fillOpacity: 0.25,
+            dashArray: '6, 6'
+          }
+        });
+        layer.addTo(layerGroups.precautionary);
+      } else if (fType === 'precautionary_center') {
+        layer = L.circleMarker([feat.geometry.coordinates[1], feat.geometry.coordinates[0]], {
+          radius: 5,
+          color: '#d35400',
+          fillColor: '#f39c12',
+          fillOpacity: 0.9,
+          weight: 2
+        });
+        layer.addTo(layerGroups.precautionary);
+      } else if (fType === 'junction_area') {
+        layer = L.geoJSON(feat, {
+          style: {
+            color: '#27ae60',
+            weight: 2,
+            opacity: 0.9,
+            fillColor: '#2ecc71',
+            fillOpacity: 0.35,
+            dashArray: '4, 4'
+          }
+        });
+        layer.addTo(layerGroups.junctions);
+      }
+
+      if (layer) {
+        layer.bindPopup(() => createPopupHtml(feat), { maxWidth: 390 });
+        layer.on('click', () => {
+          showFeatureDetails(feat);
+        });
+      }
+    });
+
+    // Render Traffic Flow Direction Labels (Liaoning TSS)
+    if (DATA.sections) {
+      DATA.sections.forEach(sec => {
+        sec.traffic_separation_schemes.forEach(tss => {
+          tss.traffic_lanes.forEach(lane => {
+            if (lane.traffic_flow) {
+              let refLine = null;
+              if (tss.separation_lines.length > 0) refLine = tss.separation_lines[0].coordinates;
+              else if (tss.boundaries.length > 0) refLine = tss.boundaries[0].coordinates;
+              else if (tss.separation_zones.length > 0) refLine = tss.separation_zones[0].coordinates;
+
+              if (refLine && refLine.length >= 2) {
+                const midIdx = Math.floor(refLine.length / 2);
+                const pt = refLine[midIdx];
+                const laneLbl = currentLang === 'en' ? (lane.bound_en || lane.name_zh) : lane.name_zh;
+                let headingAngle = null;
+                const m = lane.traffic_flow ? lane.traffic_flow.match(/(\d{1,3})°/) : null;
+                if (m) headingAngle = parseInt(m[1], 10);
+
+                const arrowSvg = headingAngle !== null
+                  ? `<svg style="display:inline-block; vertical-align:middle; width:12px; height:12px; transform:rotate(${headingAngle}deg); margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`
+                  : `<span style="margin-right:3px;">🚢</span>`;
+
+                const icon = L.divIcon({
+                  className: 'lane-arrow-icon',
+                  html: `${arrowSvg}<span>${laneLbl.slice(0, 6)} ${lane.traffic_flow}</span>`,
+                  iconSize: [98, 22],
+                  iconAnchor: [49, 11]
+                });
+                const marker = L.marker([pt[1], pt[0]], { icon: icon });
+                marker.bindPopup(`
+                  <div style="padding: 10px;">
+                    <strong>${currentLang === 'en' ? tss.name_en : tss.name_zh}</strong><br>
+                    <span>${laneLbl}</span><br>
+                    <span>${currentLang === 'en' ? 'Course/Flow' : '流向'}: <strong>${lane.traffic_flow}</strong> | ${currentLang === 'en' ? 'Width' : '宽度'}: ${lane.width} | ${currentLang === 'en' ? 'Length' : '长度'}: ${lane.length}</span>
+                  </div>
+                `);
+                marker.addTo(layerGroups.flow_arrows);
+              }
+            }
+          });
+        });
+      });
+    }
+  }
+
+  // --- 9. POPULATE SIDEBAR LIST ---
+  function populateSidebar(filterSection = 'all', searchQuery = '') {
+    const listEl = document.getElementById('schemes-list');
+    listEl.innerHTML = '';
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+
+    if (!DATA) return;
+
+    // A. NATIONAL OUTER ROUTES CARD
+    if ((filterSection === 'all' || filterSection === 'national_outer') && DATA.national_coastal_public_routes && DATA.national_coastal_public_routes.outer_public_routes) {
+      const outerRoutes = DATA.national_coastal_public_routes.outer_public_routes;
+      const card = document.createElement('div');
+      card.className = 'section-card';
+      card.innerHTML = `
+        <div class="section-card-header" style="background: #e6fffa; border-left: 4px solid var(--outer-color);">
+          <div>
+            <div class="sec-title-main" style="color: #007965;">🚢 ${t.cardOuterTitle}</div>
+            <div class="sec-title-sub">${t.cardOuterSub}</div>
+          </div>
+          <span class="sec-badge-count" style="background: #00b894; color: #fff;">${outerRoutes.length}</span>
+        </div>
+        <div class="section-card-body"></div>
+      `;
+      const bodyEl = card.querySelector('.section-card-body');
+      let count = 0;
+      outerRoutes.forEach(r => {
+        const nameMatch = (r.name_en && r.name_en.toLowerCase().includes(searchQuery.toLowerCase())) || (r.name_zh && r.name_zh.includes(searchQuery));
+        if (searchQuery && !nameMatch) return;
+        count++;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'scheme-item';
+        itemEl.innerHTML = `
+          <div class="scheme-item-left">
+            <span class="scheme-tag tag-outer">${t.schemeTagOuter} ${r.no}</span>
+            <span>${isEn ? r.name_en : r.name_zh}</span>
+          </div>
+          <span style="font-size: 0.68rem; color: #00b894; font-weight: 600;">${r.width_nm} NM</span>
+        `;
+        itemEl.addEventListener('click', () => {
+          highlightNationalRoute(r, 'outer');
+        });
+        bodyEl.appendChild(itemEl);
+      });
+      if (count > 0 || !searchQuery) listEl.appendChild(card);
+    }
+
+    // B. NATIONAL INNER ROUTES CARD
+    if ((filterSection === 'all' || filterSection === 'national_inner') && DATA.national_coastal_public_routes && DATA.national_coastal_public_routes.inner_public_routes) {
+      const innerRoutes = DATA.national_coastal_public_routes.inner_public_routes;
+      const card = document.createElement('div');
+      card.className = 'section-card';
+      card.innerHTML = `
+        <div class="section-card-header" style="background: #ebf8ff; border-left: 4px solid var(--inner-color);">
+          <div>
+            <div class="sec-title-main" style="color: #0b69a3;">⛴️ ${t.cardInnerTitle}</div>
+            <div class="sec-title-sub">${t.cardInnerSub}</div>
+          </div>
+          <span class="sec-badge-count" style="background: #0984e3; color: #fff;">${innerRoutes.length}</span>
+        </div>
+        <div class="section-card-body"></div>
+      `;
+      const bodyEl = card.querySelector('.section-card-body');
+      let count = 0;
+      innerRoutes.forEach(r => {
+        const nameMatch = (r.name_en && r.name_en.toLowerCase().includes(searchQuery.toLowerCase())) || (r.name_zh && r.name_zh.includes(searchQuery));
+        if (searchQuery && !nameMatch) return;
+        count++;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'scheme-item';
+        itemEl.innerHTML = `
+          <div class="scheme-item-left">
+            <span class="scheme-tag tag-inner">${t.schemeTagInner} ${r.no}</span>
+            <span>${isEn ? r.name_en : r.name_zh}</span>
+          </div>
+          <span style="font-size: 0.68rem; color: #0984e3; font-weight: 600;">${r.width_nm} NM</span>
+        `;
+        itemEl.addEventListener('click', () => {
+          highlightNationalRoute(r, 'inner');
+        });
+        bodyEl.appendChild(itemEl);
+      });
+      if (count > 0 || !searchQuery) listEl.appendChild(card);
+    }
+
+    // C. NAVIGATION WARNING ZONES CARD
+    if ((filterSection === 'all' || filterSection === 'warning_zones') && DATA.navigation_warning_zones && DATA.navigation_warning_zones.zones) {
+      const warnZones = DATA.navigation_warning_zones.zones;
+      const card = document.createElement('div');
+      card.className = 'section-card';
+      card.innerHTML = `
+        <div class="section-card-header" style="background: #fff5f5; border-left: 4px solid var(--warn-color);">
+          <div>
+            <div class="sec-title-main" style="color: #c53030;">⚠️ ${t.cardWarnTitle}</div>
+            <div class="sec-title-sub">${t.cardWarnSub}</div>
+          </div>
+          <span class="sec-badge-count" style="background: #e53e3e; color: #fff;">${warnZones.length}</span>
+        </div>
+        <div class="section-card-body"></div>
+      `;
+      const bodyEl = card.querySelector('.section-card-body');
+      let count = 0;
+      warnZones.forEach(wz => {
+        const nameMatch = (wz.name_en && wz.name_en.toLowerCase().includes(searchQuery.toLowerCase())) || (wz.name_zh && wz.name_zh.includes(searchQuery));
+        if (searchQuery && !nameMatch) return;
+        count++;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'scheme-item';
+        itemEl.innerHTML = `
+          <div class="scheme-item-left">
+            <span class="scheme-tag tag-warn">${t.schemeTagWarn}</span>
+            <span>${isEn ? wz.name_en : wz.name_zh}</span>
+          </div>
+          <span style="font-size: 0.68rem; color: #c53030; font-weight: 700;">${wz.points.length} pts</span>
+        `;
+        itemEl.addEventListener('click', () => {
+          highlightWarningZone(wz);
+        });
+        bodyEl.appendChild(itemEl);
+      });
+      if (count > 0 || !searchQuery) listEl.appendChild(card);
+    }
+
+    // D. LIAONING TSS SECTIONS (1 to 6)
+    if (DATA.sections) {
+      DATA.sections.forEach(sec => {
+        if (filterSection !== 'all' && sec.id.toString() !== filterSection) return;
+
+        const card = document.createElement('div');
+        card.className = 'section-card';
+
+        const totalItems = sec.traffic_separation_schemes.length + sec.precautionary_areas.length + sec.junctions.length;
+        const secTitleMain = isEn ? sec.name_en : sec.name_zh;
+        const secTitleSub = isEn ? sec.name_zh : sec.name_en;
+
+        card.innerHTML = `
+          <div class="section-card-header">
+            <div>
+              <div class="sec-title-main">⚓ ${secTitleMain}</div>
+              <div class="sec-title-sub">${secTitleSub}</div>
+            </div>
+            <span class="sec-badge-count">${totalItems}</span>
+          </div>
+          <div class="section-card-body"></div>
+        `;
+
+        const bodyEl = card.querySelector('.section-card-body');
+        let matchedCount = 0;
+
+        // TSS items
+        sec.traffic_separation_schemes.forEach(tss => {
+          const titleMatch = tss.name_zh.toLowerCase().includes(searchQuery.toLowerCase()) || (tss.name_en && tss.name_en.toLowerCase().includes(searchQuery.toLowerCase()));
+          const laneMatch = tss.traffic_lanes.some(l => l.name_zh.includes(searchQuery) || l.traffic_flow.includes(searchQuery));
+          if (searchQuery && !titleMatch && !laneMatch) return;
+
+          matchedCount++;
+          const itemEl = document.createElement('div');
+          itemEl.className = 'scheme-item';
+          const tssName = isEn ? tss.name_en : tss.name_zh;
+          itemEl.innerHTML = `
+            <div class="scheme-item-left">
+              <span class="scheme-tag tag-tss">${t.schemeTagTss}</span>
+              <span>${tssName}</span>
+            </div>
+            <span style="font-size: 0.68rem; color: #64748b;">${tss.traffic_lanes.length} lanes</span>
+          `;
+          itemEl.addEventListener('click', () => {
+            highlightTss(sec, tss);
+          });
+          bodyEl.appendChild(itemEl);
+        });
+
+        // Precautionary areas
+        sec.precautionary_areas.forEach(p => {
+          const pName = isEn ? (p.name_en || p.name_zh) : p.name_zh;
+          if (searchQuery && !pName.toLowerCase().includes(searchQuery.toLowerCase())) return;
+          matchedCount++;
+          const itemEl = document.createElement('div');
+          itemEl.className = 'scheme-item';
+          itemEl.innerHTML = `
+            <div class="scheme-item-left">
+              <span class="scheme-tag tag-prec">${t.schemeTagPrec}</span>
+              <span>${pName}</span>
+            </div>
+            <span style="font-size: 0.68rem; color: #e67e22;">${p.shape_type === 'circle' ? p.radius_nm + ' NM' : (isEn ? 'Polygon' : '多边形')}</span>
+          `;
+          itemEl.addEventListener('click', () => {
+            highlightPrecautionary(sec, p);
+          });
+          bodyEl.appendChild(itemEl);
+        });
+
+        // Junctions
+        sec.junctions.forEach(j => {
+          const jName = isEn ? (j.name_en || j.name_zh) : j.name_zh;
+          if (searchQuery && !jName.toLowerCase().includes(searchQuery.toLowerCase())) return;
+          matchedCount++;
+          const itemEl = document.createElement('div');
+          itemEl.className = 'scheme-item';
+          itemEl.innerHTML = `
+            <div class="scheme-item-left">
+              <span class="scheme-tag tag-junc">${t.schemeTagJunc}</span>
+              <span>${jName}</span>
+            </div>
+            <span style="font-size: 0.68rem; color: #27ae60;">${isEn ? 'Junction' : '连接处'}</span>
+          `;
+          itemEl.addEventListener('click', () => {
+            highlightJunction(sec, j);
+          });
+          bodyEl.appendChild(itemEl);
+        });
+
+        if (matchedCount > 0 || !searchQuery) {
+          listEl.appendChild(card);
+        }
+      });
+    }
+
+    if (listEl.children.length === 0) {
+      listEl.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;">${t.noResults}</div>`;
+    }
+  }
+
+  // --- 10. INSPECTOR DISPLAY & HIGHLIGHTS ---
+  function showFeatureDetails(feat) {
+    const p = feat.properties;
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('detail-content');
+    const btnCopy = document.getElementById('btn-copy-coords');
+
+    const fName = isEn ? (p.feature_name_en || p.scheme_name_en || p.feature_name) : (p.feature_name || p.scheme_name_zh);
+    const secName = isEn ? (p.section_name_en || p.section_name_zh) : p.section_name_zh;
+    const fType = isEn ? (p.feature_type_en || p.feature_type) : p.feature_type;
+
+    detailTitle.innerText = fName || (isEn ? 'Feature Details' : '图元详情');
+    btnCopy.style.display = 'inline-block';
+
+    let pts = [];
+    const geom = feat.geometry;
+    if (geom.type === 'LineString') pts = geom.coordinates;
+    else if (geom.type === 'Polygon') pts = geom.coordinates[0];
+    else if (geom.type === 'Point') pts = [geom.coordinates];
+
+    let noticeBlock = '';
+    if (p.feature_type === 'no_sail_warning_zone') {
+      noticeBlock = `
+        <div class="warning-alert-box">
+          ⚠️ <strong>${isEn ? 'VESSELS CAN NOT SAIL INTO THIS AREA' : '禁止任何船舶驶入此水域'}</strong><br>
+          <span style="font-weight: normal;">${p.description || ''}</span>
+        </div>
+      `;
+    }
+
+    let html = `
+      <div style="margin-bottom: 6px;">
+        <strong>${fName}</strong>
+        <p style="font-size: 0.70rem; color: #64748b;">${secName}</p>
+      </div>
+      ${noticeBlock}
+      <table class="detail-table">
+        <tr><th>${isEn ? 'Type' : '类型'}</th><td>${fType}</td></tr>
+        <tr><th>${isEn ? 'Section / Class' : '航区 / 类别'}</th><td>${secName}</td></tr>
+        ${p.width_nm ? `<tr><th>${t.corridorWidth}</th><td>${p.width_nm} NM</td></tr>` : ''}
+        ${p.radius_nm ? `<tr><th>${t.radius}</th><td>${p.radius_nm} NM (${(p.radius_nm * 1.852).toFixed(2)} km)</td></tr>` : ''}
+        ${p.center_dms ? `<tr><th>${t.centerCoords}</th><td>${p.center_dms}</td></tr>` : ''}
+      </table>
+    `;
+
+    if (pts.length > 0) {
+      html += `
+        <div style="margin-top: 8px;">
+          <strong style="font-size: 0.70rem; color: #475569;">${t.coordsSequence} (${pts.length}):</strong>
+          <table class="detail-table coords-table" id="current-coords-table">
+            <tr><th>#</th><th>Lng (E)</th><th>Lat (N)</th><th>DMS</th></tr>
+            ${pts.map((pt, i) => `<tr><td>${i+1}</td><td>${pt[0].toFixed(5)}°</td><td>${pt[1].toFixed(5)}°</td><td>${ddToDms(pt[1], true)}, ${ddToDms(pt[0], false)}</td></tr>`).join('')}
+          </table>
+        </div>
+      `;
+    }
+
+    detailContent.innerHTML = html;
+
+    btnCopy.onclick = () => {
+      const text = pts.map((pt, i) => `Point ${i+1}: ${ddToDms(pt[1], true)}, ${ddToDms(pt[0], false)} (${pt[1].toFixed(6)}, ${pt[0].toFixed(6)})`).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        btnCopy.innerText = t.copied;
+        setTimeout(() => { btnCopy.innerText = t.copyCoords; }, 2000);
+      });
+    };
+  }
+
+  function highlightNationalRoute(route, type) {
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('detail-content');
+    const btnCopy = document.getElementById('btn-copy-coords');
+
+    const rName = isEn ? route.name_en : route.name_zh;
+    detailTitle.innerText = `${rName}`;
+    btnCopy.style.display = 'inline-block';
+
+    const wpts = route.waypoints;
+    let wptsRows = wpts.map((w, idx) => {
+      const crs = w.course_deg ? `${w.course_deg}°` : '-';
+      const dst = w.dist_nm ? `${w.dist_nm} NM` : '-';
+      return `
+        <tr>
+          <td>${w.name}</td>
+          <td>${w.coordinates[0].toFixed(5)}°</td>
+          <td>${w.coordinates[1].toFixed(5)}°</td>
+          <td>${crs}</td>
+          <td>${dst}</td>
+        </tr>
+      `;
+    }).join('');
+
+    detailContent.innerHTML = `
+      <div style="margin-bottom: 6px;">
+        <strong>${rName}</strong>
+        <p style="font-size: 0.70rem; color: #007965;">${type === 'outer' ? t.cardOuterTitle : t.cardInnerTitle}</p>
+      </div>
+      <table class="detail-table">
+        <tr><th>${t.corridorWidth}</th><td>${route.width_nm} NM</td></tr>
+        ${route.connected_by ? `<tr><th>${t.connectedTss}</th><td>${route.connected_by}</td></tr>` : ''}
+      </table>
+      <div style="margin-top: 8px;">
+        <strong style="font-size: 0.70rem; color: #475569;">${t.coordsSequence} (${wpts.length} Turn Points):</strong>
+        <table class="detail-table coords-table">
+          <tr><th>Point</th><th>Lng (E)</th><th>Lat (N)</th><th>Course</th><th>Dist</th></tr>
+          ${wptsRows}
+        </table>
+      </div>
+    `;
+
+    btnCopy.onclick = () => {
+      const text = wpts.map(w => `${w.name}: ${w.lat_dms}, ${w.lng_dms} (${w.coordinates[1].toFixed(6)}, ${w.coordinates[0].toFixed(6)}) Course:${w.course_deg||'-'} Dist:${w.dist_nm||'-'}`).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        btnCopy.innerText = t.copied;
+        setTimeout(() => { btnCopy.innerText = t.copyCoords; }, 2000);
+      });
+    };
+
+    if (wpts && wpts.length > 0) {
+      const pts = wpts.map(w => [w.coordinates[1], w.coordinates[0]]);
+      map.fitBounds(L.latLngBounds(pts), { padding: [60, 60] });
+    }
+  }
+
+  function highlightWarningZone(wz) {
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('detail-content');
+    const btnCopy = document.getElementById('btn-copy-coords');
+
+    const wzName = isEn ? wz.name_en : wz.name_zh;
+    detailTitle.innerText = `${wzName}`;
+    btnCopy.style.display = 'inline-block';
+
+    const pts = wz.points;
+    let ptsRows = pts.map((p, idx) => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.coordinates[0].toFixed(5)}°</td>
+        <td>${p.coordinates[1].toFixed(5)}°</td>
+        <td>${p.dms}</td>
+      </tr>
+    `).join('');
+
+    detailContent.innerHTML = `
+      <div style="margin-bottom: 6px;">
+        <strong style="color: #c53030;">⚠️ ${wzName}</strong>
+      </div>
+      <div class="warning-alert-box">
+        ⚠️ <strong>${isEn ? 'NO-SAIL RESTRICTION NOTICE' : '航行禁令通告'}</strong><br>
+        <span style="font-weight: normal;">${wz.description}</span>
+      </div>
+      <div style="margin-top: 8px;">
+        <strong style="font-size: 0.70rem; color: #475569;">${t.coordsSequence} (${pts.length} Boundary Vertices):</strong>
+        <table class="detail-table coords-table">
+          <tr><th>Point</th><th>Lng (E)</th><th>Lat (N)</th><th>DMS</th></tr>
+          ${ptsRows}
+        </table>
+      </div>
+    `;
+
+    btnCopy.onclick = () => {
+      const text = pts.map(p => `${p.name}: ${p.dms} (${p.coordinates[1].toFixed(6)}, ${p.coordinates[0].toFixed(6)})`).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        btnCopy.innerText = t.copied;
+        setTimeout(() => { btnCopy.innerText = t.copyCoords; }, 2000);
+      });
+    };
+
+    if (wz.coordinates && wz.coordinates.length > 0) {
+      const latlngs = wz.coordinates.map(c => [c[1], c[0]]);
+      map.fitBounds(L.latLngBounds(latlngs), { padding: [80, 80] });
+    }
+  }
+
+  function highlightTss(sec, tss) {
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('detail-content');
+    const btnCopy = document.getElementById('btn-copy-coords');
+
+    const tssName = isEn ? tss.name_en : tss.name_zh;
+    const secName = isEn ? sec.name_en : sec.name_zh;
+
+    detailTitle.innerText = `${tssName}`;
+    btnCopy.style.display = 'none';
+
+    let lanesHtml = tss.traffic_lanes.map(l => {
+      const laneTitle = isEn ? `${l.bound_en} (${l.name_zh})` : l.name_zh;
+      return `
+        <div style="background: #f1f5f9; padding: 6px 8px; border-radius: 4px; margin-top: 4px;">
+          <strong style="color: #0f172a;">${laneTitle}</strong><br>
+          <span style="font-size: 0.70rem; color: #475569;">
+            ${t.flowLabel}: <strong>${l.traffic_flow}</strong> | ${t.widthLabel}: ${l.width} | ${t.lengthLabel}: ${l.length}
+          </span>
+        </div>
+      `;
+    }).join('');
+
+    let rulesHtml = sec.special_provisions ? `
+      <div style="margin-top: 8px;">
+        <strong style="font-size: 0.70rem; color: #475569;">${t.regulationsTitle}:</strong>
+        <ul style="padding-left: 16px; margin-top: 4px; font-size: 0.68rem; color: #64748b;">
+          ${sec.special_provisions.slice(0, 3).map(r => `<li>${isEn && r.text_en ? r.text_en.slice(0, 100) + '...' : r.text_zh.slice(0, 90) + '...'}</li>`).join('')}
+        </ul>
+      </div>
+    ` : '';
+
+    detailContent.innerHTML = `
+      <div style="margin-bottom: 6px;">
+        <strong>${secName}</strong>
+      </div>
+      <div>
+        <strong style="font-size: 0.70rem; color: #475569;">${t.trafficLanesTitle} (${tss.traffic_lanes.length}):</strong>
+        ${lanesHtml}
+      </div>
+      ${rulesHtml}
+    `;
+
+    const allPts = [];
+    tss.separation_lines.forEach(sl => sl.coordinates.forEach(c => allPts.push([c[1], c[0]])));
+    tss.separation_zones.forEach(sz => sz.coordinates.forEach(c => allPts.push([c[1], c[0]])));
+    tss.boundaries.forEach(b => b.coordinates.forEach(c => allPts.push([c[1], c[0]])));
+
+    if (allPts.length > 0) {
+      const bounds = L.latLngBounds(allPts);
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
+    }
+  }
+
+  function highlightPrecautionary(sec, p) {
+    const isEn = (currentLang === 'en');
+    const t = i18n[currentLang];
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('detail-content');
+    const btnCopy = document.getElementById('btn-copy-coords');
+
+    const pName = isEn ? (p.name_en || p.name_zh) : p.name_zh;
+    const secName = isEn ? sec.name_en : sec.name_zh;
+
+    detailTitle.innerText = `${pName}`;
+    btnCopy.style.display = 'none';
+
+    detailContent.innerHTML = `
+      <p style="margin-bottom: 6px;"><strong>${isEn ? 'Section' : '所属航区'}:</strong> ${secName}</p>
+      <p style="font-size: 0.70rem; color: #64748b;">${p.description}</p>
+      ${p.shape_type === 'circle' ? `<p style="margin-top: 6px;"><strong>${t.centerCoords}:</strong> ${p.center.dms}<br><strong>${t.radius}:</strong> ${p.radius_nm} NM (${p.radius_km} km)</p>` : ''}
+    `;
+
+    if (p.coordinates && p.coordinates.length > 0) {
+      const pts = p.coordinates.map(c => [c[1], c[0]]);
+      map.fitBounds(L.latLngBounds(pts), { padding: [80, 80] });
+    }
+  }
+
+  function highlightJunction(sec, j) {
+    const isEn = (currentLang === 'en');
+    const detailTitle = document.getElementById('detail-title');
+    const detailContent = document.getElementById('detail-content');
+    const jName = isEn ? (j.name_en || j.name_zh) : j.name_zh;
+    const secName = isEn ? sec.name_en : sec.name_zh;
+
+    detailTitle.innerText = `${jName}`;
+    detailContent.innerHTML = `
+      <p style="margin-bottom: 6px;"><strong>${isEn ? 'Section' : '所属航区'}:</strong> ${secName}</p>
+      <p style="font-size: 0.70rem; color: #64748b;">${j.description}</p>
+    `;
+    if (j.coordinates && j.coordinates.length > 0) {
+      const pts = j.coordinates.map(c => [c[1], c[0]]);
+      map.fitBounds(L.latLngBounds(pts), { padding: [80, 80] });
+    }
+  }
+
+  // --- 11. UPDATE UI LANGUAGE ---
+  function updateLanguage(lang) {
+    currentLang = lang;
+    const t = i18n[lang];
+
+    document.getElementById('hdr-sub').innerText = t.sub;
+    document.getElementById('hdr-badge').innerText = t.badge;
+    document.getElementById('lbl-sec').innerText = t.lblSec;
+    document.getElementById('lbl-tss').innerText = t.lblTss;
+    document.getElementById('lbl-routes').innerText = t.lblRoutes;
+    document.getElementById('lbl-prec').innerText = t.lblPrec;
+    document.getElementById('lbl-warn').innerText = t.lblWarn;
+    document.getElementById('search-input').placeholder = t.searchPlaceholder;
+    document.getElementById('detail-title').innerText = t.inspectorTitle;
+    document.getElementById('btn-reset-view').innerText = t.fitAll;
+    document.getElementById('btn-download-json').innerText = t.downloadJson;
+    document.getElementById('btn-download-geojson').innerText = t.downloadGeojson;
+    document.getElementById('btn-copy-coords').innerText = t.copyCoords;
+
+    // Update chips text
+    const chipKeys = ['natOuter', 'natInner', 'warnZones', 'sepZones', 'sepLines', 'boundaries', 'precAreas', 'junctions', 'flowHeadings'];
+    document.querySelectorAll('.layer-chip .chip-text').forEach((el, idx) => {
+      if (chipKeys[idx]) el.innerText = t[chipKeys[idx]];
+    });
+
+    renderAllFeatures();
+    populateSidebar(document.getElementById('section-select').value, document.getElementById('search-input').value.trim());
+  }
+
+  // Language button listener
+  document.getElementById('lang-btn').addEventListener('click', () => {
+    updateLanguage(currentLang === 'en' ? 'zh' : 'en');
+  });
+
+  // --- 12. CURSOR REALTIME HUD ---
+  map.on('mousemove', function(e) {
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+    document.getElementById('hud-lat').innerText = ddToDms(lat, true);
+    document.getElementById('hud-lng').innerText = ddToDms(lng, false);
+    document.getElementById('hud-dd').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  });
+
+  // --- 13. SIDEBAR TOGGLE ---
+  const sidebar = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  toggleBtn.addEventListener('click', function() {
+    sidebar.classList.toggle('collapsed');
+    toggleBtn.innerText = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+    setTimeout(() => { map.invalidateSize(); }, 320);
+  });
+
+  // --- 14. FILTER & SEARCH LISTENERS ---
+  const sectionSelect = document.getElementById('section-select');
+  const searchInput = document.getElementById('search-input');
+
+  sectionSelect.addEventListener('change', () => {
+    populateSidebar(sectionSelect.value, searchInput.value.trim());
+    if (sectionSelect.value === 'all') {
+      if (DATA && DATA.metadata && DATA.metadata.bounding_box) {
+        const bb = DATA.metadata.bounding_box;
+        map.fitBounds([[bb[1], bb[0]], [bb[3], bb[2]]], { padding: [30, 30] });
+      }
+    } else if (sectionSelect.value === 'national_outer') {
+      const pts = [];
+      DATA.national_coastal_public_routes.outer_public_routes.forEach(r => r.waypoints.forEach(w => pts.push([w.coordinates[1], w.coordinates[0]])));
+      if (pts.length > 0) map.fitBounds(L.latLngBounds(pts), { padding: [50, 50] });
+    } else if (sectionSelect.value === 'national_inner') {
+      const pts = [];
+      DATA.national_coastal_public_routes.inner_public_routes.forEach(r => r.waypoints.forEach(w => pts.push([w.coordinates[1], w.coordinates[0]])));
+      if (pts.length > 0) map.fitBounds(L.latLngBounds(pts), { padding: [50, 50] });
+    } else if (sectionSelect.value === 'warning_zones') {
+      const pts = [];
+      DATA.navigation_warning_zones.zones.forEach(z => z.points.forEach(p => pts.push([p.coordinates[1], p.coordinates[0]])));
+      if (pts.length > 0) map.fitBounds(L.latLngBounds(pts), { padding: [80, 80] });
+    } else {
+      const sec = DATA.sections.find(s => s.id.toString() === sectionSelect.value);
+      if (sec) {
+        const pts = [];
+        sec.traffic_separation_schemes.forEach(t => {
+          t.separation_lines.forEach(sl => sl.coordinates.forEach(c => pts.push([c[1], c[0]])));
+          t.separation_zones.forEach(sz => sz.coordinates.forEach(c => pts.push([c[1], c[0]])));
+          t.boundaries.forEach(b => b.coordinates.forEach(c => pts.push([c[1], c[0]])));
+        });
+        sec.precautionary_areas.forEach(p => p.coordinates.forEach(c => pts.push([c[1], c[0]])));
+        sec.junctions.forEach(j => j.coordinates.forEach(c => pts.push([c[1], c[0]])));
+        if (pts.length > 0) map.fitBounds(L.latLngBounds(pts), { padding: [50, 50] });
+      }
+    }
+  });
+
+  searchInput.addEventListener('input', () => {
+    populateSidebar(sectionSelect.value, searchInput.value.trim());
+  });
+
+  // Layer chips toggles
+  document.querySelectorAll('.layer-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const type = chip.getAttribute('data-type');
+      chip.classList.toggle('active');
+      const isVisible = chip.classList.contains('active');
+      if (layerGroups[type]) {
+        if (isVisible) map.addLayer(layerGroups[type]);
+        else map.removeLayer(layerGroups[type]);
+      }
+    });
+  });
+
+  // Action Buttons
+  document.getElementById('btn-reset-view').addEventListener('click', () => {
+    if (DATA && DATA.metadata && DATA.metadata.bounding_box) {
+      const bb = DATA.metadata.bounding_box;
+      map.fitBounds([[bb[1], bb[0]], [bb[3], bb[2]]], { padding: [40, 40] });
+    } else {
+      map.setView(mapCenter, 7);
+    }
+  });
+
+  document.getElementById('btn-download-json').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'china_ship_routing.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btn-download-geojson').addEventListener('click', () => {
+    if (DATA && DATA.geojson) {
+      const blob = new Blob([JSON.stringify(DATA.geojson, null, 2)], { type: 'application/geo+json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'china_ship_routing.geojson';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  });
+
+  // --- 15. INITIALIZE IN ENGLISH ---
+  updateLanguage('en');
+
+  // Initial fit to bounding box
+  if (DATA && DATA.metadata && DATA.metadata.bounding_box) {
+    const bb = DATA.metadata.bounding_box;
+    map.fitBounds([[bb[1], bb[0]], [bb[3], bb[2]]], { padding: [30, 30] });
+  }
+
+})();
+</script>
+</body>
+</html>

@@ -17,7 +17,8 @@
     { "source": "/admiralty_catalogue_db.js", "destination": "/data/master/admiralty_catalogue_db.js" },
     { "source": "/admiralty_data.js", "destination": "/data/master/admiralty_data.js" },
     { "source": "/admiralty_digital_catalogue_unified.json", "destination": "/data/master/admiralty_digital_catalogue_unified.json" },
-    { "source": "/admiralty_custom_package:match*", "destination": "/data/master/admiralty_custom_package:match*" }
+    { "source": "/admiralty_custom_package:match*", "destination": "/data/master/admiralty_custom_package:match*" },
+    { "source": "/chinarouting", "destination": "/china_ship_routing/index.html" }
   ],
   "headers": [
     {
