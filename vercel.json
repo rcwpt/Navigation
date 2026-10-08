@@ -20,8 +20,7 @@
     { "source": "/admiralty_custom_package:match*", "destination": "/data/master/admiralty_custom_package:match*" }
   ],
   "redirects": [
-    { "source": "/chinarouting", "destination": "/china_ship_routing/index.html", "permanent": false },
-    { "source": "/china_ship_routing", "destination": "/china_ship_routing/index.html", "permanent": false }
+    { "source": "/chinarouting", "destination": "/china_ship_routing", "permanent": false }
   ],
   "headers": [
     {
