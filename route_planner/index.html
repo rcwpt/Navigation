@@ -458,6 +458,15 @@
         </div>
       </div>
 
+      <!-- ROUTE AUTHORING & AI UPGRADE BUTTONS -->
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" id="btn-draw-route-toggle" onclick="toggleDrawRouteMode()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2 px-2 rounded-lg transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+          <span id="btn-draw-icon">✏️</span> <span id="btn-draw-label">Draw Route</span>
+        </button>
+        <button type="button" onclick="openAiExtractorModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold text-xs py-2 px-2 rounded-lg transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Upgrade using AI (OCR & Raw text parser)">
+          <span>✨</span> <span>AI Extractor</span>
+        </button>
+      </div>
 
       <!-- ACTIVE ROUTE SUMMARY -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
@@ -903,6 +912,12 @@
         <button class="view-btn" id="view-btn-report" onclick="switchView('report')">
           <span>📄</span> Passage Report & VPF
         </button>
+        <button id="topbar-draw-btn" onclick="toggleDrawRouteMode()" class="bg-amber-600/90 hover:bg-amber-600 text-white px-2.5 py-1.5 rounded text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer" title="Draw or edit waypoints interactively on chart">
+          <span id="topbar-draw-icon">✏️</span> <span id="topbar-draw-label">Draw Route</span>
+        </button>
+        <button onclick="openAiExtractorModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-2.5 py-1.5 rounded text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer" title="Upgrade using AI: OCR photos of ECDIS, paste unstructured route text">
+          <span>✨</span> <span class="hidden sm:inline">Upgrade</span> <span>AI</span>
+        </button>
       </div>
 
       <div class="flex items-center gap-3 text-xs">
@@ -928,6 +943,20 @@
     <!-- VIEW PANE 1: INTERACTIVE MAP -->
     <div id="view-map">
       <div id="map"></div>
+
+      <!-- FLOATING DRAW ROUTE TOOLBAR -->
+      <div id="draw-mode-toolbar" class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-3.5 py-2 rounded-xl shadow-xl border border-amber-500/80 flex items-center gap-3 text-xs backdrop-blur-xs">
+        <span class="flex items-center gap-1.5 font-bold text-amber-400 shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+          <span>DRAW MODE</span>
+        </span>
+        <span class="text-slate-300 text-[11px] hidden md:inline">Click chart to add WPTs • Drag any marker to adjust position</span>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="undoLastDrawnWaypoint()" class="bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-white font-semibold cursor-pointer text-[11px] transition">↩ Undo</button>
+          <button type="button" onclick="clearAllWaypoints()" class="bg-rose-900/80 hover:bg-rose-800 text-rose-200 px-2.5 py-1 rounded font-semibold cursor-pointer text-[11px] transition">🗑 Clear</button>
+          <button type="button" onclick="finishDrawingRoute()" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1 rounded text-white font-bold cursor-pointer text-[11px] transition">✔ Finish & Calc</button>
+        </div>
+      </div>
 
       <!-- MAP OVERLAY BADGE -->
       <div class="map-badge-overlay">
@@ -1561,6 +1590,142 @@
   </main>
 </div>
 
+<!-- AI ROUTE INTELLIGENCE MODAL (BYOK - GOOGLE GEMINI) -->
+<div id="ai-extractor-modal" class="hidden fixed inset-0 z-[2000] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+  <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-indigo-200 overflow-hidden flex flex-col max-h-[92vh]">
+    <!-- MODAL HEADER -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 flex items-center justify-between border-b border-indigo-900/50">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/50 border border-indigo-400/40 flex items-center justify-center text-lg">
+          ✨
+        </div>
+        <div>
+          <h3 class="font-bold text-sm text-indigo-100 flex items-center gap-2">
+            AI Smart Route Extractor
+            <span class="text-[9px] bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Gemini Multimodal</span>
+          </h3>
+          <p class="text-[11px] text-slate-300">Extracts waypoints from ECDIS screen photos, paper passage plans, or messy text</p>
+        </div>
+      </div>
+      <button onclick="closeAiExtractorModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+        ✕
+      </button>
+    </div>
+
+    <!-- MODAL BODY -->
+    <div class="p-4 overflow-y-auto space-y-4 text-xs text-slate-700">
+      <!-- VALUE EXPLANATION BANNER (WHY UPGRADE WITH AI?) -->
+      <div class="bg-gradient-to-br from-indigo-50 via-purple-50/50 to-blue-50 border border-indigo-200 rounded-xl p-3 space-y-2">
+        <div class="font-bold text-indigo-950 flex items-center gap-1.5 text-xs">
+          <span>💡</span> <span>Why upgrade using AI? (Bridge Operational Advantage)</span>
+        </div>
+        <p class="text-[11px] text-slate-600 leading-relaxed">
+          Standard ECDIS converters require strict, predefined file structures. In real bridge operations, navigators often deal with irregular data where AI excels:
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[10.5px]">
+          <div class="bg-white/80 p-2.5 rounded-lg border border-indigo-100 space-y-1 shadow-2xs">
+            <div class="font-bold text-indigo-900 flex items-center gap-1"><span>📷</span> Photos & Screenshots</div>
+            <div class="text-slate-500">Take a photo of your ECDIS display or paper passage plan table. AI Vision reads coordinates automatically.</div>
+          </div>
+          <div class="bg-white/80 p-2.5 rounded-lg border border-indigo-100 space-y-1 shadow-2xs">
+            <div class="font-bold text-purple-900 flex items-center gap-1"><span>📋</span> Messy Copy-Paste</div>
+            <div class="text-slate-500">Paste unformatted route tables from agent emails, charterer voyage orders, or WhatsApp chat logs.</div>
+          </div>
+          <div class="bg-white/80 p-2.5 rounded-lg border border-indigo-100 space-y-1 shadow-2xs">
+            <div class="font-bold text-blue-900 flex items-center gap-1"><span>📊</span> Non-Standard CSVs</div>
+            <div class="text-slate-500">Proprietary formats with swapped Lat/Lon columns, odd separators (;, tabs), or mixed DMS coordinate symbols.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API KEY SECTION (OPTION A: BRING YOUR OWN KEY) -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>🔑</span> Google Gemini API Key (Private & Free Tier)
+          </label>
+          <span id="ai-key-status-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">Checking...</span>
+        </div>
+        <div class="flex gap-2">
+          <input type="password" id="gemini-api-key-input" placeholder="AIzaSy..." class="flex-1 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-mono text-slate-800 focus:outline-none focus:border-indigo-500">
+          <button type="button" onclick="saveGeminiApiKey()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg transition text-xs cursor-pointer">
+            Save Key
+          </button>
+          <button type="button" onclick="removeGeminiApiKey()" class="bg-slate-200 hover:bg-rose-100 text-slate-600 hover:text-rose-700 font-semibold px-2.5 py-1.5 rounded-lg transition text-xs cursor-pointer" title="Remove stored key">
+            🗑
+          </button>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-slate-500 gap-1 pt-0.5">
+          <span>Your key is stored strictly on your local browser (<code>localStorage</code>). Never sent to our servers.</span>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:text-indigo-800 font-bold underline flex items-center gap-0.5">
+            Get Free Key at Google AI Studio ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- EXTRACTION INPUT TABS -->
+      <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+        <div class="flex border-b border-slate-200 bg-slate-50 text-xs">
+          <button type="button" class="ai-tab-btn active flex-1 py-2 text-center font-bold border-b-2 border-indigo-600 text-indigo-700 cursor-pointer" id="ai-tab-btn-image" onclick="switchAiTab('image')">
+            📷 From Image / Screenshot (OCR)
+          </button>
+          <button type="button" class="ai-tab-btn flex-1 py-2 text-center font-semibold text-slate-600 hover:text-slate-800 cursor-pointer" id="ai-tab-btn-text" onclick="switchAiTab('text')">
+            📋 From Raw Text / Copy-Paste
+          </button>
+        </div>
+
+        <!-- TAB CONTENT: IMAGE -->
+        <div class="p-4 space-y-3" id="ai-tab-content-image">
+          <div class="border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl p-4 text-center bg-indigo-50/20 hover:bg-indigo-50/40 transition cursor-pointer" id="ai-img-dropzone" onclick="document.getElementById('ai-img-file-input').click()">
+            <input type="file" id="ai-img-file-input" accept="image/*" onchange="handleAiImageSelect(this)" class="hidden">
+            <div class="space-y-1.5">
+              <div class="text-2xl">📸</div>
+              <div class="font-bold text-slate-700">Click or Drag & Drop photo of ECDIS / Passage Plan</div>
+              <p class="text-[10px] text-slate-400">Supports JPG, PNG, WEBP — or press <kbd class="px-1 py-0.5 bg-slate-200 rounded text-slate-700 font-mono">Ctrl + V</kbd> to paste clipboard screenshot!</p>
+            </div>
+          </div>
+          <!-- Image Preview Box -->
+          <div id="ai-img-preview-box" class="hidden border border-slate-200 rounded-lg p-2 bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <img id="ai-img-preview-tag" src="" class="w-12 h-12 object-cover rounded border border-slate-300">
+              <div class="truncate text-xs">
+                <div class="font-bold text-slate-800 truncate" id="ai-img-filename">screenshot.png</div>
+                <div class="text-[10px] text-slate-500" id="ai-img-filesize">0 KB</div>
+              </div>
+            </div>
+            <button type="button" onclick="clearAiImageSelection()" class="text-slate-400 hover:text-rose-600 font-bold p-1 cursor-pointer">✕</button>
+          </div>
+          <button type="button" id="btn-run-ai-image" onclick="runAiImageExtraction()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+            <span>🚀</span> <span>Extract Route with Gemini Vision</span>
+          </button>
+        </div>
+
+        <!-- TAB CONTENT: TEXT -->
+        <div class="p-4 space-y-3 hidden" id="ai-tab-content-text">
+          <textarea id="ai-raw-text-input" rows="6" placeholder="Paste unformatted route, email, WhatsApp, or table here...&#10;Example:&#10;WP1  31-25.5N  121-30.2E&#10;WP2  30-15.0N  122-45.0E&#10;Course 125, Dist 45.2 NM..." class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-mono text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white"></textarea>
+          <div class="flex items-center justify-between text-[10px] text-slate-500">
+            <span>Supports degree-minute-second, decimal, tab-separated, and mixed punctuation.</span>
+            <button type="button" onclick="document.getElementById('ai-raw-text-input').value = ''" class="text-slate-400 hover:text-rose-600 font-semibold cursor-pointer">Clear Text</button>
+          </div>
+          <button type="button" id="btn-run-ai-text" onclick="runAiTextExtraction()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+            <span>🚀</span> <span>Parse Route with Gemini AI</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PROGRESS / SPINNER -->
+      <div id="ai-loading-indicator" class="hidden p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-center space-y-2">
+        <div class="inline-block w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div class="font-bold text-xs text-indigo-900" id="ai-loading-text">Gemini AI is analyzing navigation data...</div>
+        <div class="text-[10px] text-indigo-600">Extracting coordinates and verifying geographic positions</div>
+      </div>
+
+      <!-- STATUS / ERROR MESSAGE -->
+      <div id="ai-status-msg" class="hidden p-2.5 rounded-lg text-xs font-semibold"></div>
+    </div>
+  </div>
+</div>
+
 <!-- JAVASCRIPT LOGIC -->
 <script>
 // --- GLOBAL APPLICATION STATE ---
@@ -1568,6 +1733,7 @@ window.STATE = {
   routeName: 'NO ROUTE',
   waypoints: [],
   currentView: 'map',
+  isDrawingRoute: false,
   portMode: 'auto', // 'auto', 'unlocode', 'manual'
   portsOverride: {
     dep: null,
@@ -2319,13 +2485,14 @@ function renderPubBadges(containerId, items, colorClasses) {
   });
 }
 
-// --- RENDER MAP ROUTE & WAYPOINTS (CONTINUOUS MULTI-WORLD WRAPPING) ---
+// --- RENDER MAP ROUTE & WAYPOINTS (TOPMOST PANE & DRAGGABLE WAYPOINTS) ---
 function renderMapRoute() {
   if (!window.overlays || !window.overlays.route) return;
   window.overlays.route.clearLayers();
 
   if (!STATE.waypoints || STATE.waypoints.length === 0) return;
 
+  const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
   const unwrapped = unwrapRouteWaypoints(STATE.waypoints);
   let primaryLine = null;
 
@@ -2335,37 +2502,72 @@ function renderMapRoute() {
       color: '#0284c7',
       weight: 3.5,
       opacity: 0.95,
-      lineJoin: 'round'
+      lineJoin: 'round',
+      pane: 'routePane'
     }).addTo(window.overlays.route);
     if (offset === 0) primaryLine = routeLine;
 
-    // Waypoint Markers
+    // Draggable Waypoint Markers (Topmost Marker Pane)
     unwrapped.forEach((w, idx) => {
       const isStart = idx === 0;
       const isEnd = idx === unwrapped.length - 1;
       const color = isStart ? '#10b981' : (isEnd ? '#ef4444' : '#0284c7');
+      const size = isStart || isEnd ? 16 : 13;
 
-      const circle = L.circleMarker([w.lat, w.unwrappedLon + offset], {
-        radius: isStart || isEnd ? 7 : 4.5,
-        fillColor: color,
-        color: '#ffffff',
-        weight: 1.5,
-        opacity: 1,
-        fillOpacity: 1
+      const markerIcon = L.divIcon({
+        className: 'route-wpt-pin-icon',
+        html: `<div style="
+          width: ${size}px;
+          height: ${size}px;
+          background-color: ${color};
+          border: 2px solid #ffffff;
+          border-radius: 50%;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+          cursor: grab;
+          transition: transform 0.15s;
+        " title="Drag to adjust #${idx + 1}: ${w.id}"></div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
       });
 
-      const popupContent = `
-        <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4;">
-          <strong style="font-size: 13px; color: #0f172a;">#${idx + 1}: ${w.id}</strong><br>
-          <b>Lat:</b> ${RouteConverter.formatDMS(w.lat, true)}<br>
-          <b>Lon:</b> ${RouteConverter.formatDMS(w.lon, false)}<br>
-          <b>Course:</b> ${(w.course || 0).toFixed(1)}°T<br>
-          <b>Leg Dist:</b> ${(w.dist || 0).toFixed(2)} NM<br>
-          <b>Accum Dist:</b> ${(w.accDist || 0).toFixed(2)} NM
+      const marker = L.marker([w.lat, w.unwrappedLon + offset], {
+        icon: markerIcon,
+        draggable: true,
+        pane: 'routeMarkerPane',
+        zIndexOffset: 1000 + idx
+      });
+
+      // Drag event - update coordinates in real time
+      marker.on('dragend', function(e) {
+        const newPos = e.target.getLatLng();
+        let newLon = newPos.lng;
+        while (newLon > 180) newLon -= 360;
+        while (newLon < -180) newLon += 360;
+        STATE.waypoints[idx].lat = parseFloat(newPos.lat.toFixed(6));
+        STATE.waypoints[idx].lon = parseFloat(newLon.toFixed(6));
+        processRoute(STATE.routeName, STATE.waypoints);
+      });
+
+      const popupHtml = `
+        <div style="font-family: Inter, sans-serif; font-size: 11px; min-width: 175px; line-height: 1.45; color: #1e293b;">
+          <div style="font-weight: bold; font-size: 13px; color: #0f172a; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center;">
+            <span>#${idx + 1}: ${w.id}</span>
+            <span style="font-size: 9px; background: #e0f2fe; color: #0369a1; padding: 1px 5px; border-radius: 3px; font-weight: bold;">Draggable</span>
+          </div>
+          <div style="color: #475569; margin-bottom: 6px;">
+            <b>Lat:</b> ${RouteConverter.formatDMS(w.lat, true)}<br>
+            <b>Lon:</b> ${RouteConverter.formatDMS(w.lon, false)}<br>
+            <b>Course:</b> ${(w.course || 0).toFixed(1)}°T • <b>Leg:</b> ${(w.dist || 0).toFixed(2)} NM<br>
+            <b>DTG:</b> ${(totalDist - (w.accDist || 0)).toFixed(2)} NM
+          </div>
+          <div style="display: flex; gap: 4px; padding-top: 5px; border-top: 1px solid #e2e8f0;">
+            <button onclick="editWaypointDialog(${idx})" style="flex: 1; background: #0284c7; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10.5px; font-weight: bold; cursor: pointer;">✏️ Edit</button>
+            <button onclick="deleteWaypointAt(${idx})" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 4px; padding: 4px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer;" title="Delete this waypoint">🗑</button>
+          </div>
         </div>
       `;
-      circle.bindPopup(popupContent);
-      circle.addTo(window.overlays.route);
+      marker.bindPopup(popupHtml);
+      marker.addTo(window.overlays.route);
     });
   });
 
@@ -2389,11 +2591,442 @@ function renderMapRoute() {
     });
   }
 
-  // Fit map bounds to primary route
-  if (window.map && primaryLine) {
+  // Fit map bounds to primary route (only when not in active drawing mode)
+  if (window.map && primaryLine && !STATE.isDrawingRoute) {
     window.map.fitBounds(primaryLine.getBounds(), { padding: [50, 50] });
   }
 }
+
+// --- WAYPOINT EDIT & DELETE DIALOGS ---
+function editWaypointDialog(idx) {
+  const w = STATE.waypoints[idx];
+  if (!w) return;
+  const newId = prompt('Waypoint Name / ID:', w.id);
+  if (newId === null) return;
+  const newLatStr = prompt('Latitude (Decimal degrees, e.g. 31.254 or -9.432):', w.lat);
+  if (newLatStr === null) return;
+  const newLonStr = prompt('Longitude (Decimal degrees, e.g. 121.523 or 147.11):', w.lon);
+  if (newLonStr === null) return;
+
+  const newLat = parseFloat(newLatStr);
+  const newLon = parseFloat(newLonStr);
+  if (isNaN(newLat) || isNaN(newLon)) {
+    alert('Invalid coordinate values entered.');
+    return;
+  }
+  STATE.waypoints[idx].id = newId.trim() || w.id;
+  STATE.waypoints[idx].lat = newLat;
+  STATE.waypoints[idx].lon = newLon;
+  processRoute(STATE.routeName, STATE.waypoints);
+}
+window.editWaypointDialog = editWaypointDialog;
+
+function deleteWaypointAt(idx) {
+  if (STATE.waypoints.length <= 1) {
+    if (confirm('Delete the last remaining waypoint and clear route?')) {
+      STATE.waypoints = [];
+      processRoute('NO ROUTE', []);
+    }
+    return;
+  }
+  if (confirm(`Delete waypoint #${idx + 1} (${STATE.waypoints[idx].id})?`)) {
+    STATE.waypoints.splice(idx, 1);
+    processRoute(STATE.routeName, STATE.waypoints);
+  }
+}
+window.deleteWaypointAt = deleteWaypointAt;
+
+// --- INTERACTIVE DRAW ROUTE MODE ---
+function toggleDrawRouteMode() {
+  STATE.isDrawingRoute = !STATE.isDrawingRoute;
+  const toolbar = document.getElementById('draw-mode-toolbar');
+  const btnSidebar = document.getElementById('btn-draw-route-toggle');
+  const labelSidebar = document.getElementById('btn-draw-label');
+  const btnTopbar = document.getElementById('topbar-draw-btn');
+  const labelTopbar = document.getElementById('topbar-draw-label');
+  const mapContainer = document.getElementById('map');
+
+  if (STATE.isDrawingRoute) {
+    if (toolbar) toolbar.classList.remove('hidden');
+    if (mapContainer) mapContainer.style.cursor = 'crosshair';
+    if (labelSidebar) labelSidebar.innerText = 'Exit Draw';
+    if (btnSidebar) {
+      btnSidebar.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+      btnSidebar.classList.add('bg-rose-600', 'hover:bg-rose-700');
+    }
+    if (labelTopbar) labelTopbar.innerText = 'Exit Draw';
+    if (btnTopbar) {
+      btnTopbar.classList.remove('bg-amber-600/90', 'hover:bg-amber-600');
+      btnTopbar.classList.add('bg-rose-600', 'hover:bg-rose-500');
+    }
+    if (STATE.currentView !== 'map') switchView('map');
+  } else {
+    if (toolbar) toolbar.classList.add('hidden');
+    if (mapContainer) mapContainer.style.cursor = '';
+    if (labelSidebar) labelSidebar.innerText = 'Draw Route';
+    if (btnSidebar) {
+      btnSidebar.classList.add('bg-amber-600', 'hover:bg-amber-700');
+      btnSidebar.classList.remove('bg-rose-600', 'hover:bg-rose-700');
+    }
+    if (labelTopbar) labelTopbar.innerText = 'Draw Route';
+    if (btnTopbar) {
+      btnTopbar.classList.add('bg-amber-600/90', 'hover:bg-amber-600');
+      btnTopbar.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+    }
+  }
+}
+window.toggleDrawRouteMode = toggleDrawRouteMode;
+
+function undoLastDrawnWaypoint() {
+  if (STATE.waypoints && STATE.waypoints.length > 0) {
+    STATE.waypoints.pop();
+    processRoute(STATE.routeName, STATE.waypoints);
+  }
+}
+window.undoLastDrawnWaypoint = undoLastDrawnWaypoint;
+
+function clearAllWaypoints() {
+  if (confirm('Clear all waypoints on this route?')) {
+    STATE.waypoints = [];
+    processRoute('NO ROUTE', []);
+  }
+}
+window.clearAllWaypoints = clearAllWaypoints;
+
+function finishDrawingRoute() {
+  toggleDrawRouteMode();
+  if (STATE.waypoints.length > 0) {
+    fitRouteBounds();
+  }
+}
+window.finishDrawingRoute = finishDrawingRoute;
+
+// --- AI SMART ROUTE EXTRACTOR LOGIC (BYOK - GOOGLE GEMINI) ---
+const STORAGE_KEY_GEMINI = 'route_planner_gemini_api_key';
+let selectedAiImageBase64 = null;
+let selectedAiImageMime = 'image/jpeg';
+
+function openAiExtractorModal() {
+  const modal = document.getElementById('ai-extractor-modal');
+  if (modal) modal.classList.remove('hidden');
+  updateAiKeyStatusDisplay();
+}
+window.openAiExtractorModal = openAiExtractorModal;
+
+function closeAiExtractorModal() {
+  const modal = document.getElementById('ai-extractor-modal');
+  if (modal) modal.classList.add('hidden');
+  const statusMsg = document.getElementById('ai-status-msg');
+  if (statusMsg) statusMsg.classList.add('hidden');
+  const loading = document.getElementById('ai-loading-indicator');
+  if (loading) loading.classList.add('hidden');
+}
+window.closeAiExtractorModal = closeAiExtractorModal;
+
+function switchAiTab(tabName) {
+  const tabBtnImg = document.getElementById('ai-tab-btn-image');
+  const tabBtnTxt = document.getElementById('ai-tab-btn-text');
+  const contentImg = document.getElementById('ai-tab-content-image');
+  const contentTxt = document.getElementById('ai-tab-content-text');
+
+  if (tabName === 'image') {
+    tabBtnImg?.classList.add('active', 'border-b-2', 'border-indigo-600', 'text-indigo-700');
+    tabBtnImg?.classList.remove('text-slate-600');
+    tabBtnTxt?.classList.remove('active', 'border-b-2', 'border-indigo-600', 'text-indigo-700');
+    tabBtnTxt?.classList.add('text-slate-600');
+    contentImg?.classList.remove('hidden');
+    contentTxt?.classList.add('hidden');
+  } else {
+    tabBtnTxt?.classList.add('active', 'border-b-2', 'border-indigo-600', 'text-indigo-700');
+    tabBtnTxt?.classList.remove('text-slate-600');
+    tabBtnImg?.classList.remove('active', 'border-b-2', 'border-indigo-600', 'text-indigo-700');
+    tabBtnImg?.classList.add('text-slate-600');
+    contentTxt?.classList.remove('hidden');
+    contentImg?.classList.add('hidden');
+  }
+}
+window.switchAiTab = switchAiTab;
+
+function updateAiKeyStatusDisplay() {
+  const storedKey = localStorage.getItem(STORAGE_KEY_GEMINI) || '';
+  const badge = document.getElementById('ai-key-status-badge');
+  const input = document.getElementById('gemini-api-key-input');
+  if (storedKey) {
+    if (badge) {
+      badge.innerText = '🔑 Key Saved & Active';
+      badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+    }
+    if (input && !input.value) {
+      input.value = storedKey;
+    }
+  } else {
+    if (badge) {
+      badge.innerText = '⚪ Key Not Set (Enter Key to Enable AI)';
+      badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600';
+    }
+  }
+}
+window.updateAiKeyStatusDisplay = updateAiKeyStatusDisplay;
+
+function saveGeminiApiKey() {
+  const input = document.getElementById('gemini-api-key-input');
+  const val = input ? input.value.trim() : '';
+  if (!val) {
+    alert('Please enter a valid Gemini API Key.');
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY_GEMINI, val);
+  updateAiKeyStatusDisplay();
+  showAiStatus('API Key successfully saved in this browser!', 'success');
+}
+window.saveGeminiApiKey = saveGeminiApiKey;
+
+function removeGeminiApiKey() {
+  if (confirm('Remove saved Gemini API Key from this browser?')) {
+    localStorage.removeItem(STORAGE_KEY_GEMINI);
+    const input = document.getElementById('gemini-api-key-input');
+    if (input) input.value = '';
+    updateAiKeyStatusDisplay();
+    showAiStatus('API Key removed.', 'info');
+  }
+}
+window.removeGeminiApiKey = removeGeminiApiKey;
+
+function showAiStatus(msg, type) {
+  const el = document.getElementById('ai-status-msg');
+  if (!el) return;
+  if (!msg) {
+    el.classList.add('hidden');
+    return;
+  }
+  el.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800', 'bg-blue-100', 'text-blue-800');
+  if (type === 'success') {
+    el.classList.add('bg-emerald-100', 'text-emerald-800');
+  } else if (type === 'error') {
+    el.classList.add('bg-rose-100', 'text-rose-800');
+  } else {
+    el.classList.add('bg-blue-100', 'text-blue-800');
+  }
+  el.innerText = msg;
+}
+
+function handleAiImageSelect(input) {
+  if (input.files && input.files[0]) {
+    loadAiImageFile(input.files[0]);
+  }
+}
+window.handleAiImageSelect = handleAiImageSelect;
+
+function loadAiImageFile(file) {
+  selectedAiImageMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    selectedAiImageBase64 = dataUrl.split(',')[1];
+    const previewBox = document.getElementById('ai-img-preview-box');
+    const previewImg = document.getElementById('ai-img-preview-tag');
+    const nameEl = document.getElementById('ai-img-filename');
+    const sizeEl = document.getElementById('ai-img-filesize');
+    if (previewImg) previewImg.src = dataUrl;
+    if (nameEl) nameEl.innerText = file.name || 'Pasted Image';
+    if (sizeEl) sizeEl.innerText = `${(file.size / 1024).toFixed(1)} KB`;
+    if (previewBox) previewBox.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearAiImageSelection() {
+  selectedAiImageBase64 = null;
+  const input = document.getElementById('ai-img-file-input');
+  if (input) input.value = '';
+  const previewBox = document.getElementById('ai-img-preview-box');
+  if (previewBox) previewBox.classList.add('hidden');
+}
+window.clearAiImageSelection = clearAiImageSelection;
+
+// Clipboard paste listener (Ctrl + V for images)
+window.addEventListener('paste', function(e) {
+  const modal = document.getElementById('ai-extractor-modal');
+  if (!modal || modal.classList.contains('hidden')) return;
+
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const blob = items[i].getAsFile();
+      if (blob) {
+        switchAiTab('image');
+        loadAiImageFile(blob);
+        showAiStatus('Image pasted from clipboard!', 'success');
+        break;
+      }
+    }
+  }
+});
+
+async function callGeminiApi(parts) {
+  const apiKey = localStorage.getItem(STORAGE_KEY_GEMINI);
+  if (!apiKey) {
+    throw new Error('Please enter and save your Google Gemini API Key first.');
+  }
+
+  // Model cascade: try gemini-2.5-flash first, then gemini-1.5-flash fallback
+  const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error('Empty response returned from Gemini.');
+      
+      const parsed = JSON.parse(rawText);
+      return parsed;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Gemini model ${model} attempt failed:`, err);
+    }
+  }
+  throw lastError;
+}
+
+async function runAiImageExtraction() {
+  if (!selectedAiImageBase64) {
+    alert('Please select or paste an image of an ECDIS screen or passage plan first.');
+    return;
+  }
+  const loading = document.getElementById('ai-loading-indicator');
+  const loadingText = document.getElementById('ai-loading-text');
+  if (loading) loading.classList.remove('hidden');
+  if (loadingText) loadingText.innerText = 'Gemini Vision is analyzing navigation chart / table...';
+  showAiStatus('', '');
+
+  try {
+    const promptText = `You are an expert maritime navigation officer and spatial data extractor.
+Analyze this image (which may be a photograph or screenshot of an ECDIS screen, radar, or paper Passage Plan table).
+Extract ALL waypoints in sequence.
+Format output strictly as JSON with this exact structure:
+{
+  "routeName": "NAME_OF_ROUTE_OR_PORTS",
+  "waypoints": [
+    {
+      "id": "WP01",
+      "lat": 31.2543,
+      "lon": 121.5234
+    }
+  ]
+}
+IMPORTANT RULES:
+1. Latitude and longitude MUST be converted into decimal degrees (Float).
+2. North latitude is positive (+), South latitude is negative (-).
+3. East longitude is positive (+), West longitude is negative (-).
+4. If degrees and minutes are shown (e.g. 31°15.30'N 121°45.20'E), accurately calculate: decimal = degrees + (minutes / 60).
+5. Preserve sequential order from Departure (WP1) to Arrival.`;
+
+    const parts = [
+      { text: promptText },
+      {
+        inlineData: {
+          mimeType: selectedAiImageMime,
+          data: selectedAiImageBase64
+        }
+      }
+    ];
+
+    const result = await callGeminiApi(parts);
+    if (!result || !result.waypoints || result.waypoints.length === 0) {
+      throw new Error('AI could not identify valid nautical waypoints in the image.');
+    }
+
+    const routeName = result.routeName || 'AI_VISION_ROUTE';
+    processRoute(routeName, result.waypoints);
+    fitRouteBounds();
+    closeAiExtractorModal();
+    alert(`✨ Success! Gemini Vision extracted ${result.waypoints.length} waypoints from image into your passage plan.`);
+  } catch (err) {
+    console.error('AI Image Extraction Error:', err);
+    showAiStatus('AI Error: ' + err.message, 'error');
+  } finally {
+    if (loading) loading.classList.add('hidden');
+  }
+}
+window.runAiImageExtraction = runAiImageExtraction;
+
+async function runAiTextExtraction() {
+  const textInput = document.getElementById('ai-raw-text-input');
+  const rawText = textInput ? textInput.value.trim() : '';
+  if (!rawText) {
+    alert('Please paste some route text, email, or unformatted coordinates first.');
+    return;
+  }
+
+  const loading = document.getElementById('ai-loading-indicator');
+  const loadingText = document.getElementById('ai-loading-text');
+  if (loading) loading.classList.remove('hidden');
+  if (loadingText) loadingText.innerText = 'Gemini AI is parsing unformatted coordinate data...';
+  showAiStatus('', '');
+
+  try {
+    const promptText = `You are an expert maritime navigation route parser.
+Parse the following unformatted text (which may come from an agent email, WhatsApp message, charter party orders, or an irregular CSV table).
+Extract ALL waypoints in sequence.
+Format output strictly as JSON with this exact structure:
+{
+  "routeName": "EXTRACTED_ROUTE_NAME",
+  "waypoints": [
+    {
+      "id": "WP01",
+      "lat": 31.2543,
+      "lon": 121.5234
+    }
+  ]
+}
+RULES:
+1. Latitude and longitude MUST be decimal degrees (+ for N/E, - for S/W).
+2. Accurately convert any degree-minute notation (e.g. 31°25.5'N = 31.425).
+3. If columns were reversed or separated by tabs/colons, intelligently identify Latitude vs Longitude.
+4. Input text:
+` + rawText;
+
+    const parts = [{ text: promptText }];
+    const result = await callGeminiApi(parts);
+    if (!result || !result.waypoints || result.waypoints.length === 0) {
+      throw new Error('AI could not find valid coordinates in the text.');
+    }
+
+    const routeName = result.routeName || 'AI_TEXT_ROUTE';
+    processRoute(routeName, result.waypoints);
+    fitRouteBounds();
+    closeAiExtractorModal();
+    alert(`✨ Success! Gemini AI parsed ${result.waypoints.length} waypoints into your passage plan.`);
+  } catch (err) {
+    console.error('AI Text Extraction Error:', err);
+    showAiStatus('AI Error: ' + err.message, 'error');
+  } finally {
+    if (loading) loading.classList.add('hidden');
+  }
+}
+window.runAiTextExtraction = runAiTextExtraction;
 
 // --- TINY WORLD MAP THEMES & REPORT BASEMAP STYLES ---
 const TINY_THEMES = {
@@ -3201,6 +3834,35 @@ document.addEventListener('DOMContentLoaded', () => {
       preferCanvas: true
     });
 
+    // Custom Topmost Panes for Route and Draggable Waypoints
+    window.map.createPane('routePane');
+    window.map.getPane('routePane').style.zIndex = '650';
+    window.map.createPane('routeMarkerPane');
+    window.map.getPane('routeMarkerPane').style.zIndex = '660';
+
+    // Map click handler for interactive Draw Route mode
+    window.map.on('click', function(e) {
+      if (!STATE.isDrawingRoute) return;
+      const lat = parseFloat(e.latlng.lat.toFixed(6));
+      let lon = e.latlng.lng;
+      while (lon > 180) lon -= 360;
+      while (lon < -180) lon += 360;
+      lon = parseFloat(lon.toFixed(6));
+
+      const nextNum = (STATE.waypoints?.length || 0) + 1;
+      const newWpt = {
+        id: `WP${String(nextNum).padStart(3, '0')}`,
+        lat: lat,
+        lon: lon
+      };
+      if (!STATE.waypoints) STATE.waypoints = [];
+      STATE.waypoints.push(newWpt);
+      if (!STATE.routeName || STATE.routeName === 'NO ROUTE') {
+        STATE.routeName = 'DRAWN_ROUTE';
+      }
+      processRoute(STATE.routeName, STATE.waypoints);
+    });
+
     L.control.zoom({ position: 'topright' }).addTo(window.map);
     L.control.scale({ imperial: true, metric: true, position: 'bottomleft' }).addTo(window.map);
 
@@ -3324,6 +3986,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Default port selection mode
   setPortSelectionMode('auto');
+
+  // Load saved Gemini API Key status
+  updateAiKeyStatusDisplay();
 });
 
 </script>
