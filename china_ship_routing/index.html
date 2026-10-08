@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>China Ship Routing - Coastal Routeing Systems & Public Routes</title>
   
-  <!-- LEAFLET CSS (Local with CDN fallback) -->
-  <link rel="stylesheet" href="leaflet.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';">
+  <!-- LEAFLET CSS (CDN with local fallback) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="leaflet.css">
   
   <style>
     :root {
@@ -47,13 +48,18 @@
     #app-container {
       display: flex;
       height: 100vh;
+      height: 100dvh;
       width: 100vw;
       position: relative;
+      overflow: hidden;
     }
 
     /* SIDEBAR */
     #sidebar {
       width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      max-width: var(--sidebar-width);
+      flex-shrink: 0;
       height: 100%;
       background: #ffffff;
       border-right: 1px solid #cbd5e1;
@@ -61,11 +67,11 @@
       flex-direction: column;
       z-index: 1000;
       box-shadow: 2px 0 12px rgba(0,0,0,0.15);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     #sidebar.collapsed {
-      transform: translateX(-100%);
+      margin-left: calc(-1 * var(--sidebar-width));
     }
 
     .sidebar-header {
@@ -440,6 +446,9 @@
     /* MAP CONTAINER */
     #map {
       flex: 1;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
       height: 100%;
       background: #0b192c;
       position: relative;
@@ -451,19 +460,22 @@
       top: 14px;
       left: calc(var(--sidebar-width) + 14px);
       z-index: 1001;
-      background: #ffffff;
-      color: var(--navy-900);
-      border: 1px solid #cbd5e1;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      border-radius: 6px;
-      width: 34px;
-      height: 34px;
+      background: #0a192f;
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       cursor: pointer;
-      font-size: 1rem;
-      transition: left 0.3s ease;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
     }
 
     #sidebar.collapsed + #sidebar-toggle {
@@ -625,16 +637,107 @@
       gap: 3px;
     }
 
-    /* RESPONSIVE */
+    /* BACKDROP FOR MOBILE */
+    .sidebar-backdrop {
+      display: none;
+    }
+
+    /* RESPONSIVE (MOBILE & TABLET) */
     @media (max-width: 768px) {
-      :root {
-        --sidebar-width: 100vw;
+      #app-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
       }
+
+      #map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 1;
+      }
+
+      #sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 86vw;
+        max-width: 380px;
+        min-width: 0;
+        height: 100%;
+        height: 100dvh;
+        z-index: 2000;
+        box-shadow: 4px 0 25px rgba(0,0,0,0.5);
+        margin-left: 0 !important;
+        transform: translateX(0);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #sidebar.collapsed {
+        transform: translateX(-100%);
+        box-shadow: none;
+      }
+
+      .sidebar-backdrop {
+        display: block;
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 1999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .sidebar-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
       #sidebar-toggle {
-        left: calc(100vw - 44px);
+        top: 12px;
+        left: 12px !important;
+        z-index: 1001;
+        height: 38px;
+        padding: 0 12px;
+        font-size: 0.85rem;
+        background: rgba(10, 25, 47, 0.95);
+        border: 1px solid rgba(56, 189, 248, 0.5);
+        color: #38bdf8;
       }
-      #sidebar.collapsed + #sidebar-toggle {
-        left: 14px;
+
+      .map-badge-overlay {
+        top: 12px;
+        right: 12px;
+        padding: 4px 8px;
+        font-size: 0.65rem;
+        gap: 6px;
+      }
+
+      .map-badge-overlay div span {
+        display: none;
+      }
+
+      #coord-hud {
+        bottom: 8px;
+        padding: 4px 10px;
+        font-size: 0.62rem;
+        gap: 8px;
+        max-width: 95vw;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .leaflet-top.leaflet-right {
+        top: 56px;
       }
     }
   </style>
@@ -762,6 +865,7 @@
       <button class="btn btn-outline" id="btn-download-geojson">🗺️ GeoJSON</button>
     </div>
   </aside>
+  <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
   <!-- SIDEBAR TOGGLE BUTTON -->
   <button id="sidebar-toggle" title="Toggle Sidebar">◀</button>
@@ -775,7 +879,7 @@
       <strong>China Ship Routing</strong>
       <span style="font-size: 0.68rem; color: #a0aec0; margin-left: 6px;">Full Coastal Network</span>
     </div>
-    <span class="engine-tag" id="basemap-tag">TINY WORLD MAP</span>
+    <span class="engine-tag" id="basemap-tag">CARTO VOYAGER</span>
   </div>
 
   <!-- REALTIME CURSOR HUD -->
@@ -786,14 +890,24 @@
   </div>
 </div>
 
-<!-- LEAFLET JS (Local with CDN fallback) -->
-<script src="leaflet.js" onerror="this.onerror=null;this.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';"></script>
+<!-- LEAFLET JS (CDN with local fallback) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  if (typeof L === 'undefined') {
+    document.write('<script src="leaflet.js"><\/script>');
+  }
+</script>
 
-<!-- TINY WORLD MAP SCRIPT (Local with CDN fallback) -->
-<script src="tiny-world-all-10000.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/tinyworldmap/tiny-world-map@master/dist/v3/tiny-world-all-10000.js';"></script>
+<!-- TINY WORLD MAP SCRIPT -->
+<script src="tiny-world-all-10000.js"></script>
 
-<!-- DATASET SCRIPT (Local data.js fallback) -->
+<!-- DATASET SCRIPT -->
 <script src="data.js"></script>
+<script>
+  if (typeof window.ROUTING_DATA === 'undefined') {
+    document.write('<script src="./china_ship_routing/data.js"><\/script>');
+  }
+</script>
 
 <script>
 (function() {
@@ -932,14 +1046,13 @@
 
   // --- 4. LEAFLET BASE MAP LAYERS ---
   const baseLayers = {};
-  let defaultBase;
 
-  // 1. Tiny World Map Layer (From tinyworldmap)
-  if (typeof L.GridLayer.TinyWorld !== 'undefined') {
-    const tinyWorldLayer = new L.GridLayer.TinyWorld({ maxZoom: 19 });
-    baseLayers["🌍 Tiny World Map (Offline Vector)"] = tinyWorldLayer;
-    defaultBase = tinyWorldLayer;
-  }
+  // 1. CartoDB Voyager (Navigation Style - Primary Default)
+  const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; CartoDB & OpenStreetMap'
+  });
+  baseLayers["🧭 CartoDB Voyager (Nav Style)"] = cartoVoyager;
 
   // 2. OpenStreetMap Standard Layer
   const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -948,35 +1061,29 @@
   });
   baseLayers["🗺️ OpenStreetMap (Standard)"] = osmLayer;
 
-  // 3. CartoDB Voyager (Navigation Style)
-  const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    attribution: '&copy; CartoDB & OpenStreetMap'
-  });
-  baseLayers["🧭 CartoDB Voyager (Nav Style)"] = cartoVoyager;
-
-  // 4. CartoDB Dark Matter (Marine Night / ECDIS)
+  // 3. CartoDB Dark Matter (Marine Night / ECDIS)
   const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     attribution: '&copy; CartoDB & OpenStreetMap'
   });
   baseLayers["🌙 CartoDB Dark (ECDIS Marine Night)"] = cartoDark;
 
-  // 5. Esri World Imagery (High-Resolution Satellite)
+  // 4. Esri World Imagery (High-Resolution Satellite)
   const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
     attribution: '&copy; Esri, Maxar, Earthstar Geographics'
   });
   baseLayers["🛰️ Esri Satellite Imagery"] = esriSat;
 
-  // Set default basemap
-  if (defaultBase) {
-    defaultBase.addTo(map);
-    document.getElementById('basemap-tag').innerText = 'TINY WORLD MAP';
-  } else {
-    osmLayer.addTo(map);
-    document.getElementById('basemap-tag').innerText = 'OPENSTREETMAP';
+  // 5. Tiny World Map Layer (Offline Vector Fallback)
+  if (typeof L.GridLayer !== 'undefined' && typeof L.GridLayer.TinyWorld !== 'undefined') {
+    const tinyWorldLayer = new L.GridLayer.TinyWorld({ maxZoom: 19 });
+    baseLayers["🌍 Tiny World Map (Offline Vector)"] = tinyWorldLayer;
   }
+
+  // Set default basemap: Carto Voyager
+  cartoVoyager.addTo(map);
+  document.getElementById('basemap-tag').innerText = 'CARTO VOYAGER';
 
   // --- 5. OVERLAY LAYERS ---
   const layerGroups = {
@@ -1622,6 +1729,7 @@
       const pts = wpts.map(w => [w.coordinates[1], w.coordinates[0]]);
       map.fitBounds(L.latLngBounds(pts), { padding: [60, 60] });
     }
+    if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
   }
 
   function highlightWarningZone(wz) {
@@ -1674,6 +1782,7 @@
       const latlngs = wz.coordinates.map(c => [c[1], c[0]]);
       map.fitBounds(L.latLngBounds(latlngs), { padding: [80, 80] });
     }
+    if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
   }
 
   function highlightTss(sec, tss) {
@@ -1730,6 +1839,7 @@
       const bounds = L.latLngBounds(allPts);
       map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
     }
+    if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
   }
 
   function highlightPrecautionary(sec, p) {
@@ -1755,6 +1865,7 @@
       const pts = p.coordinates.map(c => [c[1], c[0]]);
       map.fitBounds(L.latLngBounds(pts), { padding: [80, 80] });
     }
+    if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
   }
 
   function highlightJunction(sec, j) {
@@ -1773,6 +1884,7 @@
       const pts = j.coordinates.map(c => [c[1], c[0]]);
       map.fitBounds(L.latLngBounds(pts), { padding: [80, 80] });
     }
+    if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
   }
 
   // --- 11. UPDATE UI LANGUAGE ---
@@ -1818,13 +1930,55 @@
     document.getElementById('hud-dd').innerText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   });
 
-  // --- 13. SIDEBAR TOGGLE ---
+  // --- 13. SIDEBAR TOGGLE & MOBILE HANDLER ---
   const sidebar = document.getElementById('sidebar');
   const toggleBtn = document.getElementById('sidebar-toggle');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  function updateToggleBtn() {
+    const isMobile = window.innerWidth <= 768;
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    if (isMobile) {
+      toggleBtn.innerHTML = isCollapsed ? '☰ Routes' : '✕ Close';
+      if (backdrop) {
+        if (!isCollapsed) backdrop.classList.add('active');
+        else backdrop.classList.remove('active');
+      }
+    } else {
+      toggleBtn.innerHTML = isCollapsed ? '▶' : '◀';
+      if (backdrop) backdrop.classList.remove('active');
+    }
+    setTimeout(() => { map.invalidateSize(); }, 320);
+  }
+
+  function autoCloseMobileDrawer() {
+    if (window.innerWidth <= 768) {
+      sidebar.classList.add('collapsed');
+      updateToggleBtn();
+    }
+  }
+
+  // Initial mobile check: start collapsed on phones so map is visible immediately
+  if (window.innerWidth <= 768) {
+    sidebar.classList.add('collapsed');
+  }
+  updateToggleBtn();
+
   toggleBtn.addEventListener('click', function() {
     sidebar.classList.toggle('collapsed');
-    toggleBtn.innerText = sidebar.classList.contains('collapsed') ? '▶' : '◀';
-    setTimeout(() => { map.invalidateSize(); }, 320);
+    updateToggleBtn();
+  });
+
+  if (backdrop) {
+    backdrop.addEventListener('click', function() {
+      sidebar.classList.add('collapsed');
+      updateToggleBtn();
+    });
+  }
+
+  window.addEventListener('resize', function() {
+    updateToggleBtn();
+    map.invalidateSize();
   });
 
   // --- 14. FILTER & SEARCH LISTENERS ---
