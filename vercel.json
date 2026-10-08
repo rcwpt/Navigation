@@ -2,6 +2,23 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/admiralty_enc_:match*", "destination": "/data/enc/admiralty_enc_:match*" },
+    { "source": "/admiralty_sailing_directions.json", "destination": "/data/publications/admiralty_sailing_directions.json" },
+    { "source": "/admiralty_radio_signals_alrs.json", "destination": "/data/publications/admiralty_radio_signals_alrs.json" },
+    { "source": "/admiralty_tide_tables_att.json", "destination": "/data/publications/admiralty_tide_tables_att.json" },
+    { "source": "/admiralty_list_of_lights_all.json", "destination": "/data/publications/admiralty_list_of_lights_all.json" },
+    { "source": "/admiralty_digital_list_of_lights_adll.json", "destination": "/data/publications/admiralty_digital_list_of_lights_adll.json" },
+    { "source": "/admiralty_avcs_folios.json", "destination": "/data/publications/admiralty_avcs_folios.json" },
+    { "source": "/admiralty_harbours_ports.json", "destination": "/data/ports/admiralty_harbours_ports.json" },
+    { "source": "/navarea_data.js", "destination": "/data/navarea/navarea_data.js" },
+    { "source": "/navareas.json", "destination": "/data/navarea/navareas.json" },
+    { "source": "/navareas.geojson", "destination": "/data/navarea/navareas.geojson" },
+    { "source": "/admiralty_catalogue_db.js", "destination": "/data/master/admiralty_catalogue_db.js" },
+    { "source": "/admiralty_data.js", "destination": "/data/master/admiralty_data.js" },
+    { "source": "/admiralty_digital_catalogue_unified.json", "destination": "/data/master/admiralty_digital_catalogue_unified.json" },
+    { "source": "/admiralty_custom_package:match*", "destination": "/data/master/admiralty_custom_package:match*" }
+  ],
   "headers": [
     {
       "source": "/(.*)\\.(js|json|css|png|jpg|svg|ico)",

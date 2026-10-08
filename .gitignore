@@ -1,0 +1,35 @@
+# Private local workflow notes and guides (DO NOT UPLOAD)
+CATATAN_*
+*CATATAN*
+*WORKFLOW*
+PANDUAN_KERJA*
+*.private.*
+
+# Executables & Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+
+# Build & Dist artifacts
+build/
+dist/
+*.spec
+
+# Python cache & environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Operating System temporary files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak
+*.log
