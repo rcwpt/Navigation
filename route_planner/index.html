@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marine Route Converter & Passage Intelligence</title>
   
-  <!-- LEAFLET CSS & JS (Local + CDN Fallback) -->
-  <link rel="stylesheet" href="leaflet.css" />
-  <script src="leaflet.js"></script>
+  <script>
+    // Ensure base directory resolution when accessed without trailing slash on web server
+    (function() {
+      if (window.location.protocol.startsWith('http') && window.location.pathname.includes('/route_planner')) {
+        var b = document.createElement('base');
+        b.href = window.location.origin + '/route_planner/';
+        document.head.appendChild(b);
+      }
+    })();
+  </script>
 
-  <!-- TURF.JS (SPATIAL ANALYTICS) -->
-  <script src="turf.min.js"></script>
+  <!-- LEAFLET CSS & JS (CDN with Local Fallback) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>if (typeof L === 'undefined') document.write('<script src="leaflet.js"><\/script>');</script>
+
+  <!-- TURF.JS (CDN with Local Fallback) -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  <script>if (typeof turf === 'undefined') document.write('<script src="turf.min.js"><\/script>');</script>
 
   <!-- FONT AWESOME ICONS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -442,42 +456,51 @@
     <!-- TAB 2: VESSEL PARTICULARS & SQUAT ENGINE -->
     <div class="tab-pane flex-1 overflow-y-auto p-4 space-y-4" id="tab-vessel">
       <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2.5">
-        <div class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 flex items-center gap-1.5">
-          <span>🚢</span> Vessel Particulars & Dimensions
+        <div class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span>🚢</span> Vessel Particulars & Dimensions
+          </div>
+          <button type="button" onclick="clearVesselStorage()" class="text-[10px] text-slate-400 hover:text-rose-600 font-semibold cursor-pointer" title="Reset vessel data">
+            Clear
+          </button>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Ship Name</label>
-            <input type="text" id="vessel-name" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-semibold" value="PROSPERA">
+            <input type="text" id="vessel-name" oninput="saveVesselToStorage()" placeholder="e.g. MT PACIFIC" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-semibold">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Voyage No</label>
-            <input type="text" id="vessel-voyage" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-semibold" value="V2608B">
+            <input type="text" id="vessel-voyage" oninput="saveVesselToStorage()" placeholder="e.g. V01/2026" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-semibold">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Length (LBP/LOA m)</label>
-            <input type="number" step="0.1" id="vessel-length" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="137.8">
+            <input type="number" step="0.1" id="vessel-length" oninput="saveVesselToStorage()" placeholder="e.g. 138" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Beam (B m)</label>
-            <input type="number" step="0.1" id="vessel-beam" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="22.0">
+            <input type="number" step="0.1" id="vessel-beam" oninput="saveVesselToStorage()" placeholder="e.g. 22" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Draft Fwd (m)</label>
-            <input type="number" step="0.05" id="vessel-draft-fwd" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="7.20">
+            <input type="number" step="0.05" id="vessel-draft-fwd" oninput="saveVesselToStorage()" placeholder="e.g. 7.20" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Draft Aft (m)</label>
-            <input type="number" step="0.05" id="vessel-draft-aft" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="7.80">
+            <input type="number" step="0.05" id="vessel-draft-aft" oninput="saveVesselToStorage()" placeholder="e.g. 7.80" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Displacement Vol (m³)</label>
-            <input type="number" id="vessel-volume" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="19855">
+            <input type="number" id="vessel-volume" oninput="saveVesselToStorage()" placeholder="e.g. 19850" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono">
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase">Planned Speed (kts)</label>
-            <input type="number" step="0.5" id="vessel-speed" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="12.0">
+            <input type="number" step="0.5" id="vessel-speed" oninput="saveVesselToStorage()" placeholder="e.g. 12.0" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono">
           </div>
+        </div>
+        <div class="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-200">
+          <span>* Tersimpan di localStorage browser Anda</span>
+          <span class="text-emerald-600 font-semibold" id="vessel-save-status"></span>
         </div>
       </div>
 
@@ -943,13 +966,13 @@ window.STATE = {
   waypoints: [],
   currentView: 'map',
   vessel: {
-    name: 'PROSPERA',
-    voyageNo: 'V2608B',
-    length: 137.8,
-    beam: 22.0,
-    draftFwd: 7.20,
-    draftAft: 7.80,
-    volume: 19855,
+    name: '',
+    voyageNo: '',
+    length: null,
+    beam: null,
+    draftFwd: null,
+    draftAft: null,
+    volume: null,
     speed: 12.0
   },
   squatOptions: {
@@ -964,6 +987,65 @@ window.STATE = {
     squatUkc: null
   }
 };
+
+// --- LOCALSTORAGE PERSISTENCE FOR VESSEL DATA ---
+const STORAGE_KEY_VESSEL = 'route_planner_vessel_particulars';
+
+function loadVesselFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_VESSEL);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data) {
+        if (data.name) document.getElementById('vessel-name').value = data.name;
+        if (data.voyageNo) document.getElementById('vessel-voyage').value = data.voyageNo;
+        if (data.length != null && data.length > 0) document.getElementById('vessel-length').value = data.length;
+        if (data.beam != null && data.beam > 0) document.getElementById('vessel-beam').value = data.beam;
+        if (data.draftFwd != null && data.draftFwd > 0) document.getElementById('vessel-draft-fwd').value = data.draftFwd;
+        if (data.draftAft != null && data.draftAft > 0) document.getElementById('vessel-draft-aft').value = data.draftAft;
+        if (data.volume != null && data.volume > 0) document.getElementById('vessel-volume').value = data.volume;
+        if (data.speed != null && data.speed > 0) document.getElementById('vessel-speed').value = data.speed;
+      }
+    }
+  } catch (err) {
+    console.warn('localStorage read error:', err);
+  }
+  collectVesselInputs();
+}
+window.loadVesselFromStorage = loadVesselFromStorage;
+
+function saveVesselToStorage() {
+  collectVesselInputs();
+  try {
+    localStorage.setItem(STORAGE_KEY_VESSEL, JSON.stringify(STATE.vessel));
+    const statusEl = document.getElementById('vessel-save-status');
+    if (statusEl) {
+      statusEl.innerText = '💾 Saved';
+      setTimeout(() => { if (statusEl) statusEl.innerText = ''; }, 1500);
+    }
+  } catch (err) {
+    console.warn('localStorage write error:', err);
+  }
+  recalculateSquat();
+}
+window.saveVesselToStorage = saveVesselToStorage;
+
+function clearVesselStorage() {
+  if (confirm('Clear saved vessel particulars from this browser?')) {
+    try {
+      localStorage.removeItem(STORAGE_KEY_VESSEL);
+    } catch (e) {}
+    ['vessel-name', 'vessel-voyage', 'vessel-length', 'vessel-beam', 'vessel-draft-fwd', 'vessel-draft-aft', 'vessel-volume'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const spdEl = document.getElementById('vessel-speed');
+    if (spdEl) spdEl.value = '12.0';
+    collectVesselInputs();
+    recalculateSquat();
+  }
+}
+window.clearVesselStorage = clearVesselStorage;
 
 // --- GLOBAL LAYER REPOSITORIES ---
 window.overlays = {};
@@ -1146,22 +1228,44 @@ function recalculateSquat() {
 window.recalculateSquat = recalculateSquat;
 
 function collectVesselInputs() {
-  STATE.vessel.name = document.getElementById('vessel-name').value || 'VESSEL';
-  STATE.vessel.voyageNo = document.getElementById('vessel-voyage').value || '-';
-  STATE.vessel.length = parseFloat(document.getElementById('vessel-length').value) || 137.8;
-  STATE.vessel.beam = parseFloat(document.getElementById('vessel-beam').value) || 22.0;
-  STATE.vessel.draftFwd = parseFloat(document.getElementById('vessel-draft-fwd').value) || 7.20;
-  STATE.vessel.draftAft = parseFloat(document.getElementById('vessel-draft-aft').value) || 7.80;
-  STATE.vessel.volume = parseFloat(document.getElementById('vessel-volume').value) || 19855;
-  STATE.vessel.speed = parseFloat(document.getElementById('vessel-speed').value) || 12.0;
+  const nameVal = document.getElementById('vessel-name')?.value?.trim();
+  const voyageVal = document.getElementById('vessel-voyage')?.value?.trim();
+  const lenVal = parseFloat(document.getElementById('vessel-length')?.value);
+  const beamVal = parseFloat(document.getElementById('vessel-beam')?.value);
+  const draftFwdVal = parseFloat(document.getElementById('vessel-draft-fwd')?.value);
+  const draftAftVal = parseFloat(document.getElementById('vessel-draft-aft')?.value);
+  const volVal = parseFloat(document.getElementById('vessel-volume')?.value);
+  const spdVal = parseFloat(document.getElementById('vessel-speed')?.value);
 
-  STATE.squatOptions.squatCriteria = document.getElementById('squat-criteria').value || 'auto';
-  STATE.squatOptions.chartedDepth = parseFloat(document.getElementById('env-chart-depth').value) || 25.0;
-  STATE.squatOptions.tideHeight = parseFloat(document.getElementById('env-tide-height').value) || 2.0;
+  STATE.vessel.name = nameVal || '';
+  STATE.vessel.voyageNo = voyageVal || '';
+  STATE.vessel.length = !isNaN(lenVal) && lenVal > 0 ? lenVal : null;
+  STATE.vessel.beam = !isNaN(beamVal) && beamVal > 0 ? beamVal : null;
+  STATE.vessel.draftFwd = !isNaN(draftFwdVal) && draftFwdVal > 0 ? draftFwdVal : null;
+  STATE.vessel.draftAft = !isNaN(draftAftVal) && draftAftVal > 0 ? draftAftVal : null;
+  STATE.vessel.volume = !isNaN(volVal) && volVal > 0 ? volVal : null;
+  STATE.vessel.speed = !isNaN(spdVal) && spdVal > 0 ? spdVal : 12.0;
+
+  STATE.squatOptions.squatCriteria = document.getElementById('squat-criteria')?.value || 'auto';
+  STATE.squatOptions.chartedDepth = parseFloat(document.getElementById('env-chart-depth')?.value) || 25.0;
+  STATE.squatOptions.tideHeight = parseFloat(document.getElementById('env-tide-height')?.value) || 2.0;
 }
 
 function updateSquatDisplay(sq) {
-  if (!sq || !sq.vessel) return;
+  const hasDimensions = STATE.vessel.length && STATE.vessel.beam && (STATE.vessel.draftFwd || STATE.vessel.draftAft);
+  if (!sq || !sq.vessel || !hasDimensions) {
+    const cbEl = document.getElementById('disp-cb');
+    if (cbEl) cbEl.innerText = `Cb: -`;
+    const sqOpenEl = document.getElementById('disp-squat-open');
+    if (sqOpenEl) sqOpenEl.innerText = `-`;
+    const sqShallowEl = document.getElementById('disp-squat-shallow');
+    if (sqShallowEl) sqShallowEl.innerText = `-`;
+    const dynDraftEl = document.getElementById('disp-dynamic-draft');
+    if (dynDraftEl) dynDraftEl.innerText = `-`;
+    const netUkcEl = document.getElementById('disp-net-ukc');
+    if (netUkcEl) netUkcEl.innerText = `-`;
+    return;
+  }
   const cb = sq.vessel.blockCoefficient || 0.84;
   const sqOpen = sq.squatOpenSea || 0;
   const sqShallow = sq.squatShallow || 0;
@@ -1407,16 +1511,17 @@ function renderReportDocument() {
   const v = STATE.vessel;
   const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
 
+  const hasDimensions = STATE.vessel.length && STATE.vessel.beam;
   document.getElementById('rpt-date-disp').innerText = `Date: ${new Date().toISOString().slice(0, 10)}`;
-  document.getElementById('rpt-vessel-name').innerText = v.name;
+  document.getElementById('rpt-vessel-name').innerText = v.name || '-';
   document.getElementById('rpt-voyage-no').innerText = v.voyageNo || '-';
   document.getElementById('rpt-dep-port').innerText = pubs?.nearestDeparturePort?.name || '-';
   document.getElementById('rpt-arr-port').innerText = pubs?.nearestArrivalPort?.name || '-';
-  const dFwd = typeof v.draftFwd === 'number' ? v.draftFwd.toFixed(2) : (v.draftFwd || '7.20');
-  const dAft = typeof v.draftAft === 'number' ? v.draftAft.toFixed(2) : (v.draftAft || '7.80');
-  const spd = typeof v.speed === 'number' ? v.speed.toFixed(1) : (v.speed || '12.0');
-  document.getElementById('rpt-dim').innerText = `${v.length} × ${v.beam} m`;
-  document.getElementById('rpt-draft').innerText = `${dFwd} / ${dAft} m`;
+  const dFwd = typeof v.draftFwd === 'number' && v.draftFwd > 0 ? v.draftFwd.toFixed(2) : '-';
+  const dAft = typeof v.draftAft === 'number' && v.draftAft > 0 ? v.draftAft.toFixed(2) : '-';
+  const spd = typeof v.speed === 'number' && v.speed > 0 ? v.speed.toFixed(1) : '12.0';
+  document.getElementById('rpt-dim').innerText = hasDimensions ? `${v.length} × ${v.beam} m` : '-';
+  document.getElementById('rpt-draft').innerText = (dFwd !== '-' || dAft !== '-') ? `${dFwd} / ${dAft} m` : '-';
   document.getElementById('rpt-total-dist').innerText = `${totalDist.toFixed(2)} NM`;
   document.getElementById('rpt-speed').innerText = `${spd} kts`;
 
@@ -1444,12 +1549,18 @@ function renderReportDocument() {
     : 'None';
 
   // Squat block
-  if (squatUkc) {
+  if (squatUkc && squatUkc.vessel && hasDimensions) {
     document.getElementById('rpt-cb').innerText = `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}`;
     document.getElementById('rpt-sq-shallow').innerText = `${squatUkc.squatShallow.toFixed(2)} m`;
     document.getElementById('rpt-sq-opensea').innerText = `${squatUkc.squatOpenSea.toFixed(2)} m`;
     document.getElementById('rpt-max-draft').innerText = `${squatUkc.vessel.maxDraft.toFixed(2)} m`;
     document.getElementById('rpt-water-depth').innerText = `${squatUkc.totalWaterDepth.toFixed(1)} m`;
+  } else {
+    document.getElementById('rpt-cb').innerText = `Cb = -`;
+    document.getElementById('rpt-sq-shallow').innerText = `-`;
+    document.getElementById('rpt-sq-opensea').innerText = `-`;
+    document.getElementById('rpt-max-draft').innerText = `-`;
+    document.getElementById('rpt-water-depth').innerText = `-`;
   }
 
   // VPF Table Rows
@@ -1897,6 +2008,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Populate 31 export format options
   populateExportFormats();
+
+  // Load user's saved vessel particulars from localStorage
+  loadVesselFromStorage();
 
   // Setup Drag and Drop
   const dropZone = document.getElementById('drop-zone');
