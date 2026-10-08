@@ -1,7 +1,8 @@
 {
   "type": "FeatureCollection",
   "metadata": {
-    "title": "Admiralty Tide Tables (ATT) & TotalTide Official Coverage Areas",
+    "title": "Admiralty Tide Tables (ATT NP201A-NP208 & TotalTide Areas)",
+    "version": "2.1.0",
     "total_features": 19
   },
   "features": [
@@ -15,31 +16,41 @@
         "description": "English Channel, Thames Estuary and Southern UK",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -6.5,
+          48.5,
+          2.5,
+          51.5
+        ]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              -7.0,
-              53.5
-            ],
-            [
-              2.5,
-              53.5
+              -6.5,
+              48.5
             ],
             [
               2.5,
               48.5
             ],
             [
-              -7.0,
-              48.5
+              2.5,
+              51.5
             ],
             [
-              -7.0,
-              53.5
+              -5,
+              51.5
+            ],
+            [
+              -6.5,
+              49.5
+            ],
+            [
+              -6.5,
+              48.5
             ]
           ]
         ]
@@ -55,31 +66,37 @@
         "description": "Scotland, Irish Sea, Ireland and Northern UK",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -12,
+          51.3,
+          1.5,
+          62
+        ]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              -12.0,
-              61.5
+              -12,
+              51.3
             ],
             [
-              1.0,
-              61.5
+              1.5,
+              51.3
             ],
             [
-              1.0,
-              52.0
+              1.5,
+              62
             ],
             [
-              -12.0,
-              52.0
+              -12,
+              62
             ],
             [
-              -12.0,
-              61.5
+              -12,
+              51.3
             ]
           ]
         ]
@@ -92,34 +109,78 @@
         "name": "NP202 - ATT Vol 2 - North Atlantic & Arctic",
         "code": "NP202",
         "title": "ATT Vol 2 - North Atlantic & Arctic",
-        "description": "North Atlantic Ocean, Arctic Regions and Baltic Sea",
+        "description": "North Atlantic Ocean, Arctic Regions, European Waters, Baltic Sea and Mediterranean Sea",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -180,
+          10,
+          180,
+          90
+        ]
       },
       "geometry": {
-        "type": "Polygon",
+        "type": "MultiPolygon",
         "coordinates": [
           [
             [
-              -75.0,
-              85.0
-            ],
+              [
+                -100,
+                10
+              ],
+              [
+                -20,
+                10
+              ],
+              [
+                -10,
+                35
+              ],
+              [
+                36,
+                35
+              ],
+              [
+                42,
+                45
+              ],
+              [
+                40,
+                67
+              ],
+              [
+                -100,
+                67
+              ],
+              [
+                -100,
+                10
+              ]
+            ]
+          ],
+          [
             [
-              35.0,
-              85.0
-            ],
-            [
-              35.0,
-              45.0
-            ],
-            [
-              -75.0,
-              45.0
-            ],
-            [
-              -75.0,
-              85.0
+              [
+                -180,
+                67
+              ],
+              [
+                180,
+                67
+              ],
+              [
+                180,
+                90
+              ],
+              [
+                -180,
+                90
+              ],
+              [
+                -180,
+                67
+              ]
             ]
           ]
         ]
@@ -129,37 +190,59 @@
       "type": "Feature",
       "id": "ATT_NP203",
       "properties": {
-        "name": "NP203 - ATT Vol 3 - Indian Ocean & South China Sea",
+        "name": "NP203 - ATT Vol 3 - Indian Ocean",
         "code": "NP203",
-        "title": "ATT Vol 3 - Indian Ocean & South China Sea",
-        "description": "Indian Ocean, Arabian Sea, Bay of Bengal and South China Sea",
+        "title": "ATT Vol 3 - Indian Ocean",
+        "description": "Indian Ocean, Red Sea, Persian Gulf, Arabian Sea and Bay of Bengal (West of 93.7°E, East of 20°E)",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          20,
+          -80,
+          93.71,
+          32
+        ]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              35.0,
-              30.0
+              20,
+              -80
             ],
             [
-              120.0,
-              30.0
+              93.71,
+              -80
             ],
             [
-              120.0,
-              -35.0
+              93.71,
+              15.65
             ],
             [
-              35.0,
-              -35.0
+              80,
+              22
             ],
             [
-              35.0,
-              30.0
+              70,
+              25
+            ],
+            [
+              50,
+              30
+            ],
+            [
+              32,
+              32
+            ],
+            [
+              20,
+              20
+            ],
+            [
+              20,
+              -80
             ]
           ]
         ]
@@ -172,34 +255,86 @@
         "name": "NP204 - ATT Vol 4 - South Pacific Ocean",
         "code": "NP204",
         "title": "ATT Vol 4 - South Pacific Ocean",
-        "description": "South Pacific Ocean, Australia, New Zealand and Pacific Islands",
+        "description": "South Pacific Ocean, Australia, New Zealand and Pacific Islands (South of Equator, West of 80°W)",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -180,
+          -80,
+          180,
+          0
+        ]
       },
       "geometry": {
-        "type": "Polygon",
+        "type": "MultiPolygon",
         "coordinates": [
           [
             [
-              110.0,
-              0.0
-            ],
+              [
+                145.52,
+                0
+              ],
+              [
+                180,
+                0
+              ],
+              [
+                180,
+                -80
+              ],
+              [
+                93.71,
+                -80
+              ],
+              [
+                93.71,
+                -13.91
+              ],
+              [
+                104.76,
+                -13.91
+              ],
+              [
+                116.19,
+                -19.13
+              ],
+              [
+                125.71,
+                -13.91
+              ],
+              [
+                145.52,
+                -13.91
+              ],
+              [
+                145.52,
+                0
+              ]
+            ]
+          ],
+          [
             [
-              -70.0,
-              0.0
-            ],
-            [
-              -70.0,
-              -55.0
-            ],
-            [
-              110.0,
-              -55.0
-            ],
-            [
-              110.0,
-              0.0
+              [
+                -180,
+                0
+              ],
+              [
+                -80,
+                0
+              ],
+              [
+                -80,
+                -80
+              ],
+              [
+                -180,
+                -80
+              ],
+              [
+                -180,
+                0
+              ]
             ]
           ]
         ]
@@ -212,34 +347,56 @@
         "name": "NP205 - ATT Vol 5 - South China Sea & Indonesia",
         "code": "NP205",
         "title": "ATT Vol 5 - South China Sea & Indonesia",
-        "description": "South China Sea, Indonesia, Malaysia, Singapore, Philippines",
+        "description": "South China Sea, Indonesia, Malaysia, Singapore, Thailand, Vietnam, Philippines (93.7°E to 145.5°E, -19.1°S to 15.7°N)",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          93.71,
+          -19.13,
+          145.52,
+          15.65
+        ]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              95.0,
-              25.0
+              93.71,
+              15.65
             ],
             [
-              142.0,
-              25.0
+              127.62,
+              15.65
             ],
             [
-              142.0,
-              -12.0
+              145.52,
+              -5.22
             ],
             [
-              95.0,
-              -12.0
+              145.52,
+              -13.91
             ],
             [
-              95.0,
-              25.0
+              125.71,
+              -13.91
+            ],
+            [
+              116.19,
+              -19.13
+            ],
+            [
+              104.76,
+              -13.91
+            ],
+            [
+              93.71,
+              -5.22
+            ],
+            [
+              93.71,
+              15.65
             ]
           ]
         ]
@@ -252,34 +409,74 @@
         "name": "NP206 - ATT Vol 6 - North Pacific Ocean",
         "code": "NP206",
         "title": "ATT Vol 6 - North Pacific Ocean",
-        "description": "North Pacific Ocean, Japan, Korea, China and East Coast of Russia",
+        "description": "North Pacific Ocean, Japan, Korea, China, Russia Far East and Pacific Coast of North America (North of Equator & North of 15.7°N in East Asia)",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -180,
+          0,
+          180,
+          67
+        ]
       },
       "geometry": {
-        "type": "Polygon",
+        "type": "MultiPolygon",
         "coordinates": [
           [
             [
-              115.0,
-              65.0
-            ],
+              [
+                100,
+                15.65
+              ],
+              [
+                127.62,
+                15.65
+              ],
+              [
+                145.52,
+                0
+              ],
+              [
+                180,
+                0
+              ],
+              [
+                180,
+                67
+              ],
+              [
+                100,
+                67
+              ],
+              [
+                100,
+                15.65
+              ]
+            ]
+          ],
+          [
             [
-              -120.0,
-              65.0
-            ],
-            [
-              -120.0,
-              10.0
-            ],
-            [
-              115.0,
-              10.0
-            ],
-            [
-              115.0,
-              65.0
+              [
+                -180,
+                0
+              ],
+              [
+                -80,
+                0
+              ],
+              [
+                -80,
+                67
+              ],
+              [
+                -180,
+                67
+              ],
+              [
+                -180,
+                0
+              ]
             ]
           ]
         ]
@@ -292,34 +489,44 @@
         "name": "NP207 - ATT Vol 7 - South West Atlantic & South America",
         "code": "NP207",
         "title": "ATT Vol 7 - South West Atlantic & South America",
-        "description": "South West Atlantic Ocean and East Coast of South America",
+        "description": "South West Atlantic Ocean and East Coast of South America (West of 20°W, South of 10°N)",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -80,
+          -80,
+          -20,
+          10
+        ]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              -75.0,
-              12.0
+              -80,
+              -80
             ],
             [
-              -30.0,
-              12.0
+              -20,
+              -80
             ],
             [
-              -30.0,
-              -60.0
+              -20,
+              10
             ],
             [
-              -75.0,
-              -60.0
+              -60,
+              10
             ],
             [
-              -75.0,
-              12.0
+              -80,
+              8
+            ],
+            [
+              -80,
+              -80
             ]
           ]
         ]
@@ -329,37 +536,47 @@
       "type": "Feature",
       "id": "ATT_NP208",
       "properties": {
-        "name": "NP208 - ATT Vol 8 - South East Atlantic & Mediterranean",
+        "name": "NP208 - ATT Vol 8 - South East Atlantic & West Africa",
         "code": "NP208",
-        "title": "ATT Vol 8 - South East Atlantic & Mediterranean",
-        "description": "South East Atlantic Ocean, West Africa and Mediterranean Sea",
+        "title": "ATT Vol 8 - South East Atlantic & West Africa",
+        "description": "South East Atlantic Ocean, West Africa (Between 20°W and 20°E, South of Gibraltar)",
         "category": "Admiralty Tide Tables (ATT)",
         "group": "Admiralty Publications",
-        "type": "Coverage Area Polygon"
+        "type": "Coverage Area Polygon",
+        "bbox": [
+          -20,
+          -80,
+          20,
+          35
+        ]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              -25.0,
-              46.0
+              -20,
+              -80
             ],
             [
-              36.0,
-              46.0
+              20,
+              -80
             ],
             [
-              36.0,
-              -38.0
+              20,
+              20
             ],
             [
-              -25.0,
-              -38.0
+              -10,
+              35
             ],
             [
-              -25.0,
-              46.0
+              -20,
+              10
+            ],
+            [
+              -20,
+              -80
             ]
           ]
         ]
@@ -382,24 +599,24 @@
         "coordinates": [
           [
             [
-              -15.0,
-              65.0
+              -15,
+              65
             ],
             [
-              12.0,
-              65.0
+              12,
+              65
             ],
             [
-              12.0,
-              48.0
+              12,
+              48
             ],
             [
-              -15.0,
-              48.0
+              -15,
+              48
             ],
             [
-              -15.0,
-              65.0
+              -15,
+              65
             ]
           ]
         ]
@@ -422,24 +639,24 @@
         "coordinates": [
           [
             [
-              4.0,
-              72.0
+              4,
+              72
             ],
             [
-              32.0,
-              72.0
+              32,
+              72
             ],
             [
-              32.0,
-              53.0
+              32,
+              53
             ],
             [
-              4.0,
-              53.0
+              4,
+              53
             ],
             [
-              4.0,
-              72.0
+              4,
+              72
             ]
           ]
         ]
@@ -462,24 +679,24 @@
         "coordinates": [
           [
             [
-              -6.0,
-              48.0
+              -6,
+              48
             ],
             [
-              55.0,
-              48.0
+              55,
+              48
             ],
             [
-              55.0,
-              30.0
+              55,
+              30
             ],
             [
-              -6.0,
-              30.0
+              -6,
+              30
             ],
             [
-              -6.0,
-              48.0
+              -6,
+              48
             ]
           ]
         ]
@@ -502,24 +719,24 @@
         "coordinates": [
           [
             [
-              -35.0,
-              40.0
+              -35,
+              40
             ],
             [
-              20.0,
-              40.0
+              20,
+              40
             ],
             [
-              20.0,
-              -40.0
+              20,
+              -40
             ],
             [
-              -35.0,
-              -40.0
+              -35,
+              -40
             ],
             [
-              -35.0,
-              40.0
+              -35,
+              40
             ]
           ]
         ]
@@ -542,24 +759,24 @@
         "coordinates": [
           [
             [
-              32.0,
-              32.0
+              32,
+              32
             ],
             [
-              78.0,
-              32.0
+              78,
+              32
             ],
             [
-              78.0,
-              -5.0
+              78,
+              -5
             ],
             [
-              32.0,
-              -5.0
+              32,
+              -5
             ],
             [
-              32.0,
-              32.0
+              32,
+              32
             ]
           ]
         ]
@@ -582,24 +799,24 @@
         "coordinates": [
           [
             [
-              95.0,
-              45.0
+              95,
+              45
             ],
             [
-              150.0,
-              45.0
+              150,
+              45
             ],
             [
-              150.0,
-              -12.0
+              150,
+              -12
             ],
             [
-              95.0,
-              -12.0
+              95,
+              -12
             ],
             [
-              95.0,
-              45.0
+              95,
+              45
             ]
           ]
         ]
@@ -622,24 +839,24 @@
         "coordinates": [
           [
             [
-              110.0,
-              5.0
+              110,
+              5
             ],
             [
-              -130.0,
-              5.0
+              -130,
+              5
             ],
             [
-              -130.0,
-              -50.0
+              -130,
+              -50
             ],
             [
-              110.0,
-              -50.0
+              110,
+              -50
             ],
             [
-              110.0,
-              5.0
+              110,
+              5
             ]
           ]
         ]
@@ -662,24 +879,24 @@
         "coordinates": [
           [
             [
-              35.0,
-              25.0
+              35,
+              25
             ],
             [
-              105.0,
-              25.0
+              105,
+              25
             ],
             [
-              105.0,
-              -45.0
+              105,
+              -45
             ],
             [
-              35.0,
-              -45.0
+              35,
+              -45
             ],
             [
-              35.0,
-              25.0
+              35,
+              25
             ]
           ]
         ]
@@ -702,24 +919,24 @@
         "coordinates": [
           [
             [
-              -100.0,
-              60.0
+              -100,
+              60
             ],
             [
-              -35.0,
-              60.0
+              -35,
+              60
             ],
             [
-              -35.0,
-              -55.0
+              -35,
+              -55
             ],
             [
-              -100.0,
-              -55.0
+              -100,
+              -55
             ],
             [
-              -100.0,
-              60.0
+              -100,
+              60
             ]
           ]
         ]
@@ -742,24 +959,24 @@
         "coordinates": [
           [
             [
-              -180.0,
-              72.0
+              -180,
+              72
             ],
             [
-              -70.0,
-              72.0
+              -70,
+              72
             ],
             [
-              -70.0,
-              -55.0
+              -70,
+              -55
             ],
             [
-              -180.0,
-              -55.0
+              -180,
+              -55
             ],
             [
-              -180.0,
-              72.0
+              -180,
+              72
             ]
           ]
         ]

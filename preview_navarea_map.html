@@ -1,0 +1,635 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World NAVAREA Interactive Map & Database (IMO / IHO WWNWS)</title>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Embedded / Local NAVAREA GeoJSON Data -->
+  <script src="navarea_data.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0b1329;
+      --panel-bg: rgba(15, 23, 42, 0.92);
+      --border-color: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --card-bg: rgba(30, 41, 59, 0.85);
+    }
+
+    * { box-sizing: border-box; }
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: var(--bg-dark); overflow: hidden; color: var(--text-main); }
+    
+    #map { height: 100vh; width: 100%; background: #070e1e; }
+
+    /* Custom Leaflet Dark UI */
+    .leaflet-container { background: #070e1e !important; }
+    .leaflet-popup-content-wrapper {
+      background: rgba(15, 23, 42, 0.95) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 10px !important;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.7) !important;
+      backdrop-filter: blur(8px);
+    }
+    .leaflet-popup-tip {
+      background: rgba(15, 23, 42, 0.95) !important;
+    }
+    .leaflet-popup-content { margin: 12px 14px; font-size: 12.5px; line-height: 1.5; }
+
+    /* Area Labels on Map */
+    .navarea-label {
+      background: rgba(11, 19, 41, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+
+    /* Left Sidebar */
+    .sidebar {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 360px;
+      max-height: calc(100vh - 30px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.7);
+      backdrop-filter: blur(14px);
+    }
+
+    .sidebar-header {
+      padding: 16px 18px 12px 18px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 0 0 4px 0;
+    }
+
+    .header-title svg { width: 22px; height: 22px; fill: var(--accent); flex-shrink: 0; }
+    .header-sub { font-size: 11px; color: var(--text-muted); margin: 0; }
+
+    .sidebar-body {
+      padding: 14px 18px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .sidebar-body::-webkit-scrollbar { width: 5px; }
+    .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+    /* Search & Filter */
+    .search-box {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      font-size: 12.5px;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: var(--accent); }
+
+    /* Lookup Tool Box */
+    .tool-box {
+      background: rgba(2, 132, 199, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+    .tool-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .coord-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 6px;
+    }
+    .coord-input {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 8px;
+      font-size: 11.5px;
+      border-radius: 6px;
+      outline: none;
+    }
+    .btn-lookup {
+      background: var(--accent);
+      color: #0b1329;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-lookup:hover { background: #7dd3fc; }
+    .lookup-result {
+      margin-top: 8px;
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.4);
+      display: none;
+    }
+
+    /* NAVAREA Detail Card */
+    .detail-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .detail-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      color: #000;
+    }
+    .detail-title { font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 6px 0; }
+    .detail-row { font-size: 11.5px; margin-bottom: 6px; line-height: 1.4; }
+    .detail-row b { color: var(--accent); }
+    .detail-desc { font-size: 11px; color: var(--text-muted); line-height: 1.45; margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 6px; }
+
+    /* Area List */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      margin: 10px 0 6px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .area-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .area-list::-webkit-scrollbar { width: 4px; }
+    .area-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    
+    .area-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 8px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .area-item:hover, .area-item.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent);
+      transform: translateX(2px);
+    }
+    .area-item-info { display: flex; align-items: center; gap: 8px; }
+    .color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .area-item-code { font-weight: 700; font-size: 12px; color: #fff; }
+    .area-item-coord { font-size: 10.5px; color: var(--text-muted); }
+
+    /* Bottom Status Bar */
+    .coord-display {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      z-index: 1000;
+      background: var(--panel-bg);
+      color: var(--accent);
+      font-family: monospace;
+      font-size: 11.5px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    /* Actions buttons */
+    .btn-action-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 12px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border-color);
+      color: #f8fafc;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="header-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        IMO / IHO NAVAREA Map
+      </div>
+      <p class="header-sub">World-Wide Navigational Warning Service (21 Wilayah Lengkap)</p>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- Search Input -->
+      <input type="text" id="search-box" class="search-box" placeholder="Cari NAVAREA, negara, atau laut..." />
+
+      <!-- GPS Coordinate Lookup Tool -->
+      <div class="tool-box">
+        <div class="tool-title">
+          <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+          Cek Koordinat Kapal (GPS Lookup)
+        </div>
+        <div class="coord-inputs">
+          <input type="number" id="input-lat" class="coord-input" placeholder="Lat (e.g. 3.2)" step="any" />
+          <input type="number" id="input-lng" class="coord-input" placeholder="Lon (e.g. 100.5)" step="any" />
+          <button id="btn-lookup" class="btn-lookup">Cek</button>
+        </div>
+        <div id="lookup-result" class="lookup-result"></div>
+      </div>
+
+      <!-- Detail Card (Active Selection) -->
+      <div id="detail-card" class="detail-card">
+        <span id="detail-badge" class="detail-badge">NAVAREA I</span>
+        <h4 id="detail-title" class="detail-title">-</h4>
+        <div class="detail-row"><b>Koordinator:</b> <span id="detail-country">-</span></div>
+        <div class="detail-row"><b>Otoritas:</b> <span id="detail-authority">-</span></div>
+        <div class="detail-row"><b>Cakupan Laut:</b> <span id="detail-ocean">-</span></div>
+        <div class="detail-row"><b>Sistem Siaran:</b> <span id="detail-broadcast">-</span></div>
+        <div class="detail-desc" id="detail-desc">-</div>
+      </div>
+
+      <!-- NAVAREA List -->
+      <div class="section-label">
+        <span>Daftar 21 NAVAREA</span>
+        <span id="area-count">21 Wilayah</span>
+      </div>
+      <div id="area-list" class="area-list"></div>
+
+      <!-- Actions / Database Files -->
+      <div class="btn-action-group">
+        <a href="navareas.geojson" download="navareas.geojson" class="btn-secondary">📥 Unduh GeoJSON</a>
+        <a href="navareas.json" download="navareas.json" class="btn-secondary">📥 Unduh JSON</a>
+        <a href="navareas_schema.sql" download="navareas_schema.sql" class="btn-secondary">💾 Unduh SQL Schema</a>
+        <button id="btn-reset-view" class="btn-secondary">🌍 Reset Peta Global</button>
+      </div>
+
+      <!-- Creator Attribution -->
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;text-align:center;color:#94a3b8;">
+        Database created by <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:none;font-weight:600;">@c.wijaya.t</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Cursor Coordinates -->
+  <div id="coord-display" class="coord-display">Lat: 0.0000°, Lon: 0.0000°</div>
+
+  <script>
+    // 1. Initialize Map
+    const map = L.map('map', {
+      center: [15, 10],
+      zoom: 3,
+      minZoom: 2,
+      maxZoom: 14,
+      worldCopyJump: true
+    });
+
+    // Basemap Layers
+    const baseLayers = {
+      "CartoDB Dark Matter": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB & OpenStreetMap',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map),
+      "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }),
+      "ESRI Ocean Basemap": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; ESRI Ocean'
+      }),
+      "ESRI Satellite Imagery": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; ESRI Imagery'
+      })
+    };
+    L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
+
+    // Layer Groups
+    let geojsonLayer = null;
+    let vesselMarker = null;
+    const layerMap = {};
+    const geojsonData = window.NAVAREA_GEOJSON;
+
+    // Helper: Style for NAVAREAs
+    function getFeatureStyle(feature) {
+      const color = feature.properties.color || '#38bdf8';
+      return {
+        fillColor: color,
+        weight: 1.8,
+        opacity: 0.85,
+        color: color,
+        dashArray: '',
+        fillOpacity: 0.22
+      };
+    }
+
+    function highlightFeature(e) {
+      const layer = e.target;
+      layer.setStyle({
+        weight: 3,
+        color: '#ffffff',
+        fillOpacity: 0.45
+      });
+      if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+      }
+    }
+
+    function resetHighlight(e) {
+      if (geojsonLayer) {
+        geojsonLayer.resetStyle(e.target);
+      }
+    }
+
+    function selectNavarea(props, layer) {
+      // Highlight list item
+      document.querySelectorAll('.area-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById('item-' + props.number);
+      if (activeEl) {
+        activeEl.classList.add('active');
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Populate Detail Card
+      const card = document.getElementById('detail-card');
+      card.style.display = 'block';
+      const badge = document.getElementById('detail-badge');
+      badge.textContent = props.code;
+      badge.style.background = props.color;
+
+      document.getElementById('detail-title').textContent = props.name;
+      document.getElementById('detail-country').textContent = props.coordinator_country;
+      document.getElementById('detail-authority').textContent = props.coordinator_authority;
+      document.getElementById('detail-ocean').textContent = props.ocean;
+      document.getElementById('detail-broadcast').textContent = props.broadcast_system;
+      document.getElementById('detail-desc').textContent = props.description;
+
+      if (layer && layer.getBounds) {
+        map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 5 });
+      }
+    }
+
+    // Render GeoJSON onto map
+    if (geojsonData) {
+      geojsonLayer = L.geoJSON(geojsonData, {
+        style: getFeatureStyle,
+        onEachFeature: function(feature, layer) {
+          const props = feature.properties;
+          layerMap[props.number] = layer;
+
+          // Tooltip
+          layer.bindTooltip(`<b>${props.code}</b><br><small>${props.coordinator_country}</small>`, {
+            sticky: true,
+            className: 'navarea-label'
+          });
+
+          // Popup
+          const popupHtml = `
+            <div style="font-family: inherit;">
+              <span style="background:${props.color}; color:#000; font-weight:700; font-size:11px; padding:2px 6px; border-radius:3px;">${props.code}</span>
+              <h4 style="margin:6px 0 4px 0; color:#38bdf8; font-size:13px;">${props.name}</h4>
+              <p style="margin:2px 0; font-size:11.5px;"><b>Koordinator:</b> ${props.coordinator_country} (${props.coordinator_authority})</p>
+              <p style="margin:2px 0; font-size:11px; color:#cbd5e1;"><b>Wilayah:</b> ${props.ocean}</p>
+              <p style="margin:4px 0 0 0; font-size:10.5px; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.1); padding-top:4px;">${props.broadcast_system}</p>
+            </div>
+          `;
+          layer.bindPopup(popupHtml);
+
+          layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+            click: function(e) {
+              selectNavarea(props, layer);
+            }
+          });
+        }
+      }).addTo(map);
+
+      populateAreaList(geojsonData.features);
+    }
+
+    // Populate Sidebar Area List
+    function populateAreaList(features) {
+      const container = document.getElementById('area-list');
+      container.innerHTML = '';
+
+      features.forEach(f => {
+        const p = f.properties;
+        const item = document.createElement('div');
+        item.className = 'area-item';
+        item.id = 'item-' + p.number;
+        item.innerHTML = `
+          <div class="area-item-info">
+            <span class="color-dot" style="background:${p.color};"></span>
+            <div>
+              <div class="area-item-code">${p.code}</div>
+              <div class="area-item-coord">${p.coordinator_country}</div>
+            </div>
+          </div>
+          <span style="font-size:10px; color:#64748b;">#${p.number}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          const targetLayer = layerMap[p.number];
+          selectNavarea(p, targetLayer);
+          if (targetLayer) {
+            targetLayer.openPopup();
+          }
+        });
+
+        container.appendChild(item);
+      });
+    }
+
+    // Search / Filter
+    document.getElementById('search-box').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const items = document.querySelectorAll('.area-item');
+      let count = 0;
+
+      geojsonData.features.forEach(f => {
+        const p = f.properties;
+        const match = p.code.toLowerCase().includes(query) ||
+                      p.name.toLowerCase().includes(query) ||
+                      p.coordinator_country.toLowerCase().includes(query) ||
+                      p.ocean.toLowerCase().includes(query);
+
+        const el = document.getElementById('item-' + p.number);
+        if (el) {
+          el.style.display = match ? 'flex' : 'none';
+          if (match) count++;
+        }
+      });
+      document.getElementById('area-count').textContent = count + ' Wilayah';
+    });
+
+    // Point-in-Polygon Ray Casting algorithm
+    function isPointInPolygon(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function findNavareaByCoords(lng, lat) {
+      if (!geojsonData) return null;
+      for (const feat of geojsonData.features) {
+        const geom = feat.geometry;
+        if (geom.type === 'Polygon') {
+          if (isPointInPolygon([lng, lat], geom.coordinates[0])) {
+            return feat.properties;
+          }
+        } else if (geom.type === 'MultiPolygon') {
+          for (const poly of geom.coordinates) {
+            if (isPointInPolygon([lng, lat], poly[0])) {
+              return feat.properties;
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    // Coordinate Lookup Trigger
+    function handleCoordLookup(lat, lng) {
+      if (isNaN(lat) || isNaN(lng)) {
+        alert('Masukkan angka koordinat Latitude dan Longitude yang valid!');
+        return;
+      }
+
+      const resBox = document.getElementById('lookup-result');
+      resBox.style.display = 'block';
+
+      // Drop Vessel Marker
+      if (vesselMarker) map.removeLayer(vesselMarker);
+      
+      const shipIcon = L.divIcon({
+        className: 'ship-icon',
+        html: `<div style="background:#ef4444; width:14px; height:14px; border:2px solid #fff; border-radius:50%; box-shadow:0 0 8px #ef4444;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      vesselMarker = L.marker([lat, lng], { icon: shipIcon }).addTo(map);
+
+      const found = findNavareaByCoords(lng, lat);
+      if (found) {
+        resBox.innerHTML = `📍 <b>Koordinat [${lat.toFixed(4)}, ${lng.toFixed(4)}]</b>:<br><span style="color:#38bdf8; font-weight:700;">${found.code}</span> (${found.coordinator_country})<br><small>${found.coordinator_authority}</small>`;
+        vesselMarker.bindPopup(`<b>Posisi Kapal</b><br>Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}<br>Wilayah: <b>${found.code}</b>`).openPopup();
+        selectNavarea(found, layerMap[found.number]);
+      } else {
+        resBox.innerHTML = `📍 <b>Koordinat [${lat.toFixed(4)}, ${lng.toFixed(4)}]</b>:<br><span style="color:#f59e0b;">Di daratan / di luar batas perairan aktif NAVAREA.</span>`;
+        vesselMarker.bindPopup(`<b>Posisi Titik</b><br>Lat: ${lat.toFixed(4)}, Lon: ${lng.toFixed(4)}<br>Di luar batas perairan NAVAREA`).openPopup();
+        map.setView([lat, lng], 5);
+      }
+    }
+
+    document.getElementById('btn-lookup').addEventListener('click', () => {
+      const lat = parseFloat(document.getElementById('input-lat').value);
+      const lng = parseFloat(document.getElementById('input-lng').value);
+      handleCoordLookup(lat, lng);
+    });
+
+    // Map Click to lookup coordinates directly
+    map.on('click', (e) => {
+      document.getElementById('input-lat').value = e.latlng.lat.toFixed(4);
+      document.getElementById('input-lng').value = e.latlng.lng.toFixed(4);
+      handleCoordLookup(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Live Cursor Tracker
+    map.on('mousemove', (e) => {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      const latDir = lat >= 0 ? 'N' : 'S';
+      const lngDir = lng >= 0 ? 'E' : 'W';
+      document.getElementById('coord-display').textContent = 
+        `${Math.abs(lat).toFixed(4)}° ${latDir}, ${Math.abs(lng).toFixed(4)}° ${lngDir}`;
+    });
+
+    // Reset View Button
+    document.getElementById('btn-reset-view').addEventListener('click', () => {
+      map.setView([15, 10], 3);
+      document.getElementById('detail-card').style.display = 'none';
+      document.querySelectorAll('.area-item').forEach(el => el.classList.remove('active'));
+      if (vesselMarker) map.removeLayer(vesselMarker);
+      document.getElementById('lookup-result').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
