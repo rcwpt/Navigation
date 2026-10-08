@@ -1961,7 +1961,8 @@ function loadRouteFromFile(file) {
       const parsed = RouteConverter.parseAny(content, file.name);
       if (parsed && parsed.waypoints && parsed.waypoints.length > 0) {
         processRoute(parsed.routeName, parsed.waypoints);
-        document.getElementById('sb-status-badge').innerText = `${parsed.waypoints.length} WPTs Loaded`;
+        const sbBadge = document.getElementById('sb-status-badge');
+        if (sbBadge) sbBadge.innerText = `${parsed.waypoints.length} WPTs Loaded`;
       } else {
         alert(`Could not extract waypoints from "${file.name}". Please ensure it is a recognized format.`);
       }
@@ -2129,13 +2130,20 @@ function processRoute(routeName, waypoints) {
   STATE.waypoints = RouteConverter.recalculateRoute(waypoints);
 
   const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
-  document.getElementById('route-name-disp').innerText = STATE.routeName;
-  document.getElementById('route-wpt-count').innerText = STATE.waypoints.length;
-  document.getElementById('route-dist-count').innerText = totalDist.toFixed(2) + ' NM';
-  document.getElementById('route-format-tag').innerText = 'LOADED';
-  document.getElementById('map-overlay-title').innerText = STATE.routeName;
-  document.getElementById('map-overlay-sub').innerText = `${STATE.waypoints.length} WPTs • ${totalDist.toFixed(2)} NM`;
-  document.getElementById('topbar-summary-text').innerText = `${STATE.routeName}: ${STATE.waypoints.length} WPTs, ${totalDist.toFixed(1)} NM`;
+  const rNameEl = document.getElementById('route-name-disp');
+  if (rNameEl) rNameEl.innerText = STATE.routeName;
+  const rWptEl = document.getElementById('route-wpt-count');
+  if (rWptEl) rWptEl.innerText = STATE.waypoints.length;
+  const rDistEl = document.getElementById('route-dist-count');
+  if (rDistEl) rDistEl.innerText = totalDist.toFixed(2) + ' NM';
+  const rFmtEl = document.getElementById('route-format-tag');
+  if (rFmtEl) rFmtEl.innerText = 'LOADED';
+  const mTitleEl = document.getElementById('map-overlay-title');
+  if (mTitleEl) mTitleEl.innerText = STATE.routeName;
+  const mSubEl = document.getElementById('map-overlay-sub');
+  if (mSubEl) mSubEl.innerText = `${STATE.waypoints.length} WPTs • ${totalDist.toFixed(2)} NM`;
+  const topSumEl = document.getElementById('topbar-summary-text');
+  if (topSumEl) topSumEl.innerText = `${STATE.routeName}: ${STATE.waypoints.length} WPTs, ${totalDist.toFixed(1)} NM`;
 
   // 1. Scan NAVAREAs
   const navareas = PassageIntelligence.scanNavareas(STATE.waypoints);
@@ -2193,47 +2201,70 @@ function updateSidebarIntelUI() {
   const arrPort = ports.arr;
   const depDist = depPort ? (depPort.distanceNM != null ? depPort.distanceNM : depPort.distanceNm) : null;
   const arrDist = arrPort ? (arrPort.distanceNM != null ? arrPort.distanceNM : arrPort.distanceNm) : null;
-  document.getElementById('intel-dep-port').innerText = depPort?.name ? `${depPort.name}${depPort.country ? ' (' + depPort.country + ')' : ''}` : '-';
-  document.getElementById('intel-dep-dist').innerText = depDist != null ? `${depDist.toFixed(1)} NM from WP1` : (depPort?.code ? `UNLOCODE: ${depPort.code}` : '-');
-  document.getElementById('intel-arr-port').innerText = arrPort?.name ? `${arrPort.name}${arrPort.country ? ' (' + arrPort.country + ')' : ''}` : '-';
-  document.getElementById('intel-arr-dist').innerText = arrDist != null ? `${arrDist.toFixed(1)} NM from End` : (arrPort?.code ? `UNLOCODE: ${arrPort.code}` : '-');
+  const intDep = document.getElementById('intel-dep-port');
+  if (intDep) intDep.innerText = depPort?.name ? `${depPort.name}${depPort.country ? ' (' + depPort.country + ')' : ''}` : '-';
+  const intDepDist = document.getElementById('intel-dep-dist');
+  if (intDepDist) intDepDist.innerText = depDist != null ? `${depDist.toFixed(1)} NM from WP1` : (depPort?.code ? `UNLOCODE: ${depPort.code}` : '-');
+  const intArr = document.getElementById('intel-arr-port');
+  if (intArr) intArr.innerText = arrPort?.name ? `${arrPort.name}${arrPort.country ? ' (' + arrPort.country + ')' : ''}` : '-';
+  const intArrDist = document.getElementById('intel-arr-dist');
+  if (intArrDist) intArrDist.innerText = arrDist != null ? `${arrDist.toFixed(1)} NM from End` : (arrPort?.code ? `UNLOCODE: ${arrPort.code}` : '-');
 
   // NAVAREAs
   const navList = document.getElementById('intel-navarea-list');
-  navList.innerHTML = '';
-  document.getElementById('intel-navarea-count').innerText = `${navareas.length} Traversed`;
-  if (navareas.length === 0) {
-    navList.innerHTML = '<span class="text-xs text-slate-400 italic">None detected</span>';
-  } else {
-    navareas.forEach(n => {
-      const div = document.createElement('div');
-      div.className = 'text-xs bg-slate-50 border border-slate-200 rounded p-1.5 flex justify-between items-center';
-      div.innerHTML = `<span class="font-bold text-slate-800">${n.code} (${n.name})</span><span class="text-[10px] text-slate-500 font-mono">${n.firstWpt} ➔ ${n.lastWpt}</span>`;
-      navList.appendChild(div);
-    });
+  if (navList) navList.innerHTML = '';
+  const navCount = document.getElementById('intel-navarea-count');
+  if (navCount) navCount.innerText = `${navareas.length} Traversed`;
+  if (navList) {
+    if (navareas.length === 0) {
+      navList.innerHTML = '<span class="text-xs text-slate-400 italic">None detected</span>';
+    } else {
+      navareas.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'text-xs bg-slate-50 border border-slate-200 rounded p-1.5 flex justify-between items-center';
+        div.innerHTML = `<span class="font-bold text-slate-800">${n.code} (${n.name})</span><span class="text-[10px] text-slate-500 font-mono">${n.firstWpt} ➔ ${n.lastWpt}</span>`;
+        navList.appendChild(div);
+      });
+    }
   }
 
   // War Risk
   const warList = document.getElementById('intel-war-list');
-  warList.innerHTML = '';
+  if (warList) warList.innerHTML = '';
   const warTraversed = p2p?.warZonesTraversed || [];
-  document.getElementById('intel-war-count').innerText = `${warTraversed.length} Active`;
-  if (warTraversed.length === 0) {
-    warList.innerHTML = '<span class="text-xs text-slate-400 italic">No War Risk Areas enroute</span>';
-  } else {
-    warTraversed.forEach(w => {
-      const div = document.createElement('div');
-      div.className = 'text-xs bg-rose-50 border border-rose-200 text-rose-800 rounded p-1.5 font-bold flex items-center gap-1.5';
-      div.innerHTML = `<span>⚠️</span> <span>${w}</span>`;
-      warList.appendChild(div);
-    });
+  const warCount = document.getElementById('intel-war-count');
+  if (warCount) warCount.innerText = `${warTraversed.length} Active`;
+  if (warList) {
+    if (warTraversed.length === 0) {
+      warList.innerHTML = '<span class="text-xs text-slate-400 italic">No War Risk Areas enroute</span>';
+    } else {
+      warTraversed.forEach(w => {
+        const div = document.createElement('div');
+        div.className = 'text-xs bg-rose-50 border border-rose-200 text-rose-800 rounded p-1.5 font-bold flex items-center gap-1.5';
+        div.innerHTML = `<span>⚠️</span> <span>${w}</span>`;
+        warList.appendChild(div);
+      });
+    }
   }
 
   // ECA
   const ecaList = document.getElementById('intel-eca-list');
-  ecaList.innerHTML = '';
+  if (ecaList) ecaList.innerHTML = '';
   const ecaTraversed = p2p?.ecaZonesTraversed || [];
-  document.getElementById('intel-eca-dist').innerText = `${(p2p?.ecaDistance || 0).toFixed(1)} NM`;
+  const ecaDist = document.getElementById('intel-eca-dist');
+  if (ecaDist) ecaDist.innerText = `${(p2p?.ecaDistance || 0).toFixed(1)} NM`;
+  if (ecaList) {
+    if (ecaTraversed.length === 0) {
+      ecaList.innerHTML = '<span class="text-xs text-slate-400 italic">No ECA waters enroute</span>';
+    } else {
+      ecaTraversed.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded p-1.5 font-semibold flex items-center gap-1.5';
+        div.innerHTML = `<span>🌿</span> <span>${e}</span>`;
+        ecaList.appendChild(div);
+      });
+    }
+  }
   if (ecaTraversed.length === 0) {
     ecaList.innerHTML = '<span class="text-xs text-slate-400 italic">No ECA waters enroute</span>';
   } else {
@@ -2655,20 +2686,17 @@ function renderReportDocument() {
   const rptAtt = document.getElementById('rpt-att');
   if (rptAtt) rptAtt.innerText = pubs?.tideTables?.length ? pubs.tideTables.map(t => t.code).join(', ') : 'None';
 
-  // Squat & UKC Analysis Card (Page 1)
-  if (squatUkc && squatUkc.vessel && hasDimensions) {
-    document.getElementById('rpt-cb').innerText = `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}`;
-    document.getElementById('rpt-sq-shallow').innerText = `${squatUkc.squatShallow.toFixed(2)} m`;
-    document.getElementById('rpt-sq-opensea').innerText = `${squatUkc.squatOpenSea.toFixed(2)} m`;
-    document.getElementById('rpt-max-draft').innerText = `${squatUkc.vessel.maxDraft.toFixed(2)} m`;
-    document.getElementById('rpt-water-depth').innerText = `${squatUkc.totalWaterDepth.toFixed(1)} m`;
-  } else {
-    document.getElementById('rpt-cb').innerText = `Cb = -`;
-    document.getElementById('rpt-sq-shallow').innerText = `-`;
-    document.getElementById('rpt-sq-opensea').innerText = `-`;
-    document.getElementById('rpt-max-draft').innerText = `-`;
-    document.getElementById('rpt-water-depth').innerText = `-`;
-  }
+  // Optional legacy squat indicators if present
+  const rptCb = document.getElementById('rpt-cb');
+  if (rptCb) rptCb.innerText = squatUkc?.vessel?.blockCoefficient ? `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}` : 'Cb = -';
+  const rptSqSh = document.getElementById('rpt-sq-shallow');
+  if (rptSqSh) rptSqSh.innerText = squatUkc ? `${squatUkc.squatShallow.toFixed(2)} m` : '-';
+  const rptSqOp = document.getElementById('rpt-sq-opensea');
+  if (rptSqOp) rptSqOp.innerText = squatUkc ? `${squatUkc.squatOpenSea.toFixed(2)} m` : '-';
+  const rptMaxD = document.getElementById('rpt-max-draft');
+  if (rptMaxD) rptMaxD.innerText = squatUkc?.vessel?.maxDraft ? `${squatUkc.vessel.maxDraft.toFixed(2)} m` : '-';
+  const rptWd = document.getElementById('rpt-water-depth');
+  if (rptWd) rptWd.innerText = squatUkc ? `${squatUkc.totalWaterDepth.toFixed(1)} m` : '-';
 
   // VPF Table Rows (Page 1)
   const tbody = document.getElementById('rpt-vpf-tbody');
