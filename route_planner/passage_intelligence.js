@@ -191,6 +191,38 @@
     const seenEca = new Set(), seenWar = new Set(), seenPiracy = new Set();
     const seenMarpol = new Set(), seenLoad = new Set(), seenTss = new Set();
     const seenAsl = new Set(), seenAtba = new Set(), seenPssa = new Set(), seenSra = new Set();
+    const seenWaters = new Set();
+
+    const MARITIME_SEAS = [
+      { name: 'East China Sea', minLat: 24.5, maxLat: 33.5, minLon: 119.5, maxLon: 129.0 },
+      { name: 'Taiwan Strait', minLat: 22.0, maxLat: 26.0, minLon: 118.0, maxLon: 121.5 },
+      { name: 'Luzon Strait', minLat: 19.0, maxLat: 22.0, minLon: 120.0, maxLon: 123.0 },
+      { name: 'Philippine Sea', minLat: 5.0, maxLat: 25.0, minLon: 122.0, maxLon: 142.0 },
+      { name: 'South China Sea', minLat: 0.0, maxLat: 23.0, minLon: 105.0, maxLon: 121.0 },
+      { name: 'Bismarck Sea', minLat: -5.5, maxLat: -1.0, minLon: 143.0, maxLon: 152.0 },
+      { name: 'Solomon Sea', minLat: -10.5, maxLat: -4.5, minLon: 148.0, maxLon: 158.0 },
+      { name: 'Gulf of Papua', minLat: -11.5, maxLat: -8.0, minLon: 143.0, maxLon: 148.5 },
+      { name: 'Coral Sea', minLat: -25.0, maxLat: -10.0, minLon: 145.0, maxLon: 160.0 },
+      { name: 'Java Sea', minLat: -7.5, maxLat: -3.0, minLon: 106.0, maxLon: 116.5 },
+      { name: 'Banda Sea', minLat: -7.0, maxLat: -3.0, minLon: 125.0, maxLon: 132.5 },
+      { name: 'Timor Sea', minLat: -13.0, maxLat: -8.0, minLon: 123.0, maxLon: 132.0 },
+      { name: 'Arafura Sea', minLat: -11.5, maxLat: -7.5, minLon: 132.0, maxLon: 141.0 },
+      { name: 'Strait of Malacca', minLat: 1.0, maxLat: 6.0, minLon: 98.0, maxLon: 104.0 },
+      { name: 'Singapore Strait', minLat: 1.1, maxLat: 1.45, minLon: 103.5, maxLon: 104.5 },
+      { name: 'Sunda Strait', minLat: -6.4, maxLat: -5.6, minLon: 105.3, maxLon: 106.2 },
+      { name: 'Lombok Strait', minLat: -8.9, maxLat: -8.2, minLon: 115.5, maxLon: 116.3 },
+      { name: 'Makassar Strait', minLat: -4.5, maxLat: 1.5, minLon: 116.5, maxLon: 120.0 },
+      { name: 'Yellow Sea / Bohai Sea', minLat: 34.0, maxLat: 40.5, minLon: 118.0, maxLon: 126.5 },
+      { name: 'Sea of Japan / East Sea', minLat: 35.0, maxLat: 47.0, minLon: 128.0, maxLon: 142.0 },
+      { name: 'Bay of Bengal', minLat: 5.0, maxLat: 22.0, minLon: 80.0, maxLon: 95.0 },
+      { name: 'Arabian Sea', minLat: 10.0, maxLat: 25.0, minLon: 55.0, maxLon: 75.0 },
+      { name: 'Red Sea', minLat: 12.0, maxLat: 28.0, minLon: 32.0, maxLon: 44.0 },
+      { name: 'Gulf of Aden', minLat: 11.0, maxLat: 15.0, minLon: 43.0, maxLon: 52.0 },
+      { name: 'North Sea', minLat: 51.0, maxLat: 61.0, minLon: -3.0, maxLon: 9.0 },
+      { name: 'Baltic Sea', minLat: 54.0, maxLat: 65.0, minLon: 10.0, maxLon: 30.0 },
+      { name: 'English Channel', minLat: 49.0, maxLat: 51.5, minLon: -5.5, maxLon: 2.0 },
+      { name: 'Mediterranean Sea', minLat: 30.0, maxLat: 45.0, minLon: -6.0, maxLon: 36.0 }
+    ];
 
     for (let i = 0; i < route.length - 1; i++) {
       const p1 = route[i];
@@ -293,6 +325,13 @@
             break;
           }
         }
+
+        // Regional Seas & Straits Check
+        for (const sea of MARITIME_SEAS) {
+          if (curLat >= sea.minLat && curLat <= sea.maxLat && curLon >= sea.minLon && curLon <= sea.maxLon) {
+            seenWaters.add(sea.name);
+          }
+        }
       }
 
       // Aggregate distances
@@ -328,6 +367,7 @@
     res.avoidedAreas = Array.from(seenAtba);
     res.pssaAreas = Array.from(seenPssa);
     res.sraAreas = Array.from(seenSra);
+    res.maritimeWaters = Array.from(seenWaters);
 
     return res;
   }

@@ -203,41 +203,54 @@
       padding: 24px;
     }
 
-    /* PRINT & REPORT STYLES */
+    /* PRINT & REPORT STYLES (EXACT A4 SCALING) */
+    #view-report {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background: #cbd5e1;
+      display: none;
+      padding: 24px 12px;
+    }
+
     .report-paper {
-      max-width: 1100px;
-      margin: 0 auto;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 28px auto;
       background: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      padding: 32px;
-      color: #1e293b;
+      border-radius: 4px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.18), 0 0 1px rgba(0,0,0,0.1);
+      padding: 12mm 15mm;
+      color: #0f172a;
+      box-sizing: border-box;
+      position: relative;
     }
 
     .vpf-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10px;
+      font-size: 9.5px;
     }
     .vpf-table th, .vpf-table td {
       border: 1px solid #cbd5e1;
-      padding: 4px 6px;
+      padding: 4px 5px;
       text-align: left;
     }
     .vpf-table th {
-      background: #0f172a;
+      background: #0f2b5c;
       color: #ffffff;
       font-weight: 700;
       text-align: center;
       text-transform: uppercase;
-      font-size: 9px;
-      letter-spacing: 0.4px;
+      font-size: 8.5px;
+      letter-spacing: 0.3px;
     }
     .vpf-row-eca {
-      background-color: #dcfce7 !important;
+      background-color: #ecfdf5 !important;
     }
     .vpf-row-war {
-      background-color: #fee2e2 !important;
+      background-color: #fef2f2 !important;
     }
 
     /* MAP HUD & BADGES */
@@ -285,8 +298,12 @@
       margin-bottom: 4px;
     }
 
-    /* PRINT SPECIFIC STYLES */
+    /* PRINT SPECIFIC STYLES (A4 PORTRAIT) */
     @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm 8mm 8mm 8mm;
+      }
       body, html {
         height: auto !important;
         overflow: visible !important;
@@ -308,26 +325,43 @@
         background: #ffffff !important;
       }
       .report-paper {
-        max-width: 100% !important;
+        width: 100% !important;
+        min-height: initial !important;
         box-shadow: none !important;
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 0 15mm 0 !important;
+        border-radius: 0 !important;
+        page-break-after: always;
+        break-after: page;
+      }
+      .report-paper:last-child {
+        page-break-after: auto;
+        break-after: auto;
+        margin-bottom: 0 !important;
+      }
+      .report-page-break {
+        page-break-before: always;
+        break-before: page;
       }
       .vpf-table th {
-        background: #1e293b !important;
+        background: #0f2b5c !important;
         color: #ffffff !important;
         -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .vpf-row-eca {
-        background-color: #dcfce7 !important;
+        background-color: #ecfdf5 !important;
         -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .vpf-row-war {
-        background-color: #fee2e2 !important;
+        background-color: #fef2f2 !important;
         -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
-      .page-break {
-        page-break-before: always;
+      #doc-map-inner {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
     }
 
@@ -389,18 +423,6 @@
         </div>
       </div>
 
-      <!-- QUICK PRESET VOYAGES -->
-      <div class="bg-slate-100 p-2.5 rounded-lg text-xs space-y-2">
-        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">⚡ Quick Preset Voyages:</span>
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <button id="btn-load-user-rtz" onclick="loadUserVoyage()" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold text-[10px] px-2.5 py-1 rounded transition shadow-xs flex items-center gap-1">
-            <span>🚢</span> CNTZO - PGPOM Weather (99 WPT)
-          </button>
-          <button id="btn-load-sample" onclick="loadSampleVoyage()" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold text-[10px] px-2.5 py-1 rounded transition shadow-xs flex items-center gap-1">
-            <span>🧭</span> CNZOS - PGPOM (TW-PH 59 WPT)
-          </button>
-        </div>
-      </div>
 
       <!-- ACTIVE ROUTE SUMMARY -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
@@ -550,21 +572,62 @@
 
     <!-- TAB 3: ENROUTE INTELLIGENCE -->
     <div class="tab-pane flex-1 overflow-y-auto p-4 space-y-4" id="tab-intel">
-      <!-- PORTS IDENTIFIED -->
-      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
-        <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-          <span>⚓</span> Terminal / Port Intelligence
-        </span>
-        <div class="grid grid-cols-2 gap-2 text-xs">
+      <!-- PORTS IDENTIFIED & DERIVATION MODE -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+            <span>⚓</span> Terminal / Port Intelligence
+          </span>
+          <div class="flex items-center bg-slate-100 p-0.5 rounded text-[10px] font-semibold">
+            <button type="button" id="btn-pmode-auto" onclick="setPortSelectionMode('auto')" class="px-2 py-0.5 rounded bg-sky-600 text-white shadow-xs">Auto WPT</button>
+            <button type="button" id="btn-pmode-unlocode" onclick="setPortSelectionMode('unlocode')" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">UNLOCODE</button>
+            <button type="button" id="btn-pmode-manual" onclick="setPortSelectionMode('manual')" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900">Manual</button>
+          </div>
+        </div>
+
+        <!-- Mode 1: Auto Nearest Preview -->
+        <div id="port-panel-auto" class="grid grid-cols-2 gap-2 text-xs">
           <div class="bg-slate-50 p-2 rounded border border-slate-200">
-            <div class="text-[10px] text-slate-500 font-bold uppercase">Departure Port</div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Departure (Nearest WPT 1)</div>
             <div class="font-bold text-slate-800 text-xs truncate" id="intel-dep-port">-</div>
-            <div class="text-[10px] text-slate-500" id="intel-dep-dist">-</div>
+            <div class="text-[10px] text-slate-500 font-mono" id="intel-dep-dist">-</div>
           </div>
           <div class="bg-slate-50 p-2 rounded border border-slate-200">
-            <div class="text-[10px] text-slate-500 font-bold uppercase">Arrival Port</div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Arrival (Nearest End)</div>
             <div class="font-bold text-slate-800 text-xs truncate" id="intel-arr-port">-</div>
-            <div class="text-[10px] text-slate-500" id="intel-arr-dist">-</div>
+            <div class="text-[10px] text-slate-500 font-mono" id="intel-arr-dist">-</div>
+          </div>
+        </div>
+
+        <!-- Mode 2: UNLOCODE Input & Resolution -->
+        <div id="port-panel-unlocode" class="space-y-2 hidden">
+          <p class="text-[10px] text-slate-500">Auto-extracted from route name or input 5-letter UN/LOCODE (e.g. CNSHG, PGPOM, SGSIN):</p>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-blue-50/50 p-2 rounded border border-blue-200 space-y-1">
+              <label class="text-[10px] font-bold text-blue-900 uppercase block">Dep UNLOCODE</label>
+              <input type="text" id="in-dep-unlocode" maxlength="5" placeholder="e.g. CNTZO" oninput="handlePortUnlocodeChange()" class="w-full uppercase font-mono font-bold text-xs border border-blue-300 rounded px-1.5 py-0.5 bg-white text-slate-800">
+              <div class="text-[10px] font-bold text-blue-800 truncate" id="disp-unlocode-dep-name">-</div>
+            </div>
+            <div class="bg-emerald-50/50 p-2 rounded border border-emerald-200 space-y-1">
+              <label class="text-[10px] font-bold text-emerald-900 uppercase block">Arr UNLOCODE</label>
+              <input type="text" id="in-arr-unlocode" maxlength="5" placeholder="e.g. PGPOM" oninput="handlePortUnlocodeChange()" class="w-full uppercase font-mono font-bold text-xs border border-emerald-300 rounded px-1.5 py-0.5 bg-white text-slate-800">
+              <div class="text-[10px] font-bold text-emerald-800 truncate" id="disp-unlocode-arr-name">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode 3: Manual Port Name Input -->
+        <div id="port-panel-manual" class="space-y-2 hidden">
+          <p class="text-[10px] text-slate-500">Enter custom terminal/port names for departure and arrival:</p>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-600 uppercase block">Dep Port Name</label>
+              <input type="text" id="in-dep-manual" placeholder="e.g. Taizhou, China" oninput="handlePortManualChange()" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-600 uppercase block">Arr Port Name</label>
+              <input type="text" id="in-arr-manual" placeholder="e.g. Port Moresby, PNG" oninput="handlePortManualChange()" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+            </div>
           </div>
         </div>
       </div>
@@ -786,148 +849,91 @@
       </div>
     </div>
 
-    <!-- VIEW PANE 2: PASSAGE REPORT & VPF TABLE (PDF EXPORTABLE) -->
+    <!-- VIEW PANE 2: PASSAGE REPORT & VPF TABLE (PDF EXPORTABLE A4 PAPER) -->
     <div id="view-report">
-      <div class="report-paper space-y-6">
+      <!-- A4 PAGE 1: VOYAGE PARTICULARS & VPF WAYPOINT EXECUTION TABLE -->
+      <div class="report-paper space-y-4" id="report-page-1">
         <!-- REPORT HEADER (SOLAS / IMO AUDIT READY) -->
-        <div class="border-b-2 border-slate-800 pb-4">
+        <div class="border-b-2 border-amber-500 pb-3">
           <div class="flex justify-between items-start">
-            <div>
-              <div class="text-xs uppercase font-extrabold tracking-widest text-slate-500">Bridge Navigation System</div>
-              <h1 class="text-xl font-black text-slate-900 tracking-tight">VOYAGE PASSAGE PLAN & ROUTE INTELLIGENCE</h1>
-              <p class="text-xs text-slate-600 font-medium">Compliance: IMO Res. A.893(21) • SOLAS V Reg 34 • STCW Sect. A-VIII/2</p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-slate-900 text-sky-400 flex items-center justify-center text-xl shadow-inner border border-sky-500/30">
+                ⚓
+              </div>
+              <div>
+                <div class="text-[9.5px] uppercase font-black tracking-widest text-blue-900">Bridge Navigation & Route Intelligence</div>
+                <h1 class="text-base font-black text-slate-900 tracking-tight leading-tight">OFFICIAL PASSAGE & VOYAGE REPORT</h1>
+                <p class="text-[9.5px] text-slate-600 font-medium">Compliance: IMO Res. A.893(21) • SOLAS V Reg 34 • STCW Sect. A-VIII/2</p>
+              </div>
             </div>
             <div class="text-right">
-              <span class="inline-block px-3 py-1 bg-slate-900 text-white font-mono font-bold text-xs rounded">
-                SIR-099 REPLICA
+              <span class="inline-block px-2.5 py-0.5 bg-blue-950 text-blue-200 font-mono font-bold text-[9.5px] rounded border border-blue-800">
+                IMO AUDIT READY
               </span>
-              <div class="text-[11px] text-slate-500 mt-1 font-mono" id="rpt-date-disp">Date: --</div>
+              <div class="text-[9.5px] text-slate-500 mt-1 font-mono" id="rpt-date-disp">Date: --</div>
             </div>
           </div>
         </div>
 
         <!-- VOYAGE & VESSEL METRICS SUMMARY -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Vessel Name</span>
-            <strong class="text-slate-800 font-bold text-sm" id="rpt-vessel-name">PROSPERA</strong>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+          <div class="bg-white p-2 rounded border border-slate-200/60 shadow-xs">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Vessel Name</span>
+            <strong class="text-slate-800 font-bold text-xs truncate block" id="rpt-vessel-name">-</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Voyage Number</span>
-            <strong class="text-slate-800 font-bold text-sm" id="rpt-voyage-no">-</strong>
+          <div class="bg-white p-2 rounded border border-slate-200/60 shadow-xs">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Voyage Number</span>
+            <strong class="text-slate-800 font-bold text-xs truncate block" id="rpt-voyage-no">-</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Departure Port</span>
-            <strong class="text-slate-800 text-sm truncate block" id="rpt-dep-port">-</strong>
+          <div class="bg-white p-2 rounded border border-emerald-200 shadow-xs">
+            <span class="text-[9px] font-bold text-emerald-700 uppercase block">Departure Port</span>
+            <strong class="text-slate-800 text-xs truncate block" id="rpt-dep-port">-</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Arrival Port</span>
-            <strong class="text-slate-800 text-sm truncate block" id="rpt-arr-port">-</strong>
+          <div class="bg-white p-2 rounded border border-rose-200 shadow-xs">
+            <span class="text-[9px] font-bold text-rose-700 uppercase block">Arrival Port</span>
+            <strong class="text-slate-800 text-xs truncate block" id="rpt-arr-port">-</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Dimensions (L × B)</span>
-            <strong class="text-slate-800 font-mono" id="rpt-dim">137.8 × 22.0 m</strong>
+          <div class="bg-white p-2 rounded border border-slate-200/60 shadow-xs">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Dimensions (L × B)</span>
+            <strong class="text-slate-800 font-mono text-xs" id="rpt-dim">-</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Max Draft (F / A)</span>
-            <strong class="text-slate-800 font-mono" id="rpt-draft">7.20 / 7.80 m</strong>
+          <div class="bg-white p-2 rounded border border-slate-200/60 shadow-xs">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Max Draft (F / A)</span>
+            <strong class="text-slate-800 font-mono text-xs" id="rpt-draft">-</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Total Route Distance</span>
-            <strong class="text-blue-600 font-mono text-sm" id="rpt-total-dist">0.0 NM</strong>
+          <div class="bg-white p-2 rounded border border-blue-200 shadow-xs">
+            <span class="text-[9px] font-bold text-blue-700 uppercase block">Total Route Distance</span>
+            <strong class="text-blue-700 font-mono text-xs" id="rpt-total-dist">0.00 NM</strong>
           </div>
-          <div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase block">Service Speed</span>
-            <strong class="text-slate-800 font-mono" id="rpt-speed">12.0 kts</strong>
-          </div>
-        </div>
-
-        <!-- MARITIME SPATIAL INTELLIGENCE SUMMARY -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <!-- ZONES & NAVAREAS CARD -->
-          <div class="border border-slate-300 rounded p-3 bg-white space-y-2">
-            <div class="font-bold text-slate-900 border-b pb-1 flex items-center justify-between">
-              <span>🌐 NAVAREAs & Security Zones</span>
-              <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">WWNWS / IMO</span>
-            </div>
-            <div class="space-y-1.5 text-[11px]">
-              <div>
-                <span class="font-semibold text-slate-600">NAVAREAs Traversed:</span>
-                <span class="font-bold text-slate-900 ml-1" id="rpt-navareas">-</span>
-              </div>
-              <div>
-                <span class="font-semibold text-slate-600">Total In-ECA Distance:</span>
-                <span class="font-bold text-emerald-700 font-mono ml-1" id="rpt-eca-dist">0.0 NM</span>
-              </div>
-              <div>
-                <span class="font-semibold text-slate-600">War Risk / High Risk Areas:</span>
-                <span class="font-bold text-rose-700 ml-1" id="rpt-war-zones">None</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ADMIRALTY PUBLICATIONS MANDATORY CARD -->
-          <div class="border border-slate-300 rounded p-3 bg-white space-y-2">
-            <div class="font-bold text-slate-900 border-b pb-1 flex items-center justify-between">
-              <span>📚 Required Admiralty Publications</span>
-              <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">UKHO Coverage</span>
-            </div>
-            <div class="space-y-1.5 text-[11px]">
-              <div>
-                <span class="font-semibold text-slate-600">Sailing Directions (NP):</span>
-                <span class="font-bold text-blue-900 ml-1" id="rpt-pilots">-</span>
-              </div>
-              <div>
-                <span class="font-semibold text-slate-600">List of Lights (ALL):</span>
-                <span class="font-bold text-slate-900 ml-1" id="rpt-lights">-</span>
-              </div>
-              <div>
-                <span class="font-semibold text-slate-600">Radio Signals (ALRS):</span>
-                <span class="font-bold text-slate-900 ml-1" id="rpt-alrs">-</span>
-              </div>
-              <div>
-                <span class="font-semibold text-slate-600">Tide Tables (ATT):</span>
-                <span class="font-bold text-slate-900 ml-1" id="rpt-att">-</span>
-              </div>
-            </div>
+          <div class="bg-white p-2 rounded border border-slate-200/60 shadow-xs">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Service Speed</span>
+            <strong class="text-slate-800 font-mono text-xs" id="rpt-speed">12.0 kts</strong>
           </div>
         </div>
 
-        <!-- SQUAT & UKC CALCULATION SUMMARY CARD -->
-        <div class="border border-slate-300 rounded p-3 bg-slate-50 text-xs space-y-1.5">
-          <div class="flex items-center justify-between border-b border-slate-200 pb-1">
-            <span class="font-bold text-slate-900 uppercase">Under Keel Clearance & Squat Analysis</span>
-            <span class="font-mono font-bold text-blue-700" id="rpt-cb">Cb = 0.840</span>
-          </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-            <div>Shallow Squat: <strong class="text-red-700 font-mono" id="rpt-sq-shallow">2.42 m</strong></div>
-            <div>Open Sea Squat: <strong class="text-amber-700 font-mono" id="rpt-sq-opensea">1.21 m</strong></div>
-            <div>Static Max Draft: <strong class="text-slate-800 font-mono" id="rpt-max-draft">7.80 m</strong></div>
-            <div>Available Depth: <strong class="text-emerald-700 font-mono" id="rpt-water-depth">27.0 m</strong></div>
-          </div>
-        </div>
-
-        <!-- VPF WAYPOINT EXECUTION TABLE -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold text-slate-900 uppercase">Voyage Passage Form (VPF Table)</h3>
-            <span class="text-[10px] text-slate-500 font-semibold italic">* Green rows indicate ECA waters; Pink rows indicate High Risk Areas.</span>
+        <!-- 1. VPF WAYPOINT EXECUTION TABLE -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between border-b border-slate-300 pb-1">
+            <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
+              <span>📋</span> VOYAGE PASSAGE FORM (VPF EXECUTION TABLE)
+            </h3>
+            <span class="text-[9.5px] text-slate-500 font-semibold italic">* Green: ECA Waters • Rose: War Risk Areas • Blue: Berth/Station</span>
           </div>
           <div class="overflow-x-auto">
             <table class="vpf-table" id="rpt-vpf-table">
               <thead>
                 <tr>
-                  <th style="width: 32px;">WPT</th>
+                  <th style="width: 30px;">WPT</th>
                   <th>Name</th>
                   <th>Latitude</th>
                   <th>Longitude</th>
-                  <th style="width: 55px;">Course (°T)</th>
-                  <th style="width: 55px;">Leg (NM)</th>
-                  <th style="width: 65px;">DTG (NM)</th>
-                  <th style="width: 50px;">Speed</th>
-                  <th style="width: 55px;">Squat (m)</th>
-                  <th style="width: 60px;">Fix Int</th>
-                  <th style="width: 85px;">Method</th>
+                  <th style="width: 50px;">Course (°T)</th>
+                  <th style="width: 50px;">Leg (NM)</th>
+                  <th style="width: 60px;">DTG (NM)</th>
+                  <th style="width: 48px;">Speed</th>
+                  <th style="width: 50px;">Squat (m)</th>
+                  <th style="width: 55px;">Fix Int</th>
+                  <th style="width: 75px;">Method</th>
                   <th>Remarks / Nav Notices</th>
                 </tr>
               </thead>
@@ -937,20 +943,161 @@
             </table>
           </div>
         </div>
+      </div>
+
+      <!-- A4 PAGE 2: MAP, SQUAT/UKC, PUBLICATIONS, NAVAREAS & MARITIME WATERS -->
+      <div class="report-paper space-y-4 report-page-break" id="report-page-2">
+        <!-- PAGE 2 HEADER -->
+        <div class="border-b border-slate-300 pb-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-blue-900 font-bold text-xs uppercase tracking-wider">Passage Plan Enroute Analysis</span>
+            <span class="text-[10px] text-slate-400 font-mono">• Section 2 & 3</span>
+          </div>
+          <div class="text-[10px] text-slate-500 font-mono" id="rpt-page2-vessel-ref">-</div>
+        </div>
+
+        <!-- 2. ROUTE OVERVIEW MAP -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+            <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
+              <span>🗺️</span> PASSAGE ROUTE OVERVIEW MAP
+            </h3>
+            <span class="text-[9.5px] text-slate-500 font-mono">WGS84 • Cartographic Scale</span>
+          </div>
+          <div class="border border-slate-300 rounded overflow-hidden bg-slate-100 shadow-xs relative" style="width: 100%; height: 350px;">
+            <div id="doc-map-inner" style="width: 100%; height: 100%;"></div>
+          </div>
+          <div class="text-[9px] text-slate-600 flex justify-between font-medium pt-0.5">
+            <span>* Green: Departure Port | Red: Arrival Port | Emerald: ECA Waters | Crimson: War Risk Area | Blue: Sailing Directions NP</span>
+            <span class="text-slate-400 font-mono">Continuous Antimeridian Cartography</span>
+          </div>
+        </div>
+
+        <!-- 3. SQUAT & UKC CALCULATION SUMMARY CARD -->
+        <div class="border border-slate-300 rounded-lg p-3 bg-slate-50 text-xs space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+            <span class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
+              <span>📐</span> Under Keel Clearance (UKC) & Dynamic Squat Analysis
+            </span>
+            <span class="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200" id="rpt-cb">Cb = -</span>
+          </div>
+          <div class="text-[10px] text-slate-600 font-mono bg-white p-2 rounded border border-slate-200 flex justify-between">
+            <span>Formula (Open Sea): Squat = Cb × (V² / 100)</span>
+            <span>Formula (Shallow/Confined): Squat = 2 × Cb × (V² / 100)</span>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+            <div class="bg-white p-2 rounded border border-rose-200">
+              <span class="text-[9.5px] text-rose-800 font-semibold block">Shallow Squat</span>
+              <strong class="text-rose-700 font-mono text-sm" id="rpt-sq-shallow">-</strong>
+            </div>
+            <div class="bg-white p-2 rounded border border-amber-200">
+              <span class="text-[9.5px] text-amber-800 font-semibold block">Open Sea Squat</span>
+              <strong class="text-amber-700 font-mono text-sm" id="rpt-sq-opensea">-</strong>
+            </div>
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <span class="text-[9.5px] text-slate-600 font-semibold block">Static Max Draft</span>
+              <strong class="text-slate-800 font-mono text-sm" id="rpt-max-draft">-</strong>
+            </div>
+            <div class="bg-white p-2 rounded border border-emerald-200">
+              <span class="text-[9.5px] text-emerald-800 font-semibold block">Available Depth</span>
+              <strong class="text-emerald-700 font-mono text-sm" id="rpt-water-depth">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. MARITIME SPATIAL INTELLIGENCE & PUBLICATIONS REPORT -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <!-- ECA ZONES & DISTANCE -->
+          <div class="border border-emerald-200 rounded-lg p-2.5 bg-emerald-50/30 space-y-1.5">
+            <div class="font-bold text-emerald-950 border-b border-emerald-200 pb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><span>🌿</span> Emission Control Areas (ECA)</span>
+              <span class="text-[9.5px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-bold" id="rpt-eca-dist">0.0 NM</span>
+            </div>
+            <div class="space-y-1 text-[11px]">
+              <div><span class="font-semibold text-slate-600">Active ECA Waters:</span> <span class="font-bold text-emerald-800 ml-1" id="rpt-eca-zones">None</span></div>
+              <div class="text-[9.5px] text-slate-500 italic">* MARPOL Annex VI: Low-sulfur fuel (≤0.10% m/m) changeover mandatory upon entry.</div>
+            </div>
+          </div>
+
+          <!-- NAVAREAs TRAVERSED -->
+          <div class="border border-amber-200 rounded-lg p-2.5 bg-amber-50/30 space-y-1.5">
+            <div class="font-bold text-amber-950 border-b border-amber-200 pb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><span>🌐</span> NAVAREAs Traversed</span>
+              <span class="text-[9.5px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono font-bold">IMO / IHO WWNWS</span>
+            </div>
+            <div class="text-[11px]">
+              <span class="font-semibold text-slate-600">Broadcast Areas:</span>
+              <span class="font-bold text-slate-900 ml-1" id="rpt-navareas">-</span>
+            </div>
+          </div>
+
+          <!-- PERAIRAN & STRAITS / WILAYAH DILALUI -->
+          <div class="border border-blue-200 rounded-lg p-2.5 bg-blue-50/30 space-y-1.5">
+            <div class="font-bold text-blue-950 border-b border-blue-200 pb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><span>🌊</span> Perairan & Wilayah Dilalui</span>
+              <span class="text-[9.5px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono font-bold">Regional Waters</span>
+            </div>
+            <div class="text-[11px]">
+              <span class="font-semibold text-slate-600">Seas & Straits:</span>
+              <span class="font-bold text-blue-900 ml-1" id="rpt-waters-straits">-</span>
+            </div>
+          </div>
+
+          <!-- WAR RISK & SECURITY -->
+          <div class="border border-rose-200 rounded-lg p-2.5 bg-rose-50/30 space-y-1.5">
+            <div class="font-bold text-rose-950 border-b border-rose-200 pb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><span>⚠️</span> War Risk & Security Areas</span>
+              <span class="text-[9.5px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded font-mono font-bold">JWC Listed</span>
+            </div>
+            <div class="text-[11px]">
+              <span class="font-semibold text-slate-600">Perils Areas:</span>
+              <span class="font-bold text-rose-700 ml-1" id="rpt-war-zones">None</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMIRALTY PUBLICATIONS MANDATORY CARD -->
+        <div class="border border-slate-300 rounded-lg p-2.5 bg-white space-y-1.5">
+          <div class="font-bold text-slate-900 border-b border-slate-200 pb-1 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><span>📚</span> Required Admiralty Publications (UKHO Official)</span>
+            <span class="text-[9.5px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-mono">SOLAS Chapter V Coverage</span>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] pt-1">
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-[9.5px] text-blue-700 font-bold uppercase block">Pilots (NP)</span>
+              <span class="font-bold text-slate-800 block truncate" id="rpt-pilots">-</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-[9.5px] text-amber-700 font-bold uppercase block">List of Lights (ALL)</span>
+              <span class="font-bold text-slate-800 block truncate" id="rpt-lights">-</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-[9.5px] text-purple-700 font-bold uppercase block">Radio Signals (ALRS)</span>
+              <span class="font-bold text-slate-800 block truncate" id="rpt-alrs">-</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-[9.5px] text-teal-700 font-bold uppercase block">Tide Tables (ATT)</span>
+              <span class="font-bold text-slate-800 block truncate" id="rpt-att">-</span>
+            </div>
+          </div>
+        </div>
 
         <!-- SIGNATURE BLOCK -->
-        <div class="grid grid-cols-3 gap-6 pt-8 border-t border-slate-300 text-center text-xs">
+        <div class="grid grid-cols-3 gap-6 pt-6 border-t-2 border-slate-300 text-center text-xs">
           <div>
-            <div class="h-12 border-b border-dashed border-slate-400"></div>
+            <div class="h-10 border-b border-dashed border-slate-400"></div>
             <div class="font-bold text-slate-900 mt-1">Prepared by Navigating Officer (2/O)</div>
+            <div class="text-[9.5px] text-slate-500">Routeing & Appraisal</div>
           </div>
           <div>
-            <div class="h-12 border-b border-dashed border-slate-400"></div>
+            <div class="h-10 border-b border-dashed border-slate-400"></div>
             <div class="font-bold text-slate-900 mt-1">Checked by Chief Officer (C/O)</div>
+            <div class="text-[9.5px] text-slate-500">Navigation & Safety Audit</div>
           </div>
           <div>
-            <div class="h-12 border-b border-dashed border-slate-400"></div>
+            <div class="h-10 border-b border-dashed border-slate-400"></div>
             <div class="font-bold text-slate-900 mt-1">Approved by Master</div>
+            <div class="text-[9.5px] text-slate-500">Commanding Officer</div>
           </div>
         </div>
       </div>
@@ -965,6 +1112,11 @@ window.STATE = {
   routeName: 'NO ROUTE',
   waypoints: [],
   currentView: 'map',
+  portMode: 'auto', // 'auto', 'unlocode', 'manual'
+  portsOverride: {
+    dep: null,
+    arr: null
+  },
   vessel: {
     name: '',
     voyageNo: '',
@@ -987,6 +1139,184 @@ window.STATE = {
     squatUkc: null
   }
 };
+
+// --- UNLOCODE DICTIONARY & PORT INTELLIGENCE HELPERS ---
+const UNLOCODE_LOOKUP = {
+  // China
+  "CNZOS": "Zhoushan", "CNSHG": "Shanghai", "CNNGB": "Ningbo", "CNQDG": "Qingdao",
+  "CNTNJ": "Tianjin", "CNDAL": "Dalian", "CNXMN": "Xiamen", "CNGZG": "Guangzhou",
+  "CNSZX": "Shenzhen", "CNYTN": "Yantian", "CNFOC": "Fuzhou", "CNLYG": "Lianyungang",
+  "CNTSN": "Tangshan", "CNJNZ": "Jinzhou", "CNYNT": "Yantai", "CNZHA": "Zhanjiang",
+  "CNHUA": "Huanghua", "CNTAG": "Taicang", "CNNTG": "Nantong", "CNJXN": "Jiaxing",
+  "CNTXG": "Taizhou", "CNTZO": "Taizhou", "CNWNZ": "Wenzhou", "CNZPU": "Zhapu", "CNJGT": "Jiangyin",
+  // Papua New Guinea
+  "PGPOM": "Port Moresby", "PGLAE": "Lae", "PGRAW": "Rabaul", "PGMAS": "Madang",
+  "PGKIM": "Kimbe", "PGALU": "Alotau", "PGKAV": "Kavieng", "PGWAK": "Wewak",
+  "PGVAI": "Vanimo", "PGORO": "Oro Bay",
+  // Taiwan
+  "TWKHH": "Kaohsiung", "TWKEL": "Keelung", "TWTPE": "Taipei", "TWTXG": "Taichung",
+  "TWSUO": "Suao", "TWHUN": "Hualien", "TWMPO": "Mailiao",
+  // Philippines
+  "PHMNL": "Manila", "PHCEB": "Cebu", "PHBAT": "Batangas", "PHDVO": "Davao",
+  "PHCGY": "Cagayan de Oro", "PHSFS": "Subic Bay", "PHGLG": "General Santos", "PHZAM": "Zamboanga",
+  // Singapore & Malaysia
+  "SGSIN": "Singapore", "MYPKG": "Port Klang", "MYTPP": "Tanjung Pelepas", "MYPEN": "Penang",
+  "MYJHB": "Johor Bahru", "MYBTU": "Bintulu", "MYKCH": "Kuching", "MYMYY": "Miri",
+  // Indonesia
+  "IDJKT": "Jakarta", "IDSUB": "Surabaya", "IDBLW": "Belawan", "IDSEM": "Semarang",
+  "IDMAK": "Makassar", "IDBPP": "Balikpapan", "IDBTM": "Batam", "IDPNK": "Pontianak",
+  // Australia
+  "AUBNE": "Brisbane", "AUSYD": "Sydney", "AUMEL": "Melbourne", "AUDAM": "Dampier",
+  "AUPHE": "Port Hedland", "AUFRE": "Fremantle", "AUCNS": "Cairns", "AUTSV": "Townsville",
+  "AUGLA": "Gladstone", "AUDRW": "Darwin", "AUHBA": "Hobart", "AUGVO": "Gove",
+  // Japan & Korea
+  "JPTYO": "Tokyo", "JPYOK": "Yokohama", "JPOSA": "Osaka", "JPKOB": "Kobe",
+  "JPNGO": "Nagoya", "JPCHB": "Chiba", "JPMOJ": "Moji", "JPHKD": "Hakodate",
+  "KRPUS": "Busan", "KRINC": "Incheon", "KRUSN": "Ulsan", "KRKAN": "Gwangyang", "KRPTK": "Pyeongtaek",
+  // Global Major
+  "NLRTM": "Rotterdam", "BEANR": "Antwerp", "DEHAM": "Hamburg", "GBLON": "London",
+  "USNYC": "New York", "USLAX": "Los Angeles", "USLGB": "Long Beach", "USHOU": "Houston",
+  "EGPSD": "Port Said", "AEDXB": "Dubai", "SAJED": "Jeddah", "ZADUR": "Durban"
+};
+
+function resolvePortFromUnlocode(code) {
+  if (!code) return null;
+  const upper = code.trim().toUpperCase();
+  if (UNLOCODE_LOOKUP[upper]) {
+    return { code: upper, name: UNLOCODE_LOOKUP[upper], country: '' };
+  }
+  if (window.ADMIRALTY_PUBLICATIONS && Array.isArray(window.ADMIRALTY_PUBLICATIONS.ports)) {
+    const found = window.ADMIRALTY_PUBLICATIONS.ports.find(p => p.unlocode && p.unlocode.toUpperCase() === upper);
+    if (found) {
+      return { code: upper, name: found.name, country: found.country, lat: found.lat, lon: found.lon };
+    }
+  }
+  return { code: upper, name: upper, country: '' };
+}
+
+function setPortSelectionMode(mode) {
+  STATE.portMode = mode;
+  ['auto', 'unlocode', 'manual'].forEach(m => {
+    const btn = document.getElementById('btn-pmode-' + m);
+    const panel = document.getElementById('port-panel-' + m);
+    if (btn) {
+      btn.className = m === mode
+        ? 'px-2 py-0.5 rounded bg-sky-600 text-white shadow-xs'
+        : 'px-2 py-0.5 rounded text-slate-600 hover:text-slate-900';
+    }
+    if (panel) {
+      panel.classList.toggle('hidden', m !== mode);
+    }
+  });
+  updateSidebarIntelUI();
+  renderReportDocument();
+}
+window.setPortSelectionMode = setPortSelectionMode;
+
+function handlePortUnlocodeChange() {
+  const depCode = document.getElementById('in-dep-unlocode')?.value?.trim().toUpperCase();
+  const arrCode = document.getElementById('in-arr-unlocode')?.value?.trim().toUpperCase();
+  const depPort = resolvePortFromUnlocode(depCode);
+  const arrPort = resolvePortFromUnlocode(arrCode);
+
+  const depDisp = document.getElementById('disp-unlocode-dep-name');
+  if (depDisp) depDisp.innerText = depPort ? `${depPort.name} ${depPort.country ? '('+depPort.country+')' : ''}` : '-';
+
+  const arrDisp = document.getElementById('disp-unlocode-arr-name');
+  if (arrDisp) arrDisp.innerText = arrPort ? `${arrPort.name} ${arrPort.country ? '('+arrPort.country+')' : ''}` : '-';
+
+  STATE.portsOverride.dep = depPort;
+  STATE.portsOverride.arr = arrPort;
+
+  updateSidebarIntelUI();
+  renderReportDocument();
+}
+window.handlePortUnlocodeChange = handlePortUnlocodeChange;
+
+function handlePortManualChange() {
+  const depName = document.getElementById('in-dep-manual')?.value?.trim();
+  const arrName = document.getElementById('in-arr-manual')?.value?.trim();
+
+  STATE.portsOverride.dep = depName ? { name: depName, country: '', code: 'MANUAL' } : null;
+  STATE.portsOverride.arr = arrName ? { name: arrName, country: '', code: 'MANUAL' } : null;
+
+  updateSidebarIntelUI();
+  renderReportDocument();
+}
+window.handlePortManualChange = handlePortManualChange;
+
+function getActivePorts() {
+  const mode = STATE.portMode || 'auto';
+  const nearestDep = STATE.spatialResults?.pubs?.nearestDeparturePort;
+  const nearestArr = STATE.spatialResults?.pubs?.nearestArrivalPort;
+
+  if (mode === 'unlocode' && (STATE.portsOverride?.dep || STATE.portsOverride?.arr)) {
+    return {
+      dep: STATE.portsOverride.dep || nearestDep || { name: '-', country: '', distanceNM: 0 },
+      arr: STATE.portsOverride.arr || nearestArr || { name: '-', country: '', distanceNM: 0 }
+    };
+  }
+  if (mode === 'manual' && (STATE.portsOverride?.dep || STATE.portsOverride?.arr)) {
+    return {
+      dep: STATE.portsOverride.dep || nearestDep || { name: '-', country: '', distanceNM: 0 },
+      arr: STATE.portsOverride.arr || nearestArr || { name: '-', country: '', distanceNM: 0 }
+    };
+  }
+  // Default: Auto nearest
+  return {
+    dep: nearestDep || { name: '-', country: '', distanceNM: 0 },
+    arr: nearestArr || { name: '-', country: '', distanceNM: 0 }
+  };
+}
+
+// --- CONTINUOUS ANTIMERIDIAN & WORLD REPLICATION HELPERS ---
+function shiftGeometryCoords(coords, deltaLng) {
+  if (!coords) return coords;
+  if (!Array.isArray(coords)) return coords;
+  if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+    return [coords[0] + deltaLng, coords[1], ...(coords.slice(2))];
+  }
+  return coords.map(c => shiftGeometryCoords(c, deltaLng));
+}
+
+function shiftGeoJsonFeature(feature, deltaLng) {
+  if (!feature || deltaLng === 0) return feature;
+  const clone = JSON.parse(JSON.stringify(feature));
+  if (clone.geometry && clone.geometry.coordinates) {
+    clone.geometry.coordinates = shiftGeometryCoords(clone.geometry.coordinates, deltaLng);
+  }
+  return clone;
+}
+
+function addContinuousGeoJson(targetGroup, feature, options) {
+  if (!targetGroup || !feature) return;
+  [-360, 0, 360].forEach(offset => {
+    const f = offset === 0 ? feature : shiftGeoJsonFeature(feature, offset);
+    L.geoJSON(f, options).addTo(targetGroup);
+  });
+}
+
+function unwrapRouteWaypoints(waypoints) {
+  if (!waypoints || waypoints.length === 0) return [];
+  const res = [];
+  let prevLon = null;
+  let cumShift = 0;
+  for (let i = 0; i < waypoints.length; i++) {
+    const w = waypoints[i];
+    let lon = w.lon;
+    if (prevLon !== null) {
+      const diff = lon - prevLon;
+      if (diff > 180) cumShift -= 360;
+      else if (diff < -180) cumShift += 360;
+    }
+    prevLon = lon;
+    res.push({
+      ...w,
+      unwrappedLon: lon + cumShift
+    });
+  }
+  return res;
+}
 
 // --- LOCALSTORAGE PERSISTENCE FOR VESSEL DATA ---
 const STORAGE_KEY_VESSEL = 'route_planner_vessel_particulars';
@@ -1081,6 +1411,9 @@ function switchView(view) {
     document.getElementById('view-btn-report').classList.add('active');
     document.getElementById('btn-view-icon').innerText = '🗺️';
     document.getElementById('btn-view-label').innerText = 'View Map View';
+    if (typeof initOrUpdateDocMap === 'function') {
+      setTimeout(() => initOrUpdateDocMap(), 150);
+    }
   }
 }
 window.switchView = switchView;
@@ -1322,6 +1655,27 @@ function processRoute(routeName, waypoints) {
   STATE.spatialResults.squatUkc = squatUkc;
   updateSquatDisplay(squatUkc);
 
+  // Auto-extract UNLOCODE from Route Name if available (e.g. "V2608B CNTZO-PGPOM" -> CNTZO, PGPOM)
+  const unlocodeMatches = (STATE.routeName || '').match(/\b([A-Z]{2}[A-Z0-9]{3})\b/g);
+  if (unlocodeMatches && unlocodeMatches.length >= 2) {
+    const depCode = unlocodeMatches[0];
+    const arrCode = unlocodeMatches[1];
+    const depEl = document.getElementById('in-dep-unlocode');
+    const arrEl = document.getElementById('in-arr-unlocode');
+    if (depEl) depEl.value = depCode;
+    if (arrEl) arrEl.value = arrCode;
+    STATE.portsOverride.dep = resolvePortFromUnlocode(depCode);
+    STATE.portsOverride.arr = resolvePortFromUnlocode(arrCode);
+    STATE.portMode = 'unlocode';
+    const depDisp = document.getElementById('disp-unlocode-dep-name');
+    if (depDisp && STATE.portsOverride.dep) depDisp.innerText = `${STATE.portsOverride.dep.name}`;
+    const arrDisp = document.getElementById('disp-unlocode-arr-name');
+    if (arrDisp && STATE.portsOverride.arr) arrDisp.innerText = `${STATE.portsOverride.arr.name}`;
+  } else {
+    STATE.portMode = 'auto';
+  }
+  setPortSelectionMode(STATE.portMode);
+
   // Update UI elements
   updateSidebarIntelUI();
   renderMapRoute();
@@ -1332,16 +1686,17 @@ window.processRoute = processRoute;
 // --- UPDATE SIDEBAR INTEL TAB UI ---
 function updateSidebarIntelUI() {
   const { navareas, p2p, pubs } = STATE.spatialResults;
+  const ports = getActivePorts();
 
   // Ports
-  const depPort = pubs?.nearestDeparturePort;
-  const arrPort = pubs?.nearestArrivalPort;
+  const depPort = ports.dep;
+  const arrPort = ports.arr;
   const depDist = depPort ? (depPort.distanceNM != null ? depPort.distanceNM : depPort.distanceNm) : null;
   const arrDist = arrPort ? (arrPort.distanceNM != null ? arrPort.distanceNM : arrPort.distanceNm) : null;
-  document.getElementById('intel-dep-port').innerText = depPort ? `${depPort.name} (${depPort.country})` : '-';
-  document.getElementById('intel-dep-dist').innerText = depDist != null ? `${depDist.toFixed(1)} NM from WP1` : '-';
-  document.getElementById('intel-arr-port').innerText = arrPort ? `${arrPort.name} (${arrPort.country})` : '-';
-  document.getElementById('intel-arr-dist').innerText = arrDist != null ? `${arrDist.toFixed(1)} NM from End` : '-';
+  document.getElementById('intel-dep-port').innerText = depPort?.name ? `${depPort.name}${depPort.country ? ' (' + depPort.country + ')' : ''}` : '-';
+  document.getElementById('intel-dep-dist').innerText = depDist != null ? `${depDist.toFixed(1)} NM from WP1` : (depPort?.code ? `UNLOCODE: ${depPort.code}` : '-');
+  document.getElementById('intel-arr-port').innerText = arrPort?.name ? `${arrPort.name}${arrPort.country ? ' (' + arrPort.country + ')' : ''}` : '-';
+  document.getElementById('intel-arr-dist').innerText = arrDist != null ? `${arrDist.toFixed(1)} NM from End` : (arrPort?.code ? `UNLOCODE: ${arrPort.code}` : '-');
 
   // NAVAREAs
   const navList = document.getElementById('intel-navarea-list');
@@ -1433,57 +1788,61 @@ function renderPubBadges(containerId, items, colorClasses) {
   });
 }
 
-// --- RENDER MAP ROUTE & WAYPOINTS ---
+// --- RENDER MAP ROUTE & WAYPOINTS (CONTINUOUS MULTI-WORLD WRAPPING) ---
 function renderMapRoute() {
   if (!window.overlays || !window.overlays.route) return;
   window.overlays.route.clearLayers();
 
   if (!STATE.waypoints || STATE.waypoints.length === 0) return;
 
-  const latlngs = STATE.waypoints.map(w => [w.lat, w.lon]);
+  const unwrapped = unwrapRouteWaypoints(STATE.waypoints);
+  let primaryLine = null;
 
-  // Main Route Polyline Track
-  const routeLine = L.polyline(latlngs, {
-    color: '#0284c7',
-    weight: 3.5,
-    opacity: 0.95,
-    lineJoin: 'round'
-  }).addTo(window.overlays.route);
+  [-360, 0, 360].forEach(offset => {
+    const latlngs = unwrapped.map(w => [w.lat, w.unwrappedLon + offset]);
+    const routeLine = L.polyline(latlngs, {
+      color: '#0284c7',
+      weight: 3.5,
+      opacity: 0.95,
+      lineJoin: 'round'
+    }).addTo(window.overlays.route);
+    if (offset === 0) primaryLine = routeLine;
 
-  // Waypoint Markers
-  STATE.waypoints.forEach((w, idx) => {
-    const isStart = idx === 0;
-    const isEnd = idx === STATE.waypoints.length - 1;
-    const color = isStart ? '#10b981' : (isEnd ? '#ef4444' : '#0284c7');
+    // Waypoint Markers
+    unwrapped.forEach((w, idx) => {
+      const isStart = idx === 0;
+      const isEnd = idx === unwrapped.length - 1;
+      const color = isStart ? '#10b981' : (isEnd ? '#ef4444' : '#0284c7');
 
-    const circle = L.circleMarker([w.lat, w.lon], {
-      radius: isStart || isEnd ? 7 : 4.5,
-      fillColor: color,
-      color: '#ffffff',
-      weight: 1.5,
-      opacity: 1,
-      fillOpacity: 1
+      const circle = L.circleMarker([w.lat, w.unwrappedLon + offset], {
+        radius: isStart || isEnd ? 7 : 4.5,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 1.5,
+        opacity: 1,
+        fillOpacity: 1
+      });
+
+      const popupContent = `
+        <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4;">
+          <strong style="font-size: 13px; color: #0f172a;">#${idx + 1}: ${w.id}</strong><br>
+          <b>Lat:</b> ${RouteConverter.formatDMS(w.lat, true)}<br>
+          <b>Lon:</b> ${RouteConverter.formatDMS(w.lon, false)}<br>
+          <b>Course:</b> ${(w.course || 0).toFixed(1)}°T<br>
+          <b>Leg Dist:</b> ${(w.dist || 0).toFixed(2)} NM<br>
+          <b>Accum Dist:</b> ${(w.accDist || 0).toFixed(2)} NM
+        </div>
+      `;
+      circle.bindPopup(popupContent);
+      circle.addTo(window.overlays.route);
     });
-
-    const popupContent = `
-      <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4;">
-        <strong style="font-size: 13px; color: #0f172a;">#${idx + 1}: ${w.id}</strong><br>
-        <b>Lat:</b> ${RouteConverter.formatDMS(w.lat, true)}<br>
-        <b>Lon:</b> ${RouteConverter.formatDMS(w.lon, false)}<br>
-        <b>Course:</b> ${(w.course || 0).toFixed(1)}°T<br>
-        <b>Leg Dist:</b> ${(w.dist || 0).toFixed(2)} NM<br>
-        <b>Accum Dist:</b> ${(w.accDist || 0).toFixed(2)} NM
-      </div>
-    `;
-    circle.bindPopup(popupContent);
-    circle.addTo(window.overlays.route);
   });
 
   // Highlight Traversed Admiralty Publications (Pilots / NP Polygons)
   if (STATE.spatialResults.pubs && STATE.spatialResults.pubs.sailingDirections) {
     STATE.spatialResults.pubs.sailingDirections.forEach(sd => {
       if (sd.feature) {
-        L.geoJSON(sd.feature, {
+        addContinuousGeoJson(window.overlays.route, sd.feature, {
           style: {
             color: '#1d4ed8',
             weight: 2.4,
@@ -1494,29 +1853,106 @@ function renderMapRoute() {
           onEachFeature: (feature, layer) => {
             layer.bindTooltip(`📘 ${sd.code}: ${sd.title || ''} (Traversed Enroute)`, { sticky: true });
           }
-        }).addTo(window.overlays.route);
+        });
       }
     });
   }
 
-  // Fit map bounds to route
-  if (window.map) {
-    window.map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+  // Fit map bounds to primary route
+  if (window.map && primaryLine) {
+    window.map.fitBounds(primaryLine.getBounds(), { padding: [50, 50] });
   }
 }
 
-// --- RENDER VPF & REPORT DOCUMENT ---
+// --- RENDER ROUTE MAP OVERVIEW IN A4 REPORT (DOC MAP) ---
+function initOrUpdateDocMap() {
+  const container = document.getElementById('doc-map-inner');
+  if (!container) return;
+
+  if (!window.docMap) {
+    window.docMap = L.map('doc-map-inner', {
+      zoomControl: false,
+      attributionControl: false,
+      preferCanvas: true
+    }).setView([15.0, 125.0], 3);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18
+    }).addTo(window.docMap);
+
+    window.docMapGroup = L.layerGroup().addTo(window.docMap);
+  }
+
+  window.docMapGroup.clearLayers();
+
+  if (!STATE.waypoints || STATE.waypoints.length === 0) return;
+
+  const unwrapped = unwrapRouteWaypoints(STATE.waypoints);
+  let primaryLine = null;
+
+  [-360, 0, 360].forEach(offset => {
+    const latlngs = unwrapped.map(w => [w.lat, w.unwrappedLon + offset]);
+    const line = L.polyline(latlngs, {
+      color: '#0f2b5c',
+      weight: 3.5,
+      opacity: 0.95
+    }).addTo(window.docMapGroup);
+    if (offset === 0) primaryLine = line;
+
+    // Start marker (Green) and End marker (Red)
+    const firstW = unwrapped[0];
+    const lastW = unwrapped[unwrapped.length - 1];
+    L.circleMarker([firstW.lat, firstW.unwrappedLon + offset], {
+      radius: 6,
+      fillColor: '#10b981',
+      color: '#ffffff',
+      weight: 2,
+      fillOpacity: 1
+    }).addTo(window.docMapGroup);
+
+    L.circleMarker([lastW.lat, lastW.unwrappedLon + offset], {
+      radius: 6,
+      fillColor: '#ef4444',
+      color: '#ffffff',
+      weight: 2,
+      fillOpacity: 1
+    }).addTo(window.docMapGroup);
+  });
+
+  // Highlight Traversed ECA Zones in docMap
+  if (STATE.spatialResults.p2p && STATE.spatialResults.p2p.ecaZonesTraversed && window.PORT_TO_PORT_DATA) {
+    const ecaSet = new Set(STATE.spatialResults.p2p.ecaZonesTraversed);
+    window.PORT_TO_PORT_DATA.features.forEach(f => {
+      if (f.properties?.category === 'Marpol Zones' && ecaSet.has(f.properties?.name)) {
+        addContinuousGeoJson(window.docMapGroup, f, {
+          style: { color: '#059669', weight: 1.5, fillColor: '#10b981', fillOpacity: 0.25, dashArray: '4,4' }
+        });
+      }
+    });
+  }
+
+  setTimeout(() => {
+    if (window.docMap) {
+      window.docMap.invalidateSize();
+      if (primaryLine) window.docMap.fitBounds(primaryLine.getBounds(), { padding: [25, 25] });
+    }
+  }, 100);
+}
+window.initOrUpdateDocMap = initOrUpdateDocMap;
+
+// --- RENDER VPF & REPORT DOCUMENT (A4 MODULAR PAGES) ---
 function renderReportDocument() {
   const { navareas, p2p, pubs, squatUkc } = STATE.spatialResults;
   const v = STATE.vessel;
   const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
+  const activePorts = getActivePorts();
 
   const hasDimensions = STATE.vessel.length && STATE.vessel.beam;
   document.getElementById('rpt-date-disp').innerText = `Date: ${new Date().toISOString().slice(0, 10)}`;
   document.getElementById('rpt-vessel-name').innerText = v.name || '-';
   document.getElementById('rpt-voyage-no').innerText = v.voyageNo || '-';
-  document.getElementById('rpt-dep-port').innerText = pubs?.nearestDeparturePort?.name || '-';
-  document.getElementById('rpt-arr-port').innerText = pubs?.nearestArrivalPort?.name || '-';
+  document.getElementById('rpt-dep-port').innerText = activePorts.dep ? `${activePorts.dep.name}${activePorts.dep.country ? ' (' + activePorts.dep.country + ')' : ''}` : '-';
+  document.getElementById('rpt-arr-port').innerText = activePorts.arr ? `${activePorts.arr.name}${activePorts.arr.country ? ' (' + activePorts.arr.country + ')' : ''}` : '-';
   const dFwd = typeof v.draftFwd === 'number' && v.draftFwd > 0 ? v.draftFwd.toFixed(2) : '-';
   const dAft = typeof v.draftAft === 'number' && v.draftAft > 0 ? v.draftAft.toFixed(2) : '-';
   const spd = typeof v.speed === 'number' && v.speed > 0 ? v.speed.toFixed(1) : '12.0';
@@ -1525,14 +1961,30 @@ function renderReportDocument() {
   document.getElementById('rpt-total-dist').innerText = `${totalDist.toFixed(2)} NM`;
   document.getElementById('rpt-speed').innerText = `${spd} kts`;
 
-  // Zones
-  document.getElementById('rpt-navareas').innerText = navareas && navareas.length > 0
-    ? navareas.map(n => n.code).join(', ')
+  // Page 2 Vessel reference
+  const p2Ref = document.getElementById('rpt-page2-vessel-ref');
+  if (p2Ref) p2Ref.innerText = `Vessel: ${v.name || 'Ship'} • Route: ${STATE.routeName}`;
+
+  // Zones & ECA
+  const ecaDist = p2p ? p2p.ecaDistance.toFixed(1) : '0.0';
+  document.getElementById('rpt-eca-dist').innerText = `${ecaDist} NM`;
+  document.getElementById('rpt-eca-zones').innerText = p2p && p2p.ecaZonesTraversed && p2p.ecaZonesTraversed.length > 0
+    ? p2p.ecaZonesTraversed.join(', ')
     : 'None';
-  document.getElementById('rpt-eca-dist').innerText = p2p ? `${p2p.ecaDistance.toFixed(1)} NM` : '0.0 NM';
+  document.getElementById('rpt-navareas').innerText = navareas && navareas.length > 0
+    ? navareas.map(n => n.code + ' (' + n.name + ')').join(', ')
+    : 'None';
   document.getElementById('rpt-war-zones').innerText = p2p && p2p.warZonesTraversed && p2p.warZonesTraversed.length > 0
     ? p2p.warZonesTraversed.join(', ')
-    : 'None';
+    : 'None (Safe Navigation)';
+
+  // Perairan & Straits / Wilayah Dilalui
+  const watersList = [];
+  if (p2p?.maritimeWaters && p2p.maritimeWaters.length > 0) watersList.push(...p2p.maritimeWaters);
+  if (p2p?.tssSchemes && p2p.tssSchemes.length > 0) watersList.push(...p2p.tssSchemes.slice(0, 3));
+  if (p2p?.archipelagicLanes && p2p.archipelagicLanes.length > 0) watersList.push(...p2p.archipelagicLanes);
+  const watersEl = document.getElementById('rpt-waters-straits');
+  if (watersEl) watersEl.innerText = watersList.length > 0 ? Array.from(new Set(watersList)).join(' • ') : 'Open Ocean Waters';
 
   // Publications
   document.getElementById('rpt-pilots').innerText = pubs?.sailingDirections && pubs.sailingDirections.length > 0
@@ -1548,7 +2000,7 @@ function renderReportDocument() {
     ? pubs.tideTables.map(t => t.code).join(', ')
     : 'None';
 
-  // Squat block
+  // Squat & UKC Analysis Card
   if (squatUkc && squatUkc.vessel && hasDimensions) {
     document.getElementById('rpt-cb').innerText = `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}`;
     document.getElementById('rpt-sq-shallow').innerText = `${squatUkc.squatShallow.toFixed(2)} m`;
@@ -1569,43 +2021,45 @@ function renderReportDocument() {
 
   if (!squatUkc || !squatUkc.vpfRows || squatUkc.vpfRows.length === 0) {
     tbody.innerHTML = '<tr><td colspan="12" class="text-center py-4 text-slate-400 italic">No route data loaded</td></tr>';
-    return;
+  } else {
+    squatUkc.vpfRows.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      const isEca = p2p && p2p.ecaActiveIndices && p2p.ecaActiveIndices.has(idx);
+      const isWar = p2p && p2p.warActiveIndices && p2p.warActiveIndices.has(idx);
+
+      if (isEca) tr.className = 'vpf-row-eca';
+      else if (isWar) tr.className = 'vpf-row-war';
+
+      const dtg = (totalDist - parseFloat(row.accDist)).toFixed(2);
+      let remarks = [];
+      if (isEca) remarks.push('ECA Waters');
+      if (isWar) remarks.push('War Risk Area');
+      if (idx === 0) remarks.push('Dep Berth / Stn');
+      if (idx === squatUkc.vpfRows.length - 1) remarks.push('Arr Berth / End');
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: bold;">${row.index}</td>
+        <td style="font-weight: 600;">${row.id}</td>
+        <td style="font-family: monospace;">${row.latDms}</td>
+        <td style="font-family: monospace;">${row.lonDms}</td>
+        <td style="text-align: right; font-family: monospace; font-weight: 600; color: #1e3a8a;">${row.course}°</td>
+        <td style="text-align: right; font-family: monospace;">${row.dist}</td>
+        <td style="text-align: right; font-family: monospace; font-weight: bold;">${dtg}</td>
+        <td style="text-align: right; font-family: monospace;">${row.speed}</td>
+        <td style="text-align: right; font-family: monospace; color: #b91c1c; font-weight: 600;">${row.squat}</td>
+        <td style="text-align: center;">${row.fixInterval}</td>
+        <td style="text-align: center; font-size: 8.5px;">${row.method}</td>
+        <td style="font-size: 8.5px;">${remarks.join(' • ') || '-'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
 
-  squatUkc.vpfRows.forEach((row, idx) => {
-    const tr = document.createElement('tr');
-    const isEca = p2p && p2p.ecaActiveIndices && p2p.ecaActiveIndices.has(idx);
-    const isWar = p2p && p2p.warActiveIndices && p2p.warActiveIndices.has(idx);
-
-    if (isEca) tr.className = 'vpf-row-eca';
-    else if (isWar) tr.className = 'vpf-row-war';
-
-    const dtg = (totalDist - parseFloat(row.accDist)).toFixed(2);
-    let remarks = [];
-    if (isEca) remarks.push('ECA Waters');
-    if (isWar) remarks.push('War Risk Area');
-    if (idx === 0) remarks.push('Dep Berth / Stn');
-    if (idx === squatUkc.vpfRows.length - 1) remarks.push('Arr Berth / End');
-
-    tr.innerHTML = `
-      <td style="text-align: center; font-weight: bold;">${row.index}</td>
-      <td style="font-weight: 600;">${row.id}</td>
-      <td style="font-family: monospace;">${row.latDms}</td>
-      <td style="font-family: monospace;">${row.lonDms}</td>
-      <td style="text-align: right; font-family: monospace; font-weight: 600; color: #1e3a8a;">${row.course}°</td>
-      <td style="text-align: right; font-family: monospace;">${row.dist}</td>
-      <td style="text-align: right; font-family: monospace; font-weight: bold;">${dtg}</td>
-      <td style="text-align: right; font-family: monospace;">${row.speed}</td>
-      <td style="text-align: right; font-family: monospace; color: #b91c1c; font-weight: 600;">${row.squat}</td>
-      <td style="text-align: center;">${row.fixInterval}</td>
-      <td style="text-align: center; font-size: 8.5px;">${row.method}</td>
-      <td style="font-size: 8.5px;">${remarks.join(' • ') || '-'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  // Also update doc map snapshot
+  initOrUpdateDocMap();
 }
 
-// --- INITIALIZE ALL MARITIME BACKGROUND LAYERS (PortToPort, NAVAREA, Pilots) ---
+// --- INITIALIZE ALL MARITIME BACKGROUND LAYERS (CONTINUOUS ANTIMERIDIAN WRAPPING) ---
 function initBackgroundLayers() {
   if (!window.map) return;
 
@@ -1624,7 +2078,7 @@ function initBackgroundLayers() {
     'Waypoint Catchment Polygons': '#95a5a6'
   };
 
-  // 1. RENDER PORT_TO_PORT_DATA (Matching preview_map.html style & colors)
+  // 1. RENDER PORT_TO_PORT_DATA (Continuous across -360, 0, +360)
   if (window.PORT_TO_PORT_DATA && window.PORT_TO_PORT_DATA.features) {
     window.PORT_TO_PORT_DATA.features.forEach(feature => {
       const cat = feature.properties?.category || 'Other';
@@ -1644,7 +2098,7 @@ function initBackgroundLayers() {
 
       const isLine = feature.geometry.type === 'LineString' || feature.geometry.type === 'MultiLineString';
 
-      const layer = L.geoJSON(feature, {
+      addContinuousGeoJson(targetGroup, feature, {
         style: {
           color: color,
           weight: isLine ? 3 : 1.8,
@@ -1668,16 +2122,15 @@ function initBackgroundLayers() {
           `);
         }
       });
-      layer.addTo(targetGroup);
     });
   }
 
-  // 2. RENDER NAVAREA GEOJSON BOUNDARIES
+  // 2. RENDER NAVAREA GEOJSON BOUNDARIES (Continuous)
   if (window.NAVAREA_GEOJSON && window.NAVAREA_GEOJSON.features) {
     window.NAVAREA_GEOJSON.features.forEach(f => {
       const num = f.properties?.number || f.properties?.code || f.id || '';
       const name = f.properties?.name || `NAVAREA ${num}`;
-      L.geoJSON(f, {
+      addContinuousGeoJson(window.overlays.navarea, f, {
         style: {
           color: '#f59e0b',
           weight: 1.6,
@@ -1695,14 +2148,14 @@ function initBackgroundLayers() {
             </div>
           `);
         }
-      }).addTo(window.overlays.navarea);
+      });
     });
   }
 
-  // 3. RENDER ADMIRALTY PUBLICATIONS (Sailing Directions NP Pilots)
+  // 3. RENDER ADMIRALTY PUBLICATIONS (Sailing Directions NP Pilots - Continuous)
   if (window.ADMIRALTY_PUBLICATIONS && window.ADMIRALTY_PUBLICATIONS.sds) {
     window.ADMIRALTY_PUBLICATIONS.sds.forEach(sd => {
-      L.geoJSON(sd, {
+      addContinuousGeoJson(window.overlays.pubs, sd, {
         style: {
           color: '#2563eb',
           weight: 1.6,
@@ -1721,7 +2174,7 @@ function initBackgroundLayers() {
             </div>
           `);
         }
-      }).addTo(window.overlays.pubs);
+      });
     });
   }
 }
@@ -1910,7 +2363,8 @@ document.addEventListener('DOMContentLoaded', () => {
       zoom: 4,
       minZoom: 2,
       zoomControl: false,
-      worldCopyJump: true
+      worldCopyJump: true,
+      preferCanvas: true
     });
 
     L.control.zoom({ position: 'topright' }).addTo(window.map);
@@ -2034,10 +2488,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Auto load User 99 WPTs Voyage
-  setTimeout(() => {
-    loadUserVoyage();
-  }, 400);
+  // Default port selection mode
+  setPortSelectionMode('auto');
 });
 
 </script>
