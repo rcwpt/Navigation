@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="leaflet.css">
   
+  <!-- FONT AWESOME ICONS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
     :root {
       --navy-950: #070e17;
@@ -753,6 +756,9 @@
           <span>⚓ China Ship Routing</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center;">
+          <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="lang-toggle-btn" style="text-decoration: none; display: flex; align-items: center; gap: 4px; border-color: rgba(244, 63, 94, 0.4); color: #f472b6;" title="Created by @c.wijaya.t">
+            <i class="fa-brands fa-instagram"></i> @c.wijaya.t
+          </a>
           <a href="../index.html" class="lang-toggle-btn" style="text-decoration: none; display: flex; align-items: center; gap: 4px;" title="Back to Bridge Hub">⮌ Hub</a>
           <button id="lang-btn" class="lang-toggle-btn" title="Toggle Language / 切换语言">中 / EN</button>
         </div>
@@ -861,8 +867,9 @@
     <!-- FOOTER / ACTIONS -->
     <div class="sidebar-footer">
       <button class="btn btn-outline" id="btn-reset-view">🎯 Fit All</button>
-      <button class="btn btn-primary" id="btn-download-json">📥 Download JSON</button>
-      <button class="btn btn-outline" id="btn-download-geojson">🗺️ GeoJSON</button>
+      <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="text-decoration: none; color: #f472b6; border-color: rgba(244, 63, 94, 0.4); display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600;" title="Created by @c.wijaya.t">
+        <i class="fa-brands fa-instagram"></i> @c.wijaya.t
+      </a>
     </div>
   </aside>
   <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
@@ -879,7 +886,7 @@
       <strong>China Ship Routing</strong>
       <span style="font-size: 0.68rem; color: #a0aec0; margin-left: 6px;">Full Coastal Network</span>
     </div>
-    <span class="engine-tag" id="basemap-tag">CARTO VOYAGER</span>
+    <span class="engine-tag" id="basemap-tag">OPENSTREETMAP</span>
   </div>
 
   <!-- REALTIME CURSOR HUD -->
@@ -938,8 +945,6 @@
       inspectorTitle: "Feature Inspector / Details",
       inspectorDefault: "Click on any navigation route, TSS scheme, or warning zone to inspect coordinates, courses, distances, corridor widths, and navigation notices.",
       fitAll: "🎯 Fit All",
-      downloadJson: "📥 Download JSON",
-      downloadGeojson: "🗺️ GeoJSON",
       copyCoords: "📋 Copy Coordinates",
       copied: "✅ Copied!",
       schemeTagTss: "TSS",
@@ -993,8 +998,6 @@
       inspectorTitle: "航道属性详情 / Inspector",
       inspectorDefault: "点击地图图元或列表中方案以查看经纬度、转向点、航向距离、航道宽度与航行通告规定。",
       fitAll: "🎯 全图居中",
-      downloadJson: "📥 下载 JSON",
-      downloadGeojson: "🗺️ GeoJSON",
       copyCoords: "📋 复制坐标",
       copied: "✅ 已复制!",
       schemeTagTss: "分道",
@@ -1047,19 +1050,19 @@
   // --- 4. LEAFLET BASE MAP LAYERS ---
   const baseLayers = {};
 
-  // 1. CartoDB Voyager (Navigation Style - Primary Default)
-  const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    attribution: '&copy; CartoDB & OpenStreetMap'
-  });
-  baseLayers["🧭 CartoDB Voyager (Nav Style)"] = cartoVoyager;
-
-  // 2. OpenStreetMap Standard Layer
+  // 1. OpenStreetMap Standard Layer (Primary Default)
   const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
   });
   baseLayers["🗺️ OpenStreetMap (Standard)"] = osmLayer;
+
+  // 2. CartoDB Voyager (Navigation Style)
+  const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; CartoDB & OpenStreetMap'
+  });
+  baseLayers["🧭 CartoDB Voyager (Nav Style)"] = cartoVoyager;
 
   // 3. CartoDB Dark Matter (Marine Night / ECDIS)
   const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -1081,9 +1084,9 @@
     baseLayers["🌍 Tiny World Map (Offline Vector)"] = tinyWorldLayer;
   }
 
-  // Set default basemap: Carto Voyager
-  cartoVoyager.addTo(map);
-  document.getElementById('basemap-tag').innerText = 'CARTO VOYAGER';
+  // Set default basemap: OpenStreetMap
+  osmLayer.addTo(map);
+  document.getElementById('basemap-tag').innerText = 'OPENSTREETMAP';
 
   // --- 5. OVERLAY LAYERS ---
   const layerGroups = {
@@ -1902,8 +1905,6 @@
     document.getElementById('search-input').placeholder = t.searchPlaceholder;
     document.getElementById('detail-title').innerText = t.inspectorTitle;
     document.getElementById('btn-reset-view').innerText = t.fitAll;
-    document.getElementById('btn-download-json').innerText = t.downloadJson;
-    document.getElementById('btn-download-geojson').innerText = t.downloadGeojson;
     document.getElementById('btn-copy-coords').innerText = t.copyCoords;
 
     // Update chips text
@@ -2044,28 +2045,6 @@
       map.fitBounds([[bb[1], bb[0]], [bb[3], bb[2]]], { padding: [40, 40] });
     } else {
       map.setView(mapCenter, 7);
-    }
-  });
-
-  document.getElementById('btn-download-json').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'china_ship_routing.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('btn-download-geojson').addEventListener('click', () => {
-    if (DATA && DATA.geojson) {
-      const blob = new Blob([JSON.stringify(DATA.geojson, null, 2)], { type: 'application/geo+json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'china_ship_routing.geojson';
-      a.click();
-      URL.revokeObjectURL(url);
     }
   });
 
