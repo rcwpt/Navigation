@@ -11,6 +11,33 @@
 (function (global) {
   'use strict';
 
+  // --- Internal Math & Format Helpers (Self-contained) ---
+  function toRad(deg) { return (deg * Math.PI) / 180; }
+  function toDeg(rad) { return (rad * 180) / Math.PI; }
+
+  function internalRhumblineDistance(lat1, lon1, lat2, lon2) {
+    const R = 3440.065; // Earth radius in NM
+    const phi1 = toRad(lat1);
+    const phi2 = toRad(lat2);
+    const deltaPhi = phi2 - phi1;
+    let deltaLambda = toRad(Math.abs(lon2 - lon1));
+    if (deltaLambda > Math.PI) deltaLambda = 2 * Math.PI - deltaLambda;
+
+    const deltaPsi = Math.log(Math.tan(Math.PI / 4 + phi2 / 2) / Math.tan(Math.PI / 4 + phi1 / 2));
+    const q = Math.abs(deltaPsi) > 1e-10 ? deltaPhi / deltaPsi : Math.cos(phi1);
+    return Math.sqrt(deltaPhi * deltaPhi + q * q * deltaLambda * deltaLambda) * R;
+  }
+
+  function internalFormatDMS(val, isLat) {
+    const dir = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W');
+    const abs = Math.abs(val);
+    const deg = Math.floor(abs);
+    const min = (abs - deg) * 60;
+    const degStr = isLat ? String(deg).padStart(2, '0') : String(deg).padStart(3, '0');
+    const minStr = min.toFixed(2).padStart(5, '0');
+    return `${degStr}°${minStr}'${dir}`;
+  }
+
   // --- Geometry Helpers (Ray-Casting Point-in-Polygon & Line Intersect) ---
   function pointInPoly(pt, ring) {
     const x = pt[0], y = pt[1];
@@ -335,7 +362,7 @@
             const title = sd.properties?.title || sd.properties?.description || code;
             if (code && !seenSd.has(code)) {
               seenSd.add(code);
-              res.sailingDirections.push({ code, title });
+              res.sailingDirections.push({ code, title, feature: sd });
             }
             break;
           }
@@ -363,7 +390,7 @@
             const code = lt.properties?.code || lt.properties?.letter || name;
             if (!seenLights.has(code)) {
               seenLights.add(code);
-              res.listOfLights.push({ code, name });
+              res.listOfLights.push({ code, name, feature: lt });
             }
             break;
           }
@@ -409,7 +436,7 @@
             const title = att.properties?.title || att.properties?.description || code;
             if (code && !seenAtt.has(code)) {
               seenAtt.add(code);
-              res.tideTables.push({ code, title });
+              res.tideTables.push({ code, title, feature: att });
             }
             break;
           }
@@ -426,12 +453,12 @@
       let bestArr = null, minArrDist = Infinity;
 
       for (const pt of pubs.ports) {
-        const d1 = global.RouteConverter.rhumblineDistance(pStart.lat, pStart.lon, pt.lat, pt.lon);
+        const d1 = internalRhumblineDistance(pStart.lat, pStart.lon, pt.lat, pt.lon);
         if (d1 < minDepDist) {
           minDepDist = d1;
           bestDep = { ...pt, distanceNM: d1 };
         }
-        const d2 = global.RouteConverter.rhumblineDistance(pEnd.lat, pEnd.lon, pt.lat, pt.lon);
+        const d2 = internalRhumblineDistance(pEnd.lat, pEnd.lon, pt.lat, pt.lon);
         if (d2 < minArrDist) {
           minArrDist = d2;
           bestArr = { ...pt, distanceNM: d2 };
@@ -506,8 +533,8 @@
         id: wpt.id,
         lat: wpt.lat,
         lon: wpt.lon,
-        latDms: global.RouteConverter.formatDMS(wpt.lat, true),
-        lonDms: global.RouteConverter.formatDMS(wpt.lon, false),
+        latDms: internalFormatDMS(wpt.lat, true),
+        lonDms: internalFormatDMS(wpt.lon, false),
         course: (wpt.course || 0).toFixed(1),
         dist: (wpt.dist || 0).toFixed(2),
         accDist: (wpt.accDist || 0).toFixed(2),
@@ -547,7 +574,14 @@
     scanAdmiraltyPublications,
     calculateSquatAndUkc,
     pointInGeometry,
-    segmentIntersectsGeometry
+    segmentIntersectsGeometry,
+    internalRhumblineDistance,
+    internalFormatDMS
   };
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = global.PassageIntelligence;
+    module.exports.PassageIntelligence = global.PassageIntelligence;
+  }
 
 })(typeof window !== 'undefined' ? window : this);

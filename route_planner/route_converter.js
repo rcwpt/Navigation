@@ -844,4 +844,9 @@
     rhumblineBearing
   };
 
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = global.RouteConverter;
+    module.exports.RouteConverter = global.RouteConverter;
+  }
+
 })(typeof window !== 'undefined' ? window : this);

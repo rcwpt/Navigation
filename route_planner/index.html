@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marine Route Converter & Passage Intelligence</title>
   
-  <!-- LEAFLET CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- LEAFLET CSS (Local + Fallback) -->
+  <link rel="stylesheet" href="./leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <!-- FONT AWESOME ICONS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -341,12 +342,17 @@
         </div>
       </div>
 
-      <!-- QUICK SAMPLE LOADER -->
-      <div class="flex items-center justify-between bg-slate-100 px-3 py-2 rounded-lg text-xs">
-        <span class="text-[11px] text-slate-600 font-medium">Or load verified sample voyage:</span>
-        <button id="btn-load-sample" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[10px] px-2.5 py-1 rounded transition shadow-sm flex items-center gap-1">
-          ⚡ CNZOS - PGPOM (RTZ)
-        </button>
+      <!-- QUICK PRESET VOYAGES -->
+      <div class="bg-slate-100 p-2.5 rounded-lg text-xs space-y-2">
+        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">⚡ Quick Preset Voyages:</span>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button id="btn-load-user-rtz" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold text-[10px] px-2.5 py-1 rounded transition shadow-xs flex items-center gap-1">
+            <span>🚢</span> CNTZO - PGPOM Weather (99 WPT)
+          </button>
+          <button id="btn-load-sample" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold text-[10px] px-2.5 py-1 rounded transition shadow-xs flex items-center gap-1">
+            <span>🧭</span> CNZOS - PGPOM (TW-PH 59 WPT)
+          </button>
+        </div>
       </div>
 
       <!-- ACTIVE ROUTE SUMMARY -->
@@ -368,7 +374,37 @@
           Target ECDIS / File Format (31 Formats)
         </label>
         <select id="export-format-select" class="w-full text-xs border border-slate-300 rounded-md p-2 bg-slate-50 font-medium text-slate-800 focus:outline-none focus:border-sky-500">
-          <!-- Populated by JavaScript with all 31 formats -->
+          <option value="furuno_rtz">Furuno 3000 (.rtz)</option>
+          <option value="native_csv">Native Excel Format (.csv)</option>
+          <option value="transas_rt3">Transas Route (.rt3)</option>
+          <option value="transas_rt4">Transas iSailor (.rt4)</option>
+          <option value="wartsila_xml">Wartsila NACOS Platinum (.xml)</option>
+          <option value="furuno_gpx">Furuno GP-170 (.gpx)</option>
+          <option value="furuno_fea_txt">Furuno FEA/FMD (.txt)</option>
+          <option value="eglobe_rte">eGlobe ECDIS (.rte)</option>
+          <option value="eglobe_cb">eGlobe ECDIS (.cb)</option>
+          <option value="jrc_csv">JRC ECDIS (.csv)</option>
+          <option value="jrc_rtm">JRC ECDIS (.rtm)</option>
+          <option value="jrc_rtn">JRC ECDIS (.rtn)</option>
+          <option value="jrc_rta">JRC ECDIS (.rta)</option>
+          <option value="jrc_jmr">JRC JMA-9122 (.jmr)</option>
+          <option value="kongsberg_rut">Kongsberg (.rut)</option>
+          <option value="kongsberg_rux">Kongsberg (.rux)</option>
+          <option value="mecys_txt">ECDIS MECys PM3D2 (.txt)</option>
+          <option value="mecys_rtz">ECDIS MECys PM3D2 (.rtz)</option>
+          <option value="maxsea_wpt">MaxSea (.wpt)</option>
+          <option value="raytheon_cvt">Raytheon Anschütz ECDIS (.cvt)</option>
+          <option value="sperry_route">Sperry Marine (.route)</option>
+          <option value="simrad_rtx">SIMRAD Maris ECDIS900 (.rtx)</option>
+          <option value="simrad_noext">SIMRAD (No Extension)</option>
+          <option value="sam_noext">SAM Electronics (No Extension)</option>
+          <option value="totem_csv">TOTEM ECDIS (.csv)</option>
+          <option value="chartpilot_txt">Chart Pilot (.txt)</option>
+          <option value="bridgemate_xml">BridgeMate-DP2 (.xml)</option>
+          <option value="spos_xml">SPOS (.xml)</option>
+          <option value="bonvoyage_bvs">Bon Voyage (.bvs)</option>
+          <option value="adc_txt">Admiralty Digital Catalogue (.txt)</option>
+          <option value="opengis_kml">OpenGIS (.kml)</option>
         </select>
         <p class="text-[10px] text-slate-500 italic" id="export-format-desc">Select a target format to export.</p>
         <button id="btn-download-export" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -574,6 +610,14 @@
           <span>Route Track & Headings</span>
         </span>
         <input type="checkbox" id="layer-chk-route" checked class="accent-sky-600">
+      </label>
+
+      <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
+        <span class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+          <span>📚 Admiralty Publications (Pilots / NP)</span>
+        </span>
+        <input type="checkbox" id="layer-chk-pubs" checked class="accent-blue-600">
       </label>
 
       <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
@@ -831,8 +875,13 @@
   </main>
 </div>
 
-<!-- LEAFLET JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- LEAFLET JS (Local with Fallback) -->
+<script src="./leaflet.js"></script>
+<script>
+  if (typeof L === 'undefined') {
+    document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>');
+  }
+</script>
 
 <!-- TURF.JS (LOCAL FALLBACK) -->
 <script src="turf.min.js"></script>
@@ -920,6 +969,7 @@
   // OVERLAY LAYERS
   const overlays = {
     route: L.layerGroup().addTo(map),
+    pubs: L.layerGroup().addTo(map),
     eca: L.layerGroup().addTo(map),
     war: L.layerGroup().addTo(map),
     tss: L.layerGroup().addTo(map),
@@ -928,6 +978,7 @@
 
   L.control.layers(baseLayers, {
     "🚢 Route & Waypoint Track": overlays.route,
+    "📚 Admiralty Publications (Pilots)": overlays.pubs,
     "🌿 ECA Zones (Emission)": overlays.eca,
     "⚠️ JWC War Risk Areas": overlays.war,
     "🟪 Traffic Schemes (TSS)": overlays.tss,
@@ -1132,8 +1183,16 @@
       }
       items.forEach(it => {
         const pill = document.createElement('span');
-        pill.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 border border-slate-300 text-slate-800';
-        pill.innerText = it.code || it.name;
+        pill.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-blue-100 hover:text-blue-800 cursor-pointer border border-slate-300 text-slate-800 transition inline-flex items-center gap-1';
+        pill.innerHTML = `<span>📘</span> ${it.code || it.name}`;
+        pill.title = `${it.title || it.name} (Click to zoom to map coverage)`;
+        pill.addEventListener('click', () => {
+          if (it.feature) {
+            const geo = L.geoJSON(it.feature);
+            map.fitBounds(geo.getBounds(), { padding: [50, 50] });
+            switchView('map');
+          }
+        });
         el.appendChild(pill);
       });
     };
@@ -1162,27 +1221,110 @@
     });
   }
 
-  // --- RENDER MAP ROUTE & ZONES ---
-  function renderMapRoute() {
-    overlays.route.clearLayers();
+  // --- INITIALIZE ALL BACKGROUND MARITIME LAYERS ---
+  function initBackgroundLayers() {
+    overlays.navarea.clearLayers();
     overlays.eca.clearLayers();
     overlays.war.clearLayers();
     overlays.tss.clearLayers();
-    overlays.navarea.clearLayers();
+
+    // 1. NAVAREAs (World boundaries)
+    if (window.NAVAREA_GEOJSON && window.NAVAREA_GEOJSON.features) {
+      window.NAVAREA_GEOJSON.features.forEach(f => {
+        const num = f.properties?.number || f.properties?.code || f.id || '';
+        const name = f.properties?.name || `NAVAREA ${num}`;
+        L.geoJSON(f, {
+          style: {
+            color: '#f59e0b',
+            weight: 1.2,
+            dashArray: '5,5',
+            fillColor: '#fbbf24',
+            fillOpacity: 0.03
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindTooltip(`🌐 NAVAREA ${num}: ${name}`, { sticky: true });
+          }
+        }).addTo(overlays.navarea);
+      });
+    }
+
+    // 2. PortToPort Marine Zones
+    if (window.PORT_TO_PORT_DATA && window.PORT_TO_PORT_DATA.features) {
+      const ecaFeatures = [];
+      const warFeatures = [];
+      const tssFeatures = [];
+
+      window.PORT_TO_PORT_DATA.features.forEach(f => {
+        const cat = f.properties?.category;
+        if (cat === 'Marpol Zones') ecaFeatures.push(f);
+        else if (cat === 'JWC War Areas') warFeatures.push(f);
+        else if (cat === 'Traffic Schemes') tssFeatures.push(f);
+      });
+
+      if (ecaFeatures.length > 0) {
+        L.geoJSON({ type: 'FeatureCollection', features: ecaFeatures }, {
+          style: {
+            color: '#10b981',
+            weight: 1.2,
+            dashArray: '3,3',
+            fillColor: '#34d399',
+            fillOpacity: 0.08
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindTooltip(`🌿 ECA: ${feature.properties?.name || ''}`, { sticky: true });
+          }
+        }).addTo(overlays.eca);
+      }
+
+      if (warFeatures.length > 0) {
+        L.geoJSON({ type: 'FeatureCollection', features: warFeatures }, {
+          style: {
+            color: '#ef4444',
+            weight: 1.2,
+            dashArray: '3,3',
+            fillColor: '#f87171',
+            fillOpacity: 0.1
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindTooltip(`⚠️ War Risk: ${feature.properties?.name || ''}`, { sticky: true });
+          }
+        }).addTo(overlays.war);
+      }
+
+      if (tssFeatures.length > 0) {
+        L.geoJSON({ type: 'FeatureCollection', features: tssFeatures }, {
+          style: {
+            color: '#a855f7',
+            weight: 1.2,
+            fillColor: '#c084fc',
+            fillOpacity: 0.12
+          },
+          onEachFeature: (feature, layer) => {
+            layer.bindTooltip(`🟪 TSS: ${feature.properties?.name || ''}`, { sticky: true });
+          }
+        }).addTo(overlays.tss);
+      }
+    }
+  }
+
+  // --- RENDER MAP ROUTE & ACTIVE ZONES ---
+  function renderMapRoute() {
+    overlays.route.clearLayers();
+    overlays.pubs.clearLayers();
 
     if (!STATE.waypoints || STATE.waypoints.length === 0) return;
 
     const latlngs = STATE.waypoints.map(w => [w.lat, w.lon]);
 
-    // Main route track polyline
+    // 1. Main Route Polyline Track
     const routeLine = L.polyline(latlngs, {
       color: '#0284c7',
       weight: 3.5,
-      opacity: 0.9,
+      opacity: 0.95,
       lineJoin: 'round'
     }).addTo(overlays.route);
 
-    // Markers and pills
+    // 2. Waypoint Markers & Popups
     STATE.waypoints.forEach((w, idx) => {
       const isStart = idx === 0;
       const isEnd = idx === STATE.waypoints.length - 1;
@@ -1211,46 +1353,85 @@
       circle.addTo(overlays.route);
     });
 
-    // Fit map bounds
-    map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+    // 3. Render Traversed Admiralty Publications (Pilots / NP Polygons)
+    if (STATE.spatialResults.pubs && STATE.spatialResults.pubs.sailingDirections) {
+      STATE.spatialResults.pubs.sailingDirections.forEach(sd => {
+        if (sd.feature) {
+          L.geoJSON(sd.feature, {
+            style: {
+              color: '#2563eb',
+              weight: 2.2,
+              dashArray: '6,4',
+              fillColor: '#3b82f6',
+              fillOpacity: 0.15
+            },
+            onEachFeature: (feature, layer) => {
+              layer.bindTooltip(`📘 ${sd.code}: ${sd.title || ''}`, { sticky: true });
+              layer.bindPopup(`
+                <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 180px;">
+                  <div style="font-size: 13px; font-weight: bold; color: #1e40af; margin-bottom: 4px;">📘 ${sd.code}</div>
+                  <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">${sd.title || sd.code}</div>
+                  <div style="color: #64748b; font-size: 10px; margin-bottom: 6px;">Admiralty Sailing Directions (Pilot Book)</div>
+                  <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 8px; color: #1d4ed8; font-weight: bold; font-size: 10px;">
+                    ✓ Traversed Along Passage
+                  </div>
+                </div>
+              `);
+            }
+          }).addTo(overlays.pubs);
+        }
+      });
+    }
 
-    // Render Polygons for Traversed NAVAREAs
+    // 4. Highlight Traversed NAVAREAs
     if (window.NAVAREA_GEOJSON && window.NAVAREA_GEOJSON.features) {
       window.NAVAREA_GEOJSON.features.forEach(f => {
         const code = (f.properties?.code || 'NAVAREA ' + f.properties?.number);
         const isTraversed = STATE.spatialResults.navareas.some(n => n.code === code);
         if (isTraversed) {
           L.geoJSON(f, {
-            style: { color: '#f59e0b', weight: 1.5, fillOpacity: 0.05, dashArray: '4,4' },
+            style: {
+              color: '#d97706',
+              weight: 2.5,
+              fillColor: '#f59e0b',
+              fillOpacity: 0.12
+            },
             onEachFeature: (feature, layer) => {
-              layer.bindTooltip(`NAVAREA ${feature.properties?.number || ''}`, { sticky: true });
+              layer.bindTooltip(`🌐 ${code} (Traversed Enroute)`, { sticky: true });
             }
           }).addTo(overlays.navarea);
         }
       });
     }
 
-    // Render Traversed PortToPort Zones
+    // 5. Highlight Traversed ECA Zones
     if (window.PORT_TO_PORT_DATA && window.PORT_TO_PORT_DATA.features && STATE.spatialResults.p2p) {
       const p2p = STATE.spatialResults.p2p;
       window.PORT_TO_PORT_DATA.features.forEach(f => {
         const name = f.properties?.name;
         if (p2p.ecaZonesTraversed.includes(name)) {
           L.geoJSON(f, {
-            style: { color: '#10b981', weight: 1.5, fillOpacity: 0.12 }
-          }).bindTooltip(`ECA: ${name}`, { sticky: true }).addTo(overlays.eca);
-        } else if (p2p.warZonesTraversed.includes(name)) {
-          L.geoJSON(f, {
-            style: { color: '#ef4444', weight: 1.5, fillOpacity: 0.15 }
-          }).bindTooltip(`War Risk: ${name}`, { sticky: true }).addTo(overlays.war);
+            style: {
+              color: '#059669',
+              weight: 2.5,
+              fillColor: '#10b981',
+              fillOpacity: 0.22
+            }
+          }).bindTooltip(`🌿 ECA (Active Enroute): ${name}`, { sticky: true }).addTo(overlays.eca);
         }
       });
     }
+
+    // Fit map bounds to route
+    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
   }
 
   // Layer checkbox bindings
   document.getElementById('layer-chk-route').addEventListener('change', e => {
     if (e.target.checked) overlays.route.addTo(map); else map.removeLayer(overlays.route);
+  });
+  document.getElementById('layer-chk-pubs').addEventListener('change', e => {
+    if (e.target.checked) overlays.pubs.addTo(map); else map.removeLayer(overlays.pubs);
   });
   document.getElementById('layer-chk-eca').addEventListener('change', e => {
     if (e.target.checked) overlays.eca.addTo(map); else map.removeLayer(overlays.eca);
@@ -1268,7 +1449,7 @@
   document.getElementById('btn-fit-route').addEventListener('click', () => {
     if (STATE.waypoints.length > 0) {
       const latlngs = STATE.waypoints.map(w => [w.lat, w.lon]);
-      map.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+      map.fitBounds(L.latLngBounds(latlngs), { padding: [50, 50] });
     }
   });
 
@@ -1429,6 +1610,16 @@
   // --- LOAD BUILT-IN SAMPLE VOYAGE (CNZOS - PGPOM) ---
   document.getElementById('btn-load-sample').addEventListener('click', loadSampleVoyage);
 
+  
+  // --- LOAD USER ROUTE PRESET (V2608B CNTZO-PGPOM WEATHER 2 - 99 WPTs) ---
+  const USER_99_WPTS = [{"id":"WP001","lat":32.31178,"lon":119.82737,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP002","lat":32.30812,"lon":119.82867,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP003","lat":32.25115,"lon":119.86922,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP004","lat":32.235,"lon":119.87443,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP005","lat":32.1834,"lon":119.88498,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP006","lat":32.15358,"lon":119.8884,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP007","lat":32.13108,"lon":119.89815,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP008","lat":32.10167,"lon":119.90945,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP009","lat":32.04358,"lon":119.93958,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP010","lat":32.01553,"lon":119.9594,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP011","lat":31.99895,"lon":119.97922,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP012","lat":31.97142,"lon":120.01567,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP013","lat":31.94568,"lon":120.1066,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP014","lat":31.9362,"lon":120.15167,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP015","lat":31.92798,"lon":120.2226,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP016","lat":31.94802,"lon":120.27668,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP017","lat":31.95977,"lon":120.31528,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP018","lat":32.00395,"lon":120.37602,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP019","lat":32.01793,"lon":120.40343,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP020","lat":32.02923,"lon":120.44035,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP021","lat":32.03543,"lon":120.47615,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP022","lat":32.03132,"lon":120.50577,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP023","lat":32.0033,"lon":120.5832,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP024","lat":31.99533,"lon":120.64057,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP025","lat":32.00958,"lon":120.76385,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP026","lat":32.00835,"lon":120.78813,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP027","lat":32.00277,"lon":120.8093,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP028","lat":31.99338,"lon":120.82438,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP029","lat":31.96608,"lon":120.85162,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP030","lat":31.90948,"lon":120.87973,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP031","lat":31.8711,"lon":120.88845,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP032","lat":31.83755,"lon":120.89893,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP033","lat":31.79797,"lon":120.92492,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP034","lat":31.78567,"lon":120.93625,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP035","lat":31.77848,"lon":120.95525,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP036","lat":31.77707,"lon":120.98802,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP037","lat":31.77383,"lon":121.01705,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP038","lat":31.76542,"lon":121.05162,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP039","lat":31.75388,"lon":121.07592,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP040","lat":31.7383,"lon":121.09968,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP041","lat":31.7034,"lon":121.13837,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP042","lat":31.68,"lon":121.18122,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP043","lat":31.62557,"lon":121.25685,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP044","lat":31.58925,"lon":121.29385,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP045","lat":31.56507,"lon":121.31072,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP046","lat":31.55052,"lon":121.32602,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP047","lat":31.49658,"lon":121.42487,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP048","lat":31.4263,"lon":121.49785,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP049","lat":31.38008,"lon":121.59553,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP050","lat":31.32197,"lon":121.7152,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP051","lat":31.2689,"lon":121.85982,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP052","lat":31.23137,"lon":122.08288,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP053","lat":31.22402,"lon":122.10298,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP054","lat":31.1602,"lon":122.20658,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP055","lat":31.101,"lon":122.30625,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP056","lat":31.10217,"lon":122.515,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP057","lat":31.09167,"lon":122.54,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP058","lat":31.09167,"lon":123,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP059","lat":30.166667,"lon":123,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP060","lat":28.885204,"lon":122.583834,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP061","lat":26.544018,"lon":120.944588,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP062","lat":24.23057,"lon":120.12492,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP063","lat":23.816667,"lon":119.808333,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP064","lat":22.5,"lon":119.808333,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP065","lat":19.69807,"lon":122.07028,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP066","lat":15.433333,"lon":123.766667,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP067","lat":12.333333,"lon":125.733333,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP068","lat":7.45,"lon":127.93333,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP069","lat":-3.11333,"lon":144.56667,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP070","lat":-5.23717,"lon":147.31833,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP071","lat":-5.80033,"lon":147.58133,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP072","lat":-8.34533,"lon":149.71283,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP073","lat":-8.42217,"lon":149.73933,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP074","lat":-8.453,"lon":149.77467,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP075","lat":-8.53483,"lon":149.826,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP076","lat":-8.64133,"lon":149.831,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP077","lat":-9.62383,"lon":150.04817,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP078","lat":-10.17117,"lon":150.946,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP079","lat":-10.22217,"lon":150.97983,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP080","lat":-10.38567,"lon":150.99067,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP081","lat":-10.523,"lon":150.736,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP082","lat":-10.55133,"lon":150.70133,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP083","lat":-10.56633,"lon":150.70017,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP084","lat":-10.585,"lon":150.68133,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP085","lat":-10.5954,"lon":150.64963,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP086","lat":-10.59982,"lon":150.61937,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP087","lat":-10.63843,"lon":150.5956,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP088","lat":-10.67367,"lon":150.54733,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP089","lat":-10.72133,"lon":150.46717,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP090","lat":-10.73533,"lon":150.3935,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP091","lat":-10.7475,"lon":150.354,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP092","lat":-10.80583,"lon":150.31883,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP093","lat":-10.87,"lon":150.25983,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP094","lat":-10.196,"lon":147.4475,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP095","lat":-9.59367,"lon":147.0535,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP096","lat":-9.52677,"lon":147.1459,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP097","lat":-9.44775,"lon":147.12268,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP098","lat":-9.43068,"lon":147.11263,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5},{"id":"WP099","lat":-9.429,"lon":147.11022,"portXtd":0.1,"stbdXtd":0.1,"radius":0.5}];
+
+  function loadUserVoyage() {
+    processRoute('V2608B CNTZO-PGPOM WEATHER 2', USER_99_WPTS);
+  }
+
+  document.getElementById('btn-load-user-rtz')?.addEventListener('click', loadUserVoyage);
+
   function loadSampleVoyage() {
     // 59 verified waypoints from Zhoushan (CNZOS) to Port Moresby (PGPOM)
     const sample = [
@@ -1497,8 +1688,9 @@
   }
 
   // Auto initialize with sample route on load
+  initBackgroundLayers();
   setTimeout(() => {
-    loadSampleVoyage();
+    loadUserVoyage();
   }, 300);
 
 })();
