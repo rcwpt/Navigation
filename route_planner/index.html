@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marine Route Converter & Passage Intelligence</title>
+  
+  <!-- LEAFLET CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <!-- FONT AWESOME ICONS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- TAILWIND CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    :root {
+      --navy-950: #060d17;
+      --navy-900: #0a192f;
+      --navy-800: #112240;
+      --navy-700: #1e3a5f;
+      --teal-accent: #00d2d3;
+      --gold-accent: #feca57;
+      --blue-accent: #38bdf8;
+      --rose-accent: #f43f5e;
+      --sidebar-width: 460px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--navy-950);
+      color: #334155;
+      overflow-x: hidden;
+    }
+
+    /* APP LAYOUT */
+    #app-container {
+      display: flex;
+      height: 100vh;
+      height: 100dvh;
+      width: 100vw;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      max-width: var(--sidebar-width);
+      flex-shrink: 0;
+      height: 100%;
+      background: #ffffff;
+      border-right: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #sidebar.collapsed {
+      margin-left: calc(-1 * var(--sidebar-width));
+    }
+
+    .sidebar-header {
+      background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+      color: #ffffff;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--teal-accent);
+    }
+
+    /* TAB NAVIGATION */
+    .tab-btn {
+      padding: 9px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: #0284c7;
+      border-bottom-color: #0284c7;
+      background: rgba(2, 132, 199, 0.05);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* CONTENT VIEWER */
+    #main-content {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* VIEW SWITCHER BAR */
+    .view-bar {
+      height: 48px;
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      color: #ffffff;
+      z-index: 500;
+    }
+
+    .view-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .view-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+    }
+    .view-btn:not(.active) {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+    .view-btn:not(.active):hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    /* VIEW PANES */
+    #view-map {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #0b1329;
+    }
+
+    #view-report {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background: #f1f5f9;
+      display: none;
+      padding: 24px;
+    }
+
+    /* PRINT & REPORT STYLES */
+    .report-paper {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 32px;
+      color: #1e293b;
+    }
+
+    .vpf-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+    }
+    .vpf-table th, .vpf-table td {
+      border: 1px solid #cbd5e1;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    .vpf-table th {
+      background: #0f172a;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      font-size: 9px;
+      letter-spacing: 0.4px;
+    }
+    .vpf-row-eca {
+      background-color: #dcfce7 !important;
+    }
+    .vpf-row-war {
+      background-color: #fee2e2 !important;
+    }
+
+    /* MAP HUD & BADGES */
+    .map-badge-overlay {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      background: rgba(10, 25, 47, 0.9);
+      backdrop-filter: blur(8px);
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 210, 211, 0.3);
+      font-size: 0.78rem;
+      z-index: 400;
+      pointer-events: auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    #coord-hud {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(10, 25, 47, 0.9);
+      backdrop-filter: blur(8px);
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      z-index: 400;
+      display: flex;
+      gap: 12px;
+    }
+
+    /* PRINT SPECIFIC STYLES */
+    @media print {
+      body, html {
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      #sidebar, .view-bar, #sidebar-toggle, .no-print {
+        display: none !important;
+      }
+      #app-container, #main-content {
+        display: block !important;
+        height: auto !important;
+        width: 100% !important;
+        overflow: visible !important;
+      }
+      #view-report {
+        display: block !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+      .report-paper {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .vpf-table th {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      .vpf-row-eca {
+        background-color: #dcfce7 !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      .vpf-row-war {
+        background-color: #fee2e2 !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+    }
+
+    /* CUSTOM SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div id="app-container">
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚓</span>
+          <div>
+            <h1 class="font-bold text-sm tracking-wide text-white leading-tight">Route Intelligence</h1>
+            <p class="text-[10px] text-teal-300 font-mono">31 ECDIS Formats • Spatial Analytics</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <a href="https://www.instagram.com/c.wijaya.t/" target="_blank" rel="noopener noreferrer" class="px-2 py-1 text-[11px] rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:text-white flex items-center gap-1" title="Created by @c.wijaya.t">
+            <i class="fa-brands fa-instagram"></i> @c.wijaya.t
+          </a>
+          <a href="../index.html" class="px-2 py-1 text-[11px] rounded bg-slate-800 border border-slate-700 text-slate-200 hover:text-white flex items-center gap-1" title="Back to Bridge Hub">
+            ⮌ Hub
+          </a>
+        </div>
+      </div>
+      <div class="text-[10px] text-slate-300 flex items-center justify-between border-t border-slate-700/60 pt-1.5">
+        <span>IMO / SOLAS Compliant</span>
+        <span class="text-teal-400 font-semibold" id="sb-status-badge">Ready</span>
+      </div>
+    </div>
+
+    <!-- TABS BAR -->
+    <div class="flex border-b border-slate-200 bg-slate-50">
+      <button class="tab-btn active flex-1 text-center" data-tab="tab-converter">🔄 Convert</button>
+      <button class="tab-btn flex-1 text-center" data-tab="tab-vessel">🚢 Vessel & Squat</button>
+      <button class="tab-btn flex-1 text-center" data-tab="tab-intel">🧭 Enroute Intel</button>
+      <button class="tab-btn flex-1 text-center" data-tab="tab-layers">🗺️ Layers</button>
+    </div>
+
+    <!-- TAB 1: ROUTE & MULTI-ECDIS CONVERTER -->
+    <div class="tab-pane active flex-1 overflow-y-auto p-4 space-y-4" id="tab-converter">
+      <!-- UPLOAD / DRAG & DROP ZONE -->
+      <div class="border-2 border-dashed border-sky-300 hover:border-sky-500 rounded-xl p-4 bg-sky-50/50 hover:bg-sky-50 transition text-center cursor-pointer relative" id="drop-zone">
+        <input type="file" id="route-file-input" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" accept=".rtz,.rt3,.rt4,.xml,.gpx,.txt,.csv,.rte,.cb,.rtm,.rtn,.rta,.jmr,.rut,.rux,.wpt,.cvt,.route,.rtx,.bvs,.kml,*">
+        <div class="flex flex-col items-center justify-center space-y-1.5 pointer-events-none">
+          <div class="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-lg shadow-sm">
+            📥
+          </div>
+          <div class="font-bold text-xs text-slate-800">Import Route File</div>
+          <p class="text-[10px] text-slate-500">Supports all 31 formats (.rtz, .rt3, .csv, .gpx, .rut, .route, etc.)</p>
+        </div>
+      </div>
+
+      <!-- QUICK SAMPLE LOADER -->
+      <div class="flex items-center justify-between bg-slate-100 px-3 py-2 rounded-lg text-xs">
+        <span class="text-[11px] text-slate-600 font-medium">Or load verified sample voyage:</span>
+        <button id="btn-load-sample" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[10px] px-2.5 py-1 rounded transition shadow-sm flex items-center gap-1">
+          ⚡ CNZOS - PGPOM (RTZ)
+        </button>
+      </div>
+
+      <!-- ACTIVE ROUTE SUMMARY -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Current Route</span>
+          <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-teal-100 text-teal-800" id="route-format-tag">NO ROUTE</span>
+        </div>
+        <div class="text-sm font-bold text-slate-800 truncate" id="route-name-disp">No Route Loaded</div>
+        <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+          <div>Waypoints: <strong class="text-slate-800 font-mono" id="route-wpt-count">0</strong></div>
+          <div>Total Dist: <strong class="text-blue-600 font-mono" id="route-dist-count">0.00 NM</strong></div>
+        </div>
+      </div>
+
+      <!-- CONVERSION & EXPORT TARGET -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2.5">
+        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+          Target ECDIS / File Format (31 Formats)
+        </label>
+        <select id="export-format-select" class="w-full text-xs border border-slate-300 rounded-md p-2 bg-slate-50 font-medium text-slate-800 focus:outline-none focus:border-sky-500">
+          <!-- Populated by JavaScript with all 31 formats -->
+        </select>
+        <p class="text-[10px] text-slate-500 italic" id="export-format-desc">Select a target format to export.</p>
+        <button id="btn-download-export" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span>💾</span> Download Converted Route
+        </button>
+      </div>
+
+      <!-- WAYPOINT LIST TABLE (COMPACT) -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Waypoints Preview</span>
+          <button id="btn-fit-route" class="text-[10px] text-sky-600 hover:text-sky-800 font-semibold">🎯 Fit Map</button>
+        </div>
+        <div class="max-h-56 overflow-y-auto border border-slate-200 rounded">
+          <table class="w-full text-[10px] text-left border-collapse" id="sidebar-wpt-table">
+            <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0">
+              <tr>
+                <th class="p-1 border-b">#</th>
+                <th class="p-1 border-b">Name</th>
+                <th class="p-1 border-b">Lat / Lon</th>
+                <th class="p-1 border-b text-right">Leg NM</th>
+              </tr>
+            </thead>
+            <tbody id="sidebar-wpt-tbody">
+              <tr><td colspan="4" class="p-3 text-center text-slate-400 italic">No waypoints loaded</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: VESSEL PARTICULARS & SQUAT ENGINE -->
+    <div class="tab-pane flex-1 overflow-y-auto p-4 space-y-4" id="tab-vessel">
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2.5">
+        <div class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 flex items-center gap-1.5">
+          <span>🚢</span> Vessel Particulars & Dimensions
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Ship Name</label>
+            <input type="text" id="vessel-name" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-semibold" value="PROSPERA">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Voyage No</label>
+            <input type="text" id="voyage-no" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-semibold" value="V2608C">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Length LOA (m)</label>
+            <input type="number" step="0.1" id="vessel-loa" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="137.8">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Beam Breadth (m)</label>
+            <input type="number" step="0.1" id="vessel-beam" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="22.0">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Draft Fwd (m)</label>
+            <input type="number" step="0.01" id="draft-fwd" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="7.20">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Draft Aft (m)</label>
+            <input type="number" step="0.01" id="draft-aft" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="7.80">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Molded Vol (m³)</label>
+            <input type="number" id="vessel-vol" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="19855">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Plan Speed (kts)</label>
+            <input type="number" step="0.1" id="vessel-speed" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="12.0">
+          </div>
+        </div>
+      </div>
+
+      <!-- SQUAT & UKC ENGINE CONTROLS -->
+      <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2.5">
+        <div class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span>📐</span> Squat Calculation Model</span>
+          <span class="text-[10px] font-mono text-blue-600 font-bold" id="cb-display">Cb = 0.840</span>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Squat Mode Rule</label>
+          <select id="squat-mode-select" class="w-full text-xs border border-slate-300 rounded p-1.5 bg-white font-medium text-slate-700">
+            <option value="auto">Auto (Shallow if Leg ≤ 15 NM or XTE ≤ 0.5 NM)</option>
+            <option value="shallow">Shallow / Confined Waters [Cb × (V² / 50)]</option>
+            <option value="opensea">Open Sea [Cb × (V² / 100)]</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Charted Depth (m)</label>
+            <input type="number" step="0.1" id="depth-val" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="25.0">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase">Tide Height (m)</label>
+            <input type="number" step="0.1" id="tide-val" class="w-full text-xs border border-slate-300 rounded px-2 py-1 bg-white font-mono" value="2.0">
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded p-2.5 space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Shallow Water Squat:</span>
+            <strong class="font-mono text-red-600" id="squat-shallow-disp">2.42 m</strong>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Open Sea Squat:</span>
+            <strong class="font-mono text-amber-600" id="squat-opensea-disp">1.21 m</strong>
+          </div>
+          <div class="flex justify-between pt-1 border-t border-slate-100">
+            <span class="text-slate-500">Max Static Draft:</span>
+            <strong class="font-mono text-slate-800" id="max-draft-disp">7.80 m</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MARITIME INTELLIGENCE & PUBLICATIONS -->
+    <div class="tab-pane flex-1 overflow-y-auto p-4 space-y-4" id="tab-intel">
+      <!-- DETECTED PORTS -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
+        <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+          <span>📍</span> Detected Port Pairs
+        </span>
+        <div class="space-y-1.5 text-xs">
+          <div class="p-2 bg-slate-50 rounded border border-slate-100">
+            <div class="text-[10px] text-slate-400 font-bold uppercase">Departure Port</div>
+            <div class="font-bold text-slate-800" id="intel-dep-port">Detecting...</div>
+          </div>
+          <div class="p-2 bg-slate-50 rounded border border-slate-100">
+            <div class="text-[10px] text-slate-400 font-bold uppercase">Destination Port</div>
+            <div class="font-bold text-slate-800" id="intel-arr-port">Detecting...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAVERSED NAVAREAS -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
+        <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+          <span>🌐</span> Traversed NAVAREAs
+        </span>
+        <div class="flex flex-wrap gap-1.5" id="intel-navareas-chips">
+          <span class="text-xs text-slate-400 italic">No NAVAREAs detected</span>
+        </div>
+      </div>
+
+      <!-- ECA & MARPOL SPECIAL AREAS -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2">
+        <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span>🌿</span> ECA & MARPOL Zones</span>
+          <span class="text-[10px] font-mono font-bold text-emerald-600" id="intel-eca-dist">0.0 NM</span>
+        </span>
+        <div class="space-y-1" id="intel-eca-list">
+          <span class="text-xs text-slate-400 italic">None enroute</span>
+        </div>
+      </div>
+
+      <!-- ADMIRALTY PUBLICATIONS NEEDED -->
+      <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-3">
+        <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+          <span>📚</span> Admiralty Publications Enroute
+        </span>
+        
+        <!-- Pilots -->
+        <div>
+          <div class="text-[10px] font-bold uppercase text-slate-500 mb-1">Sailing Directions (Pilots)</div>
+          <div class="flex flex-wrap gap-1" id="intel-pilots-list">
+            <span class="text-xs text-slate-400 italic">None</span>
+          </div>
+        </div>
+
+        <!-- List of Lights -->
+        <div>
+          <div class="text-[10px] font-bold uppercase text-slate-500 mb-1">List of Lights (ALL)</div>
+          <div class="flex flex-wrap gap-1" id="intel-lights-list">
+            <span class="text-xs text-slate-400 italic">None</span>
+          </div>
+        </div>
+
+        <!-- ALRS -->
+        <div>
+          <div class="text-[10px] font-bold uppercase text-slate-500 mb-1">Radio Signals (ALRS)</div>
+          <div class="flex flex-wrap gap-1" id="intel-alrs-list">
+            <span class="text-xs text-slate-400 italic">None</span>
+          </div>
+        </div>
+
+        <!-- ATT -->
+        <div>
+          <div class="text-[10px] font-bold uppercase text-slate-500 mb-1">Tide Tables (ATT)</div>
+          <div class="flex flex-wrap gap-1" id="intel-att-list">
+            <span class="text-xs text-slate-400 italic">None</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: LAYER CONTROL -->
+    <div class="tab-pane flex-1 overflow-y-auto p-4 space-y-3" id="tab-layers">
+      <div class="text-xs font-bold text-slate-800 uppercase tracking-wide border-b pb-1">Map Layers & Overlays</div>
+      
+      <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
+        <span class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          <span>Route Track & Headings</span>
+        </span>
+        <input type="checkbox" id="layer-chk-route" checked class="accent-sky-600">
+      </label>
+
+      <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
+        <span class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <span>ECA Zones (Emission Control)</span>
+        </span>
+        <input type="checkbox" id="layer-chk-eca" checked class="accent-emerald-600">
+      </label>
+
+      <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
+        <span class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500"></span>
+          <span>JWC War Risk Areas</span>
+        </span>
+        <input type="checkbox" id="layer-chk-war" checked class="accent-red-600">
+      </label>
+
+      <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
+        <span class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+          <span>Traffic Schemes (TSS)</span>
+        </span>
+        <input type="checkbox" id="layer-chk-tss" checked class="accent-purple-600">
+      </label>
+
+      <label class="flex items-center justify-between text-xs p-2 bg-slate-50 hover:bg-slate-100 rounded cursor-pointer">
+        <span class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+          <span>NAVAREA Boundaries</span>
+        </span>
+        <input type="checkbox" id="layer-chk-navarea" checked class="accent-amber-600">
+      </label>
+    </div>
+
+    <!-- SIDEBAR FOOTER -->
+    <div class="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+      <button id="btn-toggle-view" class="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-1.5 px-3 rounded shadow-sm transition flex items-center gap-1.5">
+        <span id="btn-view-icon">📄</span> <span id="btn-view-label">View VPF & PDF Report</span>
+      </button>
+      <button id="btn-print-doc" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs py-1.5 px-3 rounded shadow-sm transition flex items-center gap-1">
+        🖨️ Print / PDF
+      </button>
+    </div>
+  </aside>
+
+  <!-- SIDEBAR TOGGLE BUTTON -->
+  <button id="sidebar-toggle" class="absolute top-3 left-3 z-[1100] bg-slate-900/90 hover:bg-slate-900 text-white px-2.5 py-1.5 rounded-lg border border-slate-700 shadow-md text-xs font-bold transition flex items-center gap-1">
+    <span id="toggle-arrow">◀</span> Sidebar
+  </button>
+
+  <!-- MAIN CONTENT VIEWER -->
+  <main id="main-content">
+    <!-- VIEW SWITCHER TOPBAR -->
+    <div class="view-bar no-print">
+      <div class="flex items-center gap-2 ml-24 md:ml-0">
+        <button class="view-btn active" id="view-btn-map" data-target="map">
+          <span>🗺️</span> Interactive Map
+        </button>
+        <button class="view-btn" id="view-btn-report" data-target="report">
+          <span>📄</span> VPF & Publications Report
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400 hidden sm:inline" id="topbar-summary-text">Ready</span>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold transition shadow-sm flex items-center gap-1.5" onclick="window.print()">
+          <span>🖨️</span> Export PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. MAP VIEW -->
+    <div id="view-map" class="active">
+      <div id="map"></div>
+
+      <!-- BADGE OVERLAY -->
+      <div class="map-badge-overlay no-print">
+        <div class="font-bold text-teal-300" id="map-overlay-title">Passage Intelligence</div>
+        <div class="text-[11px] text-slate-300" id="map-overlay-sub">No Route Loaded</div>
+      </div>
+
+      <!-- CURSOR HUD -->
+      <div id="coord-hud" class="no-print">
+        <span>Lat: <strong id="hud-lat">--°--.--'N</strong></span>
+        <span>Lon: <strong id="hud-lon">---°--.--'E</strong></span>
+      </div>
+    </div>
+
+    <!-- 2. REPORT / PRINT TO PDF VIEW -->
+    <div id="view-report">
+      <div class="report-paper space-y-6">
+        <!-- REPORT HEADER -->
+        <div class="border-b-2 border-slate-900 pb-4 flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">⚓</span>
+              <h1 class="text-xl font-black tracking-wide text-slate-900 uppercase">VOYAGE PASSAGE FORM & ROUTE INTELLIGENCE</h1>
+            </div>
+            <p class="text-xs text-slate-600 font-semibold mt-0.5">Enroute Admiralty Publications • VPF Waypoint Table • Squat & Under Keel Clearance</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs font-mono font-bold text-slate-900" id="rpt-date-disp">Date: --</div>
+            <div class="text-[10px] text-slate-500">Database by @c.wijaya.t</div>
+          </div>
+        </div>
+
+        <!-- SHIP & VOYAGE SUMMARY TABLE -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 border border-slate-300 rounded p-3 text-xs">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Vessel Name</span>
+            <div class="font-bold text-slate-900 text-sm" id="rpt-vessel-name">PROSPERA</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Voyage Number</span>
+            <div class="font-bold text-slate-900 text-sm" id="rpt-voyage-no">V2608C</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Departure Port</span>
+            <div class="font-bold text-slate-900 text-sm" id="rpt-dep-port">-</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Destination Port</span>
+            <div class="font-bold text-slate-900 text-sm" id="rpt-arr-port">-</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Dimensions (LOA × B)</span>
+            <div class="font-mono text-slate-800" id="rpt-dim">137.8 × 22.0 m</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Draft (Fwd / Aft)</span>
+            <div class="font-mono text-slate-800" id="rpt-draft">7.20 / 7.80 m</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Total Distance</span>
+            <div class="font-mono font-bold text-blue-700" id="rpt-total-dist">0.00 NM</div>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-500">Plan Speed</span>
+            <div class="font-mono font-bold text-slate-800" id="rpt-speed">12.0 kts</div>
+          </div>
+        </div>
+
+        <!-- EXECUTIVE SUMMARY: TRAVERSED MARITIME ZONES & PUBLICATIONS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- ZONES CARD -->
+          <div class="border border-slate-300 rounded p-3 bg-white space-y-2">
+            <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-1 flex items-center justify-between">
+              <span>🌐 Traversed Regulatory Maritime Zones</span>
+            </h3>
+            <div class="space-y-1.5 text-xs">
+              <div>
+                <span class="font-semibold text-slate-600">NAVAREAs Enroute:</span>
+                <span class="font-bold text-blue-800 ml-1" id="rpt-navareas">-</span>
+              </div>
+              <div>
+                <span class="font-semibold text-slate-600">ECA Emission Control Distance:</span>
+                <span class="font-bold text-emerald-700 ml-1" id="rpt-eca-dist">0.0 NM</span>
+              </div>
+              <div>
+                <span class="font-semibold text-slate-600">JWC War / Piracy Risk Areas:</span>
+                <span class="font-bold text-red-700 ml-1" id="rpt-war-zones">None</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PUBLICATIONS CARD -->
+          <div class="border border-slate-300 rounded p-3 bg-white space-y-2">
+            <h3 class="text-xs font-bold text-slate-900 uppercase border-b border-slate-200 pb-1">
+              📚 Traversed Admiralty Publications
+            </h3>
+            <div class="space-y-1 text-xs">
+              <div>
+                <span class="font-semibold text-slate-600">Sailing Directions (Pilots):</span>
+                <span class="font-bold text-slate-900 ml-1" id="rpt-pilots">-</span>
+              </div>
+              <div>
+                <span class="font-semibold text-slate-600">List of Lights (ALL):</span>
+                <span class="font-bold text-slate-900 ml-1" id="rpt-lights">-</span>
+              </div>
+              <div>
+                <span class="font-semibold text-slate-600">Radio Signals (ALRS):</span>
+                <span class="font-bold text-slate-900 ml-1" id="rpt-alrs">-</span>
+              </div>
+              <div>
+                <span class="font-semibold text-slate-600">Tide Tables (ATT):</span>
+                <span class="font-bold text-slate-900 ml-1" id="rpt-att">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SQUAT & UKC CALCULATION SUMMARY CARD -->
+        <div class="border border-slate-300 rounded p-3 bg-slate-50 text-xs space-y-1.5">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1">
+            <span class="font-bold text-slate-900 uppercase">Under Keel Clearance & Squat Analysis</span>
+            <span class="font-mono font-bold text-blue-700" id="rpt-cb">Cb = 0.840</span>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+            <div>Shallow Squat: <strong class="text-red-700 font-mono" id="rpt-sq-shallow">2.42 m</strong></div>
+            <div>Open Sea Squat: <strong class="text-amber-700 font-mono" id="rpt-sq-opensea">1.21 m</strong></div>
+            <div>Static Max Draft: <strong class="text-slate-800 font-mono" id="rpt-max-draft">7.80 m</strong></div>
+            <div>Available Depth: <strong class="text-emerald-700 font-mono" id="rpt-water-depth">27.0 m</strong></div>
+          </div>
+        </div>
+
+        <!-- VPF WAYPOINT EXECUTION TABLE -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-900 uppercase">Voyage Passage Form (VPF Table)</h3>
+            <span class="text-[10px] text-slate-500 font-semibold italic">* Green rows indicate ECA waters; Pink rows indicate High Risk Areas.</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="vpf-table" id="rpt-vpf-table">
+              <thead>
+                <tr>
+                  <th style="width: 32px;">WPT</th>
+                  <th>Name</th>
+                  <th>Latitude</th>
+                  <th>Longitude</th>
+                  <th style="width: 55px;">Course (°T)</th>
+                  <th style="width: 55px;">Leg (NM)</th>
+                  <th style="width: 65px;">DTG (NM)</th>
+                  <th style="width: 50px;">Speed</th>
+                  <th style="width: 55px;">Squat (m)</th>
+                  <th style="width: 60px;">Fix Int</th>
+                  <th style="width: 85px;">Method</th>
+                  <th>Remarks / Nav Notices</th>
+                </tr>
+              </thead>
+              <tbody id="rpt-vpf-tbody">
+                <tr><td colspan="12" class="text-center py-4 text-slate-400 italic">No route data loaded</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SIGNATURE BLOCK -->
+        <div class="grid grid-cols-3 gap-6 pt-8 border-t border-slate-300 text-center text-xs">
+          <div>
+            <div class="h-12 border-b border-dashed border-slate-400"></div>
+            <div class="font-bold text-slate-900 mt-1">Prepared by Navigating Officer (2/O)</div>
+          </div>
+          <div>
+            <div class="h-12 border-b border-dashed border-slate-400"></div>
+            <div class="font-bold text-slate-900 mt-1">Checked by Chief Officer (C/O)</div>
+          </div>
+          <div>
+            <div class="h-12 border-b border-dashed border-slate-400"></div>
+            <div class="font-bold text-slate-900 mt-1">Approved by Master</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- LEAFLET JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- TURF.JS (LOCAL FALLBACK) -->
+<script src="turf.min.js"></script>
+
+<!-- EXTERNAL EMBEDDED DATASETS -->
+<script src="port_to_port_data.js"></script>
+<script src="navarea_data.js"></script>
+<script src="admiralty_publications.js"></script>
+
+<!-- ROUTE CONVERTER & PASSAGE INTELLIGENCE ENGINES -->
+<script src="route_converter.js"></script>
+<script src="passage_intelligence.js"></script>
+
+<!-- MAIN APPLICATION LOGIC -->
+<script>
+(function() {
+  'use strict';
+
+  // --- STATE ---
+  const STATE = {
+    routeName: 'V2608C CNZOS-PGPOM',
+    waypoints: [],
+    currentView: 'map', // 'map' or 'report'
+    vessel: {
+      name: 'PROSPERA',
+      voyageNo: 'V2608C',
+      length: 137.8,
+      beam: 22.0,
+      draftFwd: 7.20,
+      draftAft: 7.80,
+      volume: 19855,
+      speed: 12.0
+    },
+    squatOptions: {
+      squatCriteria: 'auto',
+      chartedDepth: 25.0,
+      tideHeight: 2.0
+    },
+    spatialResults: {
+      navareas: [],
+      p2p: null,
+      pubs: null,
+      squatUkc: null
+    }
+  };
+
+  // --- LEAFLET MAP SETUP ---
+  const map = L.map('map', {
+    center: [15.0, 130.0],
+    zoom: 4,
+    zoomControl: false,
+    worldCopyJump: true
+  });
+
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  L.control.scale({ imperial: true, metric: true, position: 'bottomleft' }).addTo(map);
+
+  // BASEMAP LAYERS
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  });
+  const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; CartoDB & OpenStreetMap'
+  });
+  const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; CartoDB & OpenStreetMap'
+  });
+  const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, Maxar'
+  });
+
+  osmLayer.addTo(map); // DEFAULT OPENSTREETMAP
+
+  const baseLayers = {
+    "🗺️ OpenStreetMap (Standard)": osmLayer,
+    "🧭 CartoDB Voyager (Nav Style)": cartoVoyager,
+    "🌙 CartoDB Dark (ECDIS Marine Night)": cartoDark,
+    "🛰️ Esri Satellite Imagery": esriSat
+  };
+
+  // OVERLAY LAYERS
+  const overlays = {
+    route: L.layerGroup().addTo(map),
+    eca: L.layerGroup().addTo(map),
+    war: L.layerGroup().addTo(map),
+    tss: L.layerGroup().addTo(map),
+    navarea: L.layerGroup().addTo(map)
+  };
+
+  L.control.layers(baseLayers, {
+    "🚢 Route & Waypoint Track": overlays.route,
+    "🌿 ECA Zones (Emission)": overlays.eca,
+    "⚠️ JWC War Risk Areas": overlays.war,
+    "🟪 Traffic Schemes (TSS)": overlays.tss,
+    "🌐 NAVAREA Boundaries": overlays.navarea
+  }, { position: 'topright', collapsed: true }).addTo(map);
+
+  // Cursor HUD Listener
+  map.on('mousemove', (e) => {
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+    document.getElementById('hud-lat').innerText = RouteConverter.formatDMS(lat, true);
+    document.getElementById('hud-lon').innerText = RouteConverter.formatDMS(lon, false);
+  });
+
+  // --- POPULATE 31 EXPORT FORMATS ---
+  const exportSelect = document.getElementById('export-format-select');
+  RouteConverter.FORMATS.forEach((fmt) => {
+    const opt = document.createElement('option');
+    opt.value = fmt.id;
+    opt.textContent = `${fmt.name} (${fmt.extension || 'No Ext'})`;
+    exportSelect.appendChild(opt);
+  });
+
+  exportSelect.addEventListener('change', () => {
+    const chosen = RouteConverter.FORMATS.find(f => f.id === exportSelect.value);
+    document.getElementById('export-format-desc').textContent = chosen ? chosen.description : '';
+  });
+
+  // --- TAB NAVIGATION ---
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const targetId = btn.getAttribute('data-tab');
+      document.getElementById(targetId)?.classList.add('active');
+    });
+  });
+
+  // --- VIEW SWITCHER (MAP vs REPORT) ---
+  function switchView(view) {
+    STATE.currentView = view;
+    if (view === 'map') {
+      document.getElementById('view-map').style.display = 'block';
+      document.getElementById('view-report').style.display = 'none';
+      document.getElementById('view-btn-map').classList.add('active');
+      document.getElementById('view-btn-report').classList.remove('active');
+      document.getElementById('btn-view-icon').innerText = '📄';
+      document.getElementById('btn-view-label').innerText = 'View VPF & PDF Report';
+      setTimeout(() => map.invalidateSize(), 100);
+    } else {
+      document.getElementById('view-map').style.display = 'none';
+      document.getElementById('view-report').style.display = 'block';
+      document.getElementById('view-btn-map').classList.remove('active');
+      document.getElementById('view-btn-report').classList.add('active');
+      document.getElementById('btn-view-icon').innerText = '🗺️';
+      document.getElementById('btn-view-label').innerText = 'View Map View';
+    }
+  }
+
+  document.getElementById('view-btn-map').addEventListener('click', () => switchView('map'));
+  document.getElementById('view-btn-report').addEventListener('click', () => switchView('report'));
+  document.getElementById('btn-toggle-view').addEventListener('click', () => {
+    switchView(STATE.currentView === 'map' ? 'report' : 'map');
+  });
+  document.getElementById('btn-print-doc').addEventListener('click', () => {
+    switchView('report');
+    setTimeout(() => window.print(), 200);
+  });
+
+  // SIDEBAR TOGGLE
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const toggleArrow = document.getElementById('toggle-arrow');
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    const isCol = sidebar.classList.contains('collapsed');
+    toggleArrow.innerText = isCol ? '▶' : '◀';
+    setTimeout(() => map.invalidateSize(), 300);
+  });
+
+  // --- RECALCULATE & RUN PASSAGE INTELLIGENCE ---
+  function processRoute(routeName, waypoints) {
+    STATE.routeName = routeName || 'ACTIVE_ROUTE';
+    STATE.waypoints = RouteConverter.recalculateRoute(waypoints);
+
+    const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
+    document.getElementById('route-name-disp').innerText = STATE.routeName;
+    document.getElementById('route-wpt-count').innerText = STATE.waypoints.length;
+    document.getElementById('route-dist-count').innerText = totalDist.toFixed(2) + ' NM';
+    document.getElementById('route-format-tag').innerText = 'LOADED';
+    document.getElementById('map-overlay-title').innerText = STATE.routeName;
+    document.getElementById('map-overlay-sub').innerText = `${STATE.waypoints.length} WPTs • ${totalDist.toFixed(2)} NM`;
+    document.getElementById('topbar-summary-text').innerText = `${STATE.routeName}: ${STATE.waypoints.length} WPTs, ${totalDist.toFixed(1)} NM`;
+
+    // 1. Scan NAVAREAs
+    const navareas = PassageIntelligence.scanNavareas(STATE.waypoints);
+    STATE.spatialResults.navareas = navareas;
+
+    // 2. Scan PortToPort Maritime Zones
+    const p2p = PassageIntelligence.scanPortToPortZones(STATE.waypoints);
+    STATE.spatialResults.p2p = p2p;
+
+    // 3. Scan Admiralty Publications & Ports
+    const pubs = PassageIntelligence.scanAdmiraltyPublications(STATE.waypoints);
+    STATE.spatialResults.pubs = pubs;
+
+    // 4. Calculate Squat & UKC
+    collectVesselInputs();
+    const squatUkc = PassageIntelligence.calculateSquatAndUkc(STATE.vessel, STATE.waypoints, STATE.squatOptions);
+    STATE.spatialResults.squatUkc = squatUkc;
+
+    // Update UI elements
+    updateSidebarIntelUI();
+    renderMapRoute();
+    renderReportDocument();
+  }
+
+  function collectVesselInputs() {
+    STATE.vessel.name = document.getElementById('vessel-name').value || 'PROSPERA';
+    STATE.vessel.voyageNo = document.getElementById('voyage-no').value || 'V2608C';
+    STATE.vessel.length = parseFloat(document.getElementById('vessel-loa').value) || 137.8;
+    STATE.vessel.beam = parseFloat(document.getElementById('vessel-beam').value) || 22.0;
+    STATE.vessel.draftFwd = parseFloat(document.getElementById('draft-fwd').value) || 7.20;
+    STATE.vessel.draftAft = parseFloat(document.getElementById('draft-aft').value) || 7.80;
+    STATE.vessel.volume = parseFloat(document.getElementById('vessel-vol').value) || 19855;
+    STATE.vessel.speed = parseFloat(document.getElementById('vessel-speed').value) || 12.0;
+
+    STATE.squatOptions.squatCriteria = document.getElementById('squat-mode-select').value;
+    STATE.squatOptions.chartedDepth = parseFloat(document.getElementById('depth-val').value) || 25.0;
+    STATE.squatOptions.tideHeight = parseFloat(document.getElementById('tide-val').value) || 2.0;
+  }
+
+  // Auto recalculate on vessel input change
+  ['vessel-name', 'voyage-no', 'vessel-loa', 'vessel-beam', 'draft-fwd', 'draft-aft', 'vessel-vol', 'vessel-speed', 'squat-mode-select', 'depth-val', 'tide-val'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+      if (STATE.waypoints.length > 0) {
+        collectVesselInputs();
+        STATE.spatialResults.squatUkc = PassageIntelligence.calculateSquatAndUkc(STATE.vessel, STATE.waypoints, STATE.squatOptions);
+        updateSidebarIntelUI();
+        renderReportDocument();
+      }
+    });
+  });
+
+  // --- UPDATE SIDEBAR INTEL UI ---
+  function updateSidebarIntelUI() {
+    const { navareas, p2p, pubs, squatUkc } = STATE.spatialResults;
+
+    // Cb & Squat Disps
+    if (squatUkc) {
+      document.getElementById('cb-display').innerText = `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}`;
+      document.getElementById('squat-shallow-disp').innerText = `${squatUkc.squatShallow.toFixed(2)} m`;
+      document.getElementById('squat-opensea-disp').innerText = `${squatUkc.squatOpenSea.toFixed(2)} m`;
+      document.getElementById('max-draft-disp').innerText = `${squatUkc.vessel.maxDraft.toFixed(2)} m`;
+    }
+
+    // Ports
+    document.getElementById('intel-dep-port').innerText = pubs?.nearestDeparturePort
+      ? `${pubs.nearestDeparturePort.name} (${pubs.nearestDeparturePort.distanceNM.toFixed(1)} NM)`
+      : 'Not detected';
+    document.getElementById('intel-arr-port').innerText = pubs?.nearestArrivalPort
+      ? `${pubs.nearestArrivalPort.name} (${pubs.nearestArrivalPort.distanceNM.toFixed(1)} NM)`
+      : 'Not detected';
+
+    // Navareas
+    const navDiv = document.getElementById('intel-navareas-chips');
+    navDiv.innerHTML = '';
+    if (navareas && navareas.length > 0) {
+      navareas.forEach(n => {
+        const badge = document.createElement('span');
+        badge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300';
+        badge.innerText = n.code;
+        navDiv.appendChild(badge);
+      });
+    } else {
+      navDiv.innerHTML = '<span class="text-xs text-slate-400 italic">None</span>';
+    }
+
+    // ECA
+    document.getElementById('intel-eca-dist').innerText = p2p ? `${p2p.ecaDistance.toFixed(1)} NM` : '0.0 NM';
+    const ecaListDiv = document.getElementById('intel-eca-list');
+    ecaListDiv.innerHTML = '';
+    if (p2p && p2p.ecaZonesTraversed && p2p.ecaZonesTraversed.length > 0) {
+      p2p.ecaZonesTraversed.forEach(z => {
+        const item = document.createElement('div');
+        item.className = 'text-xs text-emerald-800 font-semibold flex items-center gap-1';
+        item.innerHTML = `• ${z}`;
+        ecaListDiv.appendChild(item);
+      });
+    } else {
+      ecaListDiv.innerHTML = '<span class="text-xs text-slate-400 italic">No ECA zones enroute</span>';
+    }
+
+    // Publications
+    const makeList = (divId, items) => {
+      const el = document.getElementById(divId);
+      el.innerHTML = '';
+      if (!items || items.length === 0) {
+        el.innerHTML = '<span class="text-xs text-slate-400 italic">None</span>';
+        return;
+      }
+      items.forEach(it => {
+        const pill = document.createElement('span');
+        pill.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 border border-slate-300 text-slate-800';
+        pill.innerText = it.code || it.name;
+        el.appendChild(pill);
+      });
+    };
+
+    makeList('intel-pilots-list', pubs?.sailingDirections);
+    makeList('intel-lights-list', pubs?.listOfLights);
+    makeList('intel-alrs-list', pubs?.radioSignals);
+    makeList('intel-att-list', pubs?.tideTables);
+
+    // Sidebar Waypoint table
+    const tbody = document.getElementById('sidebar-wpt-tbody');
+    tbody.innerHTML = '';
+    STATE.waypoints.forEach((w, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-sky-50 cursor-pointer';
+      tr.innerHTML = `
+        <td class="p-1 border-b font-mono font-bold text-slate-500">${idx + 1}</td>
+        <td class="p-1 border-b font-semibold text-slate-800">${w.id}</td>
+        <td class="p-1 border-b font-mono text-[9px] text-slate-600">${w.lat.toFixed(2)} / ${w.lon.toFixed(2)}</td>
+        <td class="p-1 border-b text-right font-mono text-slate-700">${(w.dist || 0).toFixed(1)}</td>
+      `;
+      tr.addEventListener('click', () => {
+        map.setView([w.lat, w.lon], 9);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // --- RENDER MAP ROUTE & ZONES ---
+  function renderMapRoute() {
+    overlays.route.clearLayers();
+    overlays.eca.clearLayers();
+    overlays.war.clearLayers();
+    overlays.tss.clearLayers();
+    overlays.navarea.clearLayers();
+
+    if (!STATE.waypoints || STATE.waypoints.length === 0) return;
+
+    const latlngs = STATE.waypoints.map(w => [w.lat, w.lon]);
+
+    // Main route track polyline
+    const routeLine = L.polyline(latlngs, {
+      color: '#0284c7',
+      weight: 3.5,
+      opacity: 0.9,
+      lineJoin: 'round'
+    }).addTo(overlays.route);
+
+    // Markers and pills
+    STATE.waypoints.forEach((w, idx) => {
+      const isStart = idx === 0;
+      const isEnd = idx === STATE.waypoints.length - 1;
+      const color = isStart ? '#10b981' : (isEnd ? '#ef4444' : '#0284c7');
+
+      const circle = L.circleMarker([w.lat, w.lon], {
+        radius: isStart || isEnd ? 6 : 4,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 1.5,
+        opacity: 1,
+        fillOpacity: 1
+      });
+
+      const popupContent = `
+        <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4;">
+          <strong style="font-size: 13px; color: #0f172a;">#${idx + 1}: ${w.id}</strong><br>
+          <b>Lat:</b> ${RouteConverter.formatDMS(w.lat, true)}<br>
+          <b>Lon:</b> ${RouteConverter.formatDMS(w.lon, false)}<br>
+          <b>Course:</b> ${(w.course || 0).toFixed(1)}°T<br>
+          <b>Leg Dist:</b> ${(w.dist || 0).toFixed(2)} NM<br>
+          <b>Accum Dist:</b> ${(w.accDist || 0).toFixed(2)} NM
+        </div>
+      `;
+      circle.bindPopup(popupContent);
+      circle.addTo(overlays.route);
+    });
+
+    // Fit map bounds
+    map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
+    // Render Polygons for Traversed NAVAREAs
+    if (window.NAVAREA_GEOJSON && window.NAVAREA_GEOJSON.features) {
+      window.NAVAREA_GEOJSON.features.forEach(f => {
+        const code = (f.properties?.code || 'NAVAREA ' + f.properties?.number);
+        const isTraversed = STATE.spatialResults.navareas.some(n => n.code === code);
+        if (isTraversed) {
+          L.geoJSON(f, {
+            style: { color: '#f59e0b', weight: 1.5, fillOpacity: 0.05, dashArray: '4,4' },
+            onEachFeature: (feature, layer) => {
+              layer.bindTooltip(`NAVAREA ${feature.properties?.number || ''}`, { sticky: true });
+            }
+          }).addTo(overlays.navarea);
+        }
+      });
+    }
+
+    // Render Traversed PortToPort Zones
+    if (window.PORT_TO_PORT_DATA && window.PORT_TO_PORT_DATA.features && STATE.spatialResults.p2p) {
+      const p2p = STATE.spatialResults.p2p;
+      window.PORT_TO_PORT_DATA.features.forEach(f => {
+        const name = f.properties?.name;
+        if (p2p.ecaZonesTraversed.includes(name)) {
+          L.geoJSON(f, {
+            style: { color: '#10b981', weight: 1.5, fillOpacity: 0.12 }
+          }).bindTooltip(`ECA: ${name}`, { sticky: true }).addTo(overlays.eca);
+        } else if (p2p.warZonesTraversed.includes(name)) {
+          L.geoJSON(f, {
+            style: { color: '#ef4444', weight: 1.5, fillOpacity: 0.15 }
+          }).bindTooltip(`War Risk: ${name}`, { sticky: true }).addTo(overlays.war);
+        }
+      });
+    }
+  }
+
+  // Layer checkbox bindings
+  document.getElementById('layer-chk-route').addEventListener('change', e => {
+    if (e.target.checked) overlays.route.addTo(map); else map.removeLayer(overlays.route);
+  });
+  document.getElementById('layer-chk-eca').addEventListener('change', e => {
+    if (e.target.checked) overlays.eca.addTo(map); else map.removeLayer(overlays.eca);
+  });
+  document.getElementById('layer-chk-war').addEventListener('change', e => {
+    if (e.target.checked) overlays.war.addTo(map); else map.removeLayer(overlays.war);
+  });
+  document.getElementById('layer-chk-tss').addEventListener('change', e => {
+    if (e.target.checked) overlays.tss.addTo(map); else map.removeLayer(overlays.tss);
+  });
+  document.getElementById('layer-chk-navarea').addEventListener('change', e => {
+    if (e.target.checked) overlays.navarea.addTo(map); else map.removeLayer(overlays.navarea);
+  });
+
+  document.getElementById('btn-fit-route').addEventListener('click', () => {
+    if (STATE.waypoints.length > 0) {
+      const latlngs = STATE.waypoints.map(w => [w.lat, w.lon]);
+      map.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+    }
+  });
+
+  // --- RENDER VPF & REPORT DOCUMENT ---
+  function renderReportDocument() {
+    const { navareas, p2p, pubs, squatUkc } = STATE.spatialResults;
+    const v = STATE.vessel;
+    const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
+
+    document.getElementById('rpt-date-disp').innerText = `Date: ${new Date().toISOString().slice(0, 10)}`;
+    document.getElementById('rpt-vessel-name').innerText = v.name;
+    document.getElementById('rpt-voyage-no').innerText = v.voyageNo || '-';
+    document.getElementById('rpt-dep-port').innerText = pubs?.nearestDeparturePort?.name || '-';
+    document.getElementById('rpt-arr-port').innerText = pubs?.nearestArrivalPort?.name || '-';
+    document.getElementById('rpt-dim').innerText = `${v.length} × ${v.beam} m`;
+    document.getElementById('rpt-draft').innerText = `${v.draftFwd.toFixed(2)} / ${v.draftAft.toFixed(2)} m`;
+    document.getElementById('rpt-total-dist').innerText = `${totalDist.toFixed(2)} NM`;
+    document.getElementById('rpt-speed').innerText = `${v.speed.toFixed(1)} kts`;
+
+    // Zones
+    document.getElementById('rpt-navareas').innerText = navareas && navareas.length > 0
+      ? navareas.map(n => n.code).join(', ')
+      : 'None';
+    document.getElementById('rpt-eca-dist').innerText = p2p ? `${p2p.ecaDistance.toFixed(1)} NM` : '0.0 NM';
+    document.getElementById('rpt-war-zones').innerText = p2p && p2p.warZonesTraversed && p2p.warZonesTraversed.length > 0
+      ? p2p.warZonesTraversed.join(', ')
+      : 'None';
+
+    // Publications
+    document.getElementById('rpt-pilots').innerText = pubs?.sailingDirections && pubs.sailingDirections.length > 0
+      ? pubs.sailingDirections.map(s => s.code).join(', ')
+      : 'None';
+    document.getElementById('rpt-lights').innerText = pubs?.listOfLights && pubs.listOfLights.length > 0
+      ? pubs.listOfLights.map(l => l.code).join(', ')
+      : 'None';
+    document.getElementById('rpt-alrs').innerText = pubs?.radioSignals && pubs.radioSignals.length > 0
+      ? pubs.radioSignals.map(r => r.code).join(', ')
+      : 'None';
+    document.getElementById('rpt-att').innerText = pubs?.tideTables && pubs.tideTables.length > 0
+      ? pubs.tideTables.map(t => t.code).join(', ')
+      : 'None';
+
+    // Squat block
+    if (squatUkc) {
+      document.getElementById('rpt-cb').innerText = `Cb = ${squatUkc.vessel.blockCoefficient.toFixed(3)}`;
+      document.getElementById('rpt-sq-shallow').innerText = `${squatUkc.squatShallow.toFixed(2)} m`;
+      document.getElementById('rpt-sq-opensea').innerText = `${squatUkc.squatOpenSea.toFixed(2)} m`;
+      document.getElementById('rpt-max-draft').innerText = `${squatUkc.vessel.maxDraft.toFixed(2)} m`;
+      document.getElementById('rpt-water-depth').innerText = `${squatUkc.totalWaterDepth.toFixed(1)} m`;
+    }
+
+    // VPF Table Rows
+    const tbody = document.getElementById('rpt-vpf-tbody');
+    tbody.innerHTML = '';
+
+    if (!squatUkc || !squatUkc.vpfRows || squatUkc.vpfRows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="12" class="text-center py-4 text-slate-400 italic">No route data loaded</td></tr>';
+      return;
+    }
+
+    squatUkc.vpfRows.forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      const isEca = p2p && p2p.ecaActiveIndices && p2p.ecaActiveIndices.has(idx);
+      const isWar = p2p && p2p.warActiveIndices && p2p.warActiveIndices.has(idx);
+
+      if (isEca) tr.className = 'vpf-row-eca';
+      else if (isWar) tr.className = 'vpf-row-war';
+
+      const dtg = (totalDist - parseFloat(row.accDist)).toFixed(2);
+      let remarks = [];
+      if (isEca) remarks.push('ECA Waters');
+      if (isWar) remarks.push('War Risk Area');
+      if (idx === 0) remarks.push('Dep Berth / Stn');
+      if (idx === squatUkc.vpfRows.length - 1) remarks.push('Arr Berth / End');
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: bold;">${row.index}</td>
+        <td style="font-weight: 600;">${row.id}</td>
+        <td style="font-family: monospace;">${row.latDms}</td>
+        <td style="font-family: monospace;">${row.lonDms}</td>
+        <td style="text-align: right; font-family: monospace; font-weight: 600; color: #1e3a8a;">${row.course}°</td>
+        <td style="text-align: right; font-family: monospace;">${row.dist}</td>
+        <td style="text-align: right; font-family: monospace; font-weight: bold;">${dtg}</td>
+        <td style="text-align: right; font-family: monospace;">${row.speed}</td>
+        <td style="text-align: right; font-family: monospace; color: #b91c1c; font-weight: 600;">${row.squat}</td>
+        <td style="text-align: center;">${row.fixInterval}</td>
+        <td style="text-align: center; font-size: 8.5px;">${row.method}</td>
+        <td style="font-size: 8.5px;">${remarks.join(' • ') || '-'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // --- FILE IMPORT HANDLER ---
+  const fileInput = document.getElementById('route-file-input');
+  fileInput.addEventListener('change', handleFileSelect);
+
+  const dropZone = document.getElementById('drop-zone');
+  ['dragenter', 'dragover'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-sky-600', 'bg-sky-100');
+    });
+  });
+  ['dragleave', 'drop'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-sky-600', 'bg-sky-100');
+    });
+  });
+  dropZone.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      readFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  function handleFileSelect(e) {
+    if (e.target.files && e.target.files.length > 0) {
+      readFile(e.target.files[0]);
+    }
+  }
+
+  function readFile(file) {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = evt.target.result;
+      const parsed = RouteConverter.parseAny(content, file.name);
+      if (parsed.waypoints.length > 0) {
+        processRoute(parsed.routeName, parsed.waypoints);
+        document.getElementById('sb-status-badge').innerText = `${parsed.waypoints.length} WPTs Loaded`;
+      } else {
+        alert('Could not find valid coordinates in the selected file.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // --- EXPORT DOWNLOAD HANDLER ---
+  document.getElementById('btn-download-export').addEventListener('click', () => {
+    if (!STATE.waypoints || STATE.waypoints.length === 0) {
+      alert('Please load a route before exporting.');
+      return;
+    }
+    const fmtId = exportSelect.value;
+    const fmt = RouteConverter.FORMATS.find(f => f.id === fmtId);
+    if (!fmt) return;
+
+    const data = RouteConverter.exportFormat(fmtId, STATE.routeName, STATE.waypoints);
+    const blob = new Blob([data], { type: fmt.mimeType || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${STATE.routeName}${fmt.extension}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // --- LOAD BUILT-IN SAMPLE VOYAGE (CNZOS - PGPOM) ---
+  document.getElementById('btn-load-sample').addEventListener('click', loadSampleVoyage);
+
+  function loadSampleVoyage() {
+    // 59 verified waypoints from Zhoushan (CNZOS) to Port Moresby (PGPOM)
+    const sample = [
+      { id: "WP001", lat: 29.913833, lon: 122.253283, portXtd: 0.1, stbdXtd: 0.1 },
+      { id: "WP002", lat: 29.897800, lon: 122.208216, portXtd: 0.15, stbdXtd: 0.15 },
+      { id: "WP003", lat: 29.862258, lon: 122.190992, portXtd: 0.05, stbdXtd: 0.05 },
+      { id: "WP004", lat: 29.834418, lon: 122.211491, portXtd: 0.05, stbdXtd: 0.05 },
+      { id: "WP005", lat: 29.812235, lon: 122.232071, portXtd: 0.05, stbdXtd: 0.05 },
+      { id: "WP006", lat: 29.729013, lon: 122.338720, portXtd: 0.05, stbdXtd: 0.05 },
+      { id: "WP007", lat: 29.676954, lon: 122.537274, portXtd: 0.20, stbdXtd: 0.20 },
+      { id: "WP008", lat: 29.638333, lon: 122.643833, portXtd: 0.20, stbdXtd: 0.20 },
+      { id: "WP009", lat: 29.638333, lon: 122.828333, portXtd: 0.30, stbdXtd: 0.30 },
+      { id: "WP010", lat: 28.885203, lon: 122.583834, portXtd: 0.75, stbdXtd: 0.75 },
+      { id: "WP011", lat: 26.544016, lon: 120.944583, portXtd: 0.75, stbdXtd: 0.75 },
+      { id: "WP012", lat: 25.173589, lon: 119.923662, portXtd: 0.75, stbdXtd: 0.75 },
+      { id: "WP013", lat: 23.543333, lon: 119.205000, portXtd: 0.75, stbdXtd: 0.75 },
+      { id: "WP014", lat: 16.352150, lon: 119.403066, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP015", lat: 14.881200, lon: 119.825100, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP016", lat: 13.916667, lon: 120.250000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP017", lat: 13.533333, lon: 120.500000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP018", lat: 13.333333, lon: 120.833333, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP019", lat: 12.833333, lon: 121.500000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP020", lat: 12.000000, lon: 122.000000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP021", lat: 11.250000, lon: 122.833333, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP022", lat: 10.500000, lon: 123.000000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP023", lat: 9.750000, lon: 123.500000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP024", lat: 9.000000, lon: 124.500000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP025", lat: 8.500000, lon: 125.000000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP026", lat: 7.000000, lon: 126.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP027", lat: 5.500000, lon: 128.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP028", lat: 3.500000, lon: 130.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP029", lat: 1.000000, lon: 132.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP030", lat: -0.500000, lon: 135.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP031", lat: -1.500000, lon: 137.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP032", lat: -2.500000, lon: 140.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP033", lat: -3.500000, lon: 142.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP034", lat: -4.500000, lon: 144.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP035", lat: -5.500000, lon: 146.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP036", lat: -6.500000, lon: 147.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP037", lat: -7.500000, lon: 148.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP038", lat: -8.500000, lon: 149.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP039", lat: -9.000000, lon: 150.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP040", lat: -9.500000, lon: 150.250000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP041", lat: -10.000000, lon: 150.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP042", lat: -10.500000, lon: 150.750000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP043", lat: -10.750000, lon: 150.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP044", lat: -11.000000, lon: 150.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP045", lat: -11.200000, lon: 149.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP046", lat: -11.350000, lon: 149.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP047", lat: -11.450000, lon: 148.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP048", lat: -11.500000, lon: 148.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP049", lat: -11.300000, lon: 147.500000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP050", lat: -11.000000, lon: 147.200000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP051", lat: -10.600000, lon: 147.000000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP052", lat: -10.200000, lon: 146.900000, portXtd: 1.00, stbdXtd: 1.00 },
+      { id: "WP053", lat: -9.850000, lon: 146.950000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP054", lat: -9.650000, lon: 147.050000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP055", lat: -9.550000, lon: 147.100000, portXtd: 0.50, stbdXtd: 0.50 },
+      { id: "WP056", lat: -9.500000, lon: 147.120000, portXtd: 0.20, stbdXtd: 0.20 },
+      { id: "WP057", lat: -9.470000, lon: 147.130000, portXtd: 0.15, stbdXtd: 0.15 },
+      { id: "WP058", lat: -9.450000, lon: 147.120000, portXtd: 0.10, stbdXtd: 0.10 },
+      { id: "WP059", lat: -9.429000, lon: 147.110220, portXtd: 0.10, stbdXtd: 0.10 }
+    ];
+
+    processRoute('V2608C CNZOS-PGPOM VIA TW-PH', sample);
+  }
+
+  // Auto initialize with sample route on load
+  setTimeout(() => {
+    loadSampleVoyage();
+  }, 300);
+
+})();
+</script>
+
+</body>
+</html>
