@@ -2126,7 +2126,7 @@ function loadRouteFromFile(file) {
       }
       const parsed = RouteConverter.parseAny(content, file.name);
       if (parsed && parsed.waypoints && parsed.waypoints.length > 0) {
-        processRoute(parsed.routeName, parsed.waypoints);
+        processRoute(parsed.routeName, parsed.waypoints, true);
         const sbBadge = document.getElementById('sb-status-badge');
         if (sbBadge) sbBadge.innerText = `${parsed.waypoints.length} WPTs Loaded`;
       } else {
@@ -2291,7 +2291,7 @@ function updateSquatDisplay(sq) {
 }
 
 // --- CORE PASSAGE PROCESSOR ---
-function processRoute(routeName, waypoints) {
+function processRoute(routeName, waypoints, shouldFitBounds = false) {
   STATE.routeName = routeName || 'ACTIVE_ROUTE';
   STATE.waypoints = RouteConverter.recalculateRoute(waypoints);
 
@@ -2352,7 +2352,7 @@ function processRoute(routeName, waypoints) {
 
   // Update UI elements
   updateSidebarIntelUI();
-  renderMapRoute();
+  renderMapRoute(shouldFitBounds);
   renderReportDocument();
 }
 window.processRoute = processRoute;
@@ -2485,8 +2485,8 @@ function renderPubBadges(containerId, items, colorClasses) {
   });
 }
 
-// --- RENDER MAP ROUTE & WAYPOINTS (TOPMOST PANE & DRAGGABLE WAYPOINTS) ---
-function renderMapRoute() {
+// --- RENDER MAP ROUTE & WAYPOINTS (TOPMOST PANE & SMOOTH DRAGGABLE WAYPOINTS) ---
+function renderMapRoute(shouldFitBounds = false) {
   if (!window.overlays || !window.overlays.route) return;
   window.overlays.route.clearLayers();
 
@@ -2495,9 +2495,19 @@ function renderMapRoute() {
   const totalDist = STATE.waypoints.reduce((acc, w) => acc + (w.dist || 0), 0);
   const unwrapped = unwrapRouteWaypoints(STATE.waypoints);
   let primaryLine = null;
+  const linesData = [];
 
   [-360, 0, 360].forEach(offset => {
     const latlngs = unwrapped.map(w => [w.lat, w.unwrappedLon + offset]);
+
+    // Transparent wider buffer line for easy clicking & right-clicking
+    const hitLine = L.polyline(latlngs, {
+      color: '#0284c7',
+      weight: 18,
+      opacity: 0,
+      pane: 'routePane'
+    }).addTo(window.overlays.route);
+
     const routeLine = L.polyline(latlngs, {
       color: '#0284c7',
       weight: 3.5,
@@ -2505,7 +2515,23 @@ function renderMapRoute() {
       lineJoin: 'round',
       pane: 'routePane'
     }).addTo(window.overlays.route);
+
     if (offset === 0) primaryLine = routeLine;
+
+    // Right-click on route line or buffer to insert waypoint
+    const onRightClickLine = function(e) {
+      if (e.originalEvent) {
+        e.originalEvent.preventDefault();
+        e.originalEvent.stopPropagation();
+      }
+      L.DomEvent.stopPropagation(e);
+      handleLegContextMenu(e.latlng, offset);
+    };
+
+    routeLine.on('contextmenu', onRightClickLine);
+    hitLine.on('contextmenu', onRightClickLine);
+
+    linesData.push({ offset, line: routeLine, hitLine, latlngs });
 
     // Draggable Waypoint Markers (Topmost Marker Pane)
     unwrapped.forEach((w, idx) => {
@@ -2524,7 +2550,6 @@ function renderMapRoute() {
           border-radius: 50%;
           box-shadow: 0 2px 5px rgba(0,0,0,0.6);
           cursor: grab;
-          transition: transform 0.15s;
         " title="Drag to adjust #${idx + 1}: ${w.id}"></div>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2]
@@ -2537,7 +2562,18 @@ function renderMapRoute() {
         zIndexOffset: 1000 + idx
       });
 
-      // Drag event - update coordinates in real time
+      // Smooth real-time line movement while dragging (60 FPS)
+      marker.on('drag', function(e) {
+        const curPos = e.target.getLatLng();
+        linesData.forEach(item => {
+          const relOffset = item.offset - offset;
+          item.latlngs[idx] = [curPos.lat, curPos.lng + relOffset];
+          item.line.setLatLngs(item.latlngs);
+          if (item.hitLine) item.hitLine.setLatLngs(item.latlngs);
+        });
+      });
+
+      // Dragend event - recalculate distances, DTG, navareas without zoom-out!
       marker.on('dragend', function(e) {
         const newPos = e.target.getLatLng();
         let newLon = newPos.lng;
@@ -2545,7 +2581,7 @@ function renderMapRoute() {
         while (newLon < -180) newLon += 360;
         STATE.waypoints[idx].lat = parseFloat(newPos.lat.toFixed(6));
         STATE.waypoints[idx].lon = parseFloat(newLon.toFixed(6));
-        processRoute(STATE.routeName, STATE.waypoints);
+        processRoute(STATE.routeName, STATE.waypoints, false);
       });
 
       const popupHtml = `
@@ -2591,11 +2627,136 @@ function renderMapRoute() {
     });
   }
 
-  // Fit map bounds to primary route (only when not in active drawing mode)
-  if (window.map && primaryLine && !STATE.isDrawingRoute) {
+  // Fit map bounds to primary route (ONLY when requested explicitly and not in active drawing mode)
+  if (window.map && primaryLine && shouldFitBounds && !STATE.isDrawingRoute) {
     window.map.fitBounds(primaryLine.getBounds(), { padding: [50, 50] });
   }
 }
+
+// --- NEAREST SEGMENT CALCULATION FOR LEG RIGHT-CLICK ---
+function findNearestSegment(clickLat, rawClickLon, waypoints) {
+  if (!waypoints || waypoints.length < 2) return null;
+  let minDistance = Infinity;
+  let bestSegIndex = 0;
+  let bestProjLat = clickLat;
+  let bestProjLon = rawClickLon;
+
+  const testLons = [rawClickLon, rawClickLon - 360, rawClickLon + 360];
+
+  testLons.forEach(clickLon => {
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const p1 = waypoints[i];
+      const p2 = waypoints[i + 1];
+      const lat1 = p1.lat;
+      const lon1 = p1.unwrappedLon !== undefined ? p1.unwrappedLon : p1.lon;
+      const lat2 = p2.lat;
+      const lon2 = p2.unwrappedLon !== undefined ? p2.unwrappedLon : p2.lon;
+
+      const dLat = lat2 - lat1;
+      const dLon = lon2 - lon1;
+      const segLenSq = dLat * dLat + dLon * dLon;
+
+      let t = 0;
+      if (segLenSq > 0.000000001) {
+        t = ((clickLat - lat1) * dLat + (clickLon - lon1) * dLon) / segLenSq;
+        t = Math.max(0, Math.min(1, t));
+      }
+
+      const projLat = lat1 + t * dLat;
+      const projLon = lon1 + t * dLon;
+      const distSq = Math.pow(clickLat - projLat, 2) + Math.pow(clickLon - projLon, 2);
+
+      if (distSq < minDistance) {
+        minDistance = distSq;
+        bestSegIndex = i;
+        bestProjLat = projLat;
+        bestProjLon = projLon;
+      }
+    }
+  });
+
+  let normLon = bestProjLon;
+  while (normLon > 180) normLon -= 360;
+  while (normLon < -180) normLon += 360;
+
+  return {
+    segIndex: bestSegIndex,
+    lat: parseFloat(bestProjLat.toFixed(6)),
+    lon: parseFloat(normLon.toFixed(6)),
+    distDeg: Math.sqrt(minDistance)
+  };
+}
+window.findNearestSegment = findNearestSegment;
+
+// --- LEG CONTEXT MENU (RIGHT CLICK ON ROUTE LINE) ---
+function handleLegContextMenu(latlng, offset = 0) {
+  if (!STATE.waypoints || STATE.waypoints.length < 2) return;
+  const unwrapped = unwrapRouteWaypoints(STATE.waypoints);
+  const clickLat = latlng.lat;
+  const clickLon = latlng.lng - offset;
+
+  const seg = findNearestSegment(clickLat, clickLon, unwrapped);
+  if (!seg) return;
+
+  const wA = STATE.waypoints[seg.segIndex];
+  const wB = STATE.waypoints[seg.segIndex + 1];
+  const defaultId = `${wA.id || 'WP'}_N`;
+
+  const popupContent = `
+    <div style="font-family: Inter, sans-serif; font-size: 11.5px; min-width: 215px; color: #1e293b; padding: 2px;">
+      <div style="font-weight: bold; font-size: 12.5px; color: #0284c7; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+        <span>⚓ Insert Intermediate Waypoint</span>
+      </div>
+      <div style="color: #475569; font-size: 11px; margin-bottom: 6px;">
+        Between <b>#${seg.segIndex + 1}: ${wA.id}</b> and <b>#${seg.segIndex + 2}: ${wB.id}</b>
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 6px; margin-bottom: 6px; font-family: monospace; font-size: 10.5px; line-height: 1.4;">
+        <div><b>Lat:</b> ${RouteConverter.formatDMS(seg.lat, true)}</div>
+        <div><b>Lon:</b> ${RouteConverter.formatDMS(seg.lon, false)}</div>
+      </div>
+      <div style="margin-bottom: 8px;">
+        <label style="font-size: 10px; font-weight: bold; color: #64748b; display: block; margin-bottom: 2px;">WPT ID / Name:</label>
+        <input type="text" id="insert-wpt-id-input" value="${defaultId}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 6px; font-size: 11px; font-family: monospace; box-sizing: border-box;">
+      </div>
+      <button onclick="confirmInsertWaypoint(${seg.segIndex}, ${seg.lat}, ${seg.lon})"
+        style="width: 100%; background: #0284c7; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-weight: bold; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+        ➕ Insert Waypoint
+      </button>
+    </div>
+  `;
+
+  L.popup({
+    offset: [0, -5],
+    className: 'insert-wpt-popup'
+  })
+  .setLatLng(latlng)
+  .setContent(popupContent)
+  .openOn(window.map);
+}
+window.handleLegContextMenu = handleLegContextMenu;
+
+function confirmInsertWaypoint(segIndex, lat, lon) {
+  const inputEl = document.getElementById('insert-wpt-id-input');
+  const customId = inputEl && inputEl.value.trim() ? inputEl.value.trim() : `WP${String(segIndex + 2).padStart(3, '0')}`;
+  insertWaypointAtSegment(segIndex, lat, lon, customId);
+}
+window.confirmInsertWaypoint = confirmInsertWaypoint;
+
+function insertWaypointAtSegment(segIndex, lat, lon, customId) {
+  if (!STATE.waypoints || STATE.waypoints.length === 0) return;
+  const prevWpt = STATE.waypoints[segIndex];
+  const newId = customId || `${prevWpt?.id || 'WP'}_N`;
+  const newWpt = {
+    id: newId,
+    lat: lat,
+    lon: lon
+  };
+
+  STATE.waypoints.splice(segIndex + 1, 0, newWpt);
+  if (window.map) window.map.closePopup();
+  processRoute(STATE.routeName, STATE.waypoints, false);
+}
+window.insertWaypointAtSegment = insertWaypointAtSegment;
 
 // --- WAYPOINT EDIT & DELETE DIALOGS ---
 function editWaypointDialog(idx) {
@@ -2617,7 +2778,8 @@ function editWaypointDialog(idx) {
   STATE.waypoints[idx].id = newId.trim() || w.id;
   STATE.waypoints[idx].lat = newLat;
   STATE.waypoints[idx].lon = newLon;
-  processRoute(STATE.routeName, STATE.waypoints);
+  if (window.map) window.map.closePopup();
+  processRoute(STATE.routeName, STATE.waypoints, false);
 }
 window.editWaypointDialog = editWaypointDialog;
 
@@ -2625,13 +2787,15 @@ function deleteWaypointAt(idx) {
   if (STATE.waypoints.length <= 1) {
     if (confirm('Delete the last remaining waypoint and clear route?')) {
       STATE.waypoints = [];
-      processRoute('NO ROUTE', []);
+      if (window.map) window.map.closePopup();
+      processRoute('NO ROUTE', [], false);
     }
     return;
   }
   if (confirm(`Delete waypoint #${idx + 1} (${STATE.waypoints[idx].id})?`)) {
     STATE.waypoints.splice(idx, 1);
-    processRoute(STATE.routeName, STATE.waypoints);
+    if (window.map) window.map.closePopup();
+    processRoute(STATE.routeName, STATE.waypoints, false);
   }
 }
 window.deleteWaypointAt = deleteWaypointAt;
@@ -3750,7 +3914,7 @@ const USER_99_WPTS = [
 ];
 
 function loadUserVoyage() {
-  processRoute('V2608B CNTZO-PGPOM WEATHER 2', USER_99_WPTS);
+  processRoute('V2608B CNTZO-PGPOM WEATHER 2', USER_99_WPTS, true);
 }
 window.loadUserVoyage = loadUserVoyage;
 
@@ -3817,7 +3981,7 @@ function loadSampleVoyage() {
     { id: "WP059", lat: -9.429000, lon: 147.110220, portXtd: 0.10, stbdXtd: 0.10 }
   ];
 
-  processRoute('V2608C CNZOS-PGPOM VIA TW-PH', sample);
+  processRoute('V2608C CNZOS-PGPOM VIA TW-PH', sample, true);
 }
 window.loadSampleVoyage = loadSampleVoyage;
 
@@ -3860,7 +4024,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!STATE.routeName || STATE.routeName === 'NO ROUTE') {
         STATE.routeName = 'DRAWN_ROUTE';
       }
-      processRoute(STATE.routeName, STATE.waypoints);
+      processRoute(STATE.routeName, STATE.waypoints, false);
+    });
+
+    // Map contextmenu handler: allow inserting waypoint if right-clicked near an active route leg
+    window.map.on('contextmenu', function(e) {
+      if (STATE.isDrawingRoute) return;
+      if (!STATE.waypoints || STATE.waypoints.length < 2) return;
+      const unwrapped = unwrapRouteWaypoints(STATE.waypoints);
+      const seg = findNearestSegment(e.latlng.lat, e.latlng.lng, unwrapped);
+      // If clicked near a route leg (within ~1.0 degree / ~60 NM)
+      if (seg && seg.distDeg <= 1.0) {
+        handleLegContextMenu(e.latlng, 0);
+      }
     });
 
     L.control.zoom({ position: 'topright' }).addTo(window.map);
