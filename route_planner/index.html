@@ -484,12 +484,61 @@
       <!-- CONVERSION & EXPORT TARGET -->
       <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-xs space-y-2.5">
         <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
-          Target ECDIS / File Format (31 Formats)
+          Target ECDIS / File Format (32 Formats)
         </label>
         <select id="export-format-select" onchange="handleExportFormatChange(this.value)" class="w-full text-xs border border-slate-300 rounded-md p-2 bg-slate-50 font-medium text-slate-800 focus:outline-none focus:border-sky-500">
-          <!-- Populated dynamically and statically with exact format IDs -->
+          <optgroup label="🇯🇵 Furuno ECDIS &amp; GPS">
+            <option value="furuno_3000_rtz" selected>Furuno 3000 / 3200 / 3300 (.rtz)</option>
+            <option value="furuno_fea_fmd_txt">Furuno FEA/FMD (.txt)</option>
+            <option value="furuno_gpx">Furuno GP-170 (.gpx)</option>
+          </optgroup>
+          <optgroup label="🇯🇵 JRC (Japan Radio Co.)">
+            <option value="jrc_csv">JRC ECDIS JAN-701B/901B/9201 (.csv)</option>
+            <option value="chartco_csv">ChartCo PassageManager (.csv)</option>
+            <option value="jrc_rtm">JRC ECDIS Master Route (.rtm)</option>
+            <option value="jrc_rtn">JRC ECDIS Route File (.rtn)</option>
+            <option value="jrc_rta">JRC ECDIS Alternate Route (.rta)</option>
+            <option value="jrc_jmr">JRC JMA-9122 Marine Radar (.jmr)</option>
+          </optgroup>
+          <optgroup label="🇷🇺/🇫🇮 Transas &amp; Wärtsilä">
+            <option value="transas_rt3">Transas Navi-Sailor 3000/4000 (.rt3)</option>
+            <option value="transas_rt4">Transas Wärtsilä iSailor (.rt4)</option>
+            <option value="wartsila_nacos">Wärtsilä NACOS Platinum (.xml)</option>
+          </optgroup>
+          <optgroup label="🇳🇴 Kongsberg Maritime">
+            <option value="kongsberg_rut">Kongsberg K-Bridge (.rut)</option>
+            <option value="kongsberg_rux">Kongsberg XML Route (.rux)</option>
+          </optgroup>
+          <optgroup label="🇺🇸/🇬🇧 Sperry Marine &amp; eGlobe">
+            <option value="sperry_route">Sperry Marine VisionMaster (.route)</option>
+            <option value="eglobe_rte">eGlobe / ChartWorld G2 (.rte)</option>
+            <option value="eglobe_cb">eGlobe ChartBrowser (.cb)</option>
+          </optgroup>
+          <optgroup label="🇳🇴 Simrad / Navico">
+            <option value="simrad_rtx">Simrad Maris ECDIS900 (.rtx)</option>
+            <option value="simrad_no_ext">Simrad ECDIS (No Extension)</option>
+          </optgroup>
+          <optgroup label="🇩🇪 Raytheon Anschütz &amp; SAM">
+            <option value="raytheon_cvt">Raytheon Anschütz Synapsis (.cvt)</option>
+            <option value="sam_no_ext">SAM Electronics ChartPilot (No Ext)</option>
+            <option value="chart_pilot_txt">Chart Pilot 1100 (.txt)</option>
+            <option value="mecys_txt">ECDIS MECys PM3D2 (.txt)</option>
+            <option value="mecys_rtz">ECDIS MECys PM3D2 (.rtz)</option>
+          </optgroup>
+          <optgroup label="🌦️ Weather Routing &amp; Fleet Systems">
+            <option value="spos_xml">MeteoGroup / DTN SPOS (.xml)</option>
+            <option value="bon_voyage_bvs">AWT Bon Voyage System (.bvs)</option>
+          </optgroup>
+          <optgroup label="📊 GIS, Office &amp; Open Formats">
+            <option value="opengis_kml">Google Earth OpenGIS (.kml)</option>
+            <option value="bridgemate_xml">Marine Tech BridgeMate-DP2 (.xml)</option>
+            <option value="admiralty_adc_txt">Admiralty Digital Catalogue ADC (.txt)</option>
+            <option value="maxsea_wpt">MaxSea / TimeZero (.wpt)</option>
+            <option value="totem_csv">TOTEM Plus ECDIS (.csv)</option>
+            <option value="native_csv">Native Excel Spreadsheet (.csv)</option>
+          </optgroup>
         </select>
-        <p class="text-[10px] text-slate-500 italic" id="export-format-desc">Select a target format to export.</p>
+        <p class="text-[10px] text-slate-500 italic" id="export-format-desc">Standard CIRM RTZ 1.0 XML route format utilized by Furuno 3000 / 3200 / 3300 ECDIS.</p>
         <button id="btn-download-export" onclick="downloadConvertedRoute()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-lg transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
           <span>💾</span> Download Converted Route
         </button>
@@ -2169,19 +2218,42 @@ function loadRouteFromFile(file) {
 }
 window.loadRouteFromFile = loadRouteFromFile;
 
-// --- POPULATE 31 EXPORT FORMATS ---
+// --- POPULATE 32 EXPORT FORMATS (ECDIS MANUFACTURER GROUPED) ---
 function populateExportFormats() {
   const select = document.getElementById('export-format-select');
   if (!select || !window.RouteConverter || !window.RouteConverter.FORMATS) return;
+
+  const currentVal = select.value || 'furuno_3000_rtz';
   select.innerHTML = '';
+
+  const groups = {};
   RouteConverter.FORMATS.forEach((fmt) => {
-    const opt = document.createElement('option');
-    opt.value = fmt.id;
-    opt.textContent = `${fmt.name} (${fmt.extension || 'No Ext'})`;
-    select.appendChild(opt);
+    const cat = fmt.category || 'Other Formats';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(fmt);
   });
+
+  for (let cat in groups) {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = cat;
+    groups[cat].forEach(fmt => {
+      const opt = document.createElement('option');
+      opt.value = fmt.id;
+      opt.textContent = `${fmt.name} (${fmt.extension || 'No Ext'})`;
+      if (fmt.id === currentVal) opt.selected = true;
+      optgroup.appendChild(opt);
+    });
+    select.appendChild(optgroup);
+  }
+
+  if (currentVal && RouteConverter.FORMATS.some(f => f.id === currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.value = 'furuno_3000_rtz';
+  }
   handleExportFormatChange(select.value);
 }
+window.populateExportFormats = populateExportFormats;
 
 function handleExportFormatChange(val) {
   if (!window.RouteConverter || !window.RouteConverter.FORMATS) return;
@@ -2192,6 +2264,7 @@ function handleExportFormatChange(val) {
   }
 }
 window.handleExportFormatChange = handleExportFormatChange;
+try { populateExportFormats(); } catch (e) {}
 
 function downloadConvertedRoute() {
   if (!STATE.waypoints || STATE.waypoints.length === 0) {

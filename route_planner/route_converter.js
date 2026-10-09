@@ -92,224 +92,263 @@
 
   // --- PARSERS & SERIALIZERS FOR 31 FORMATS ---
   const FORMATS = [
-    {
-      id: 'furuno_3000_rtz',
-      name: 'Furuno 3000 (.rtz)',
-      extension: '.rtz',
-      mimeType: 'application/xml',
-      description: 'Standard CIRM RTZ 1.0 XML route format utilized by Furuno 3000 / 3200 / 3300 ECDIS.'
-    },
-    {
-      id: 'furuno_fea_fmd_txt',
-      name: 'Furuno FEA/FMD (.txt)',
-      extension: '.txt',
-      mimeType: 'text/plain',
-      description: 'Furuno FEA-2107 / FMD-3100 / FMD-3200 text-based route exchange format.'
-    },
-    {
-      id: 'furuno_gpx',
-      name: 'Furuno GP-170 (.gpx)',
-      extension: '.gpx',
-      mimeType: 'application/gpx+xml',
-      description: 'GPX 1.1 format for Furuno GP-170, GP-150 GPS Navigator & NavNet chart plotters.'
-    },
-    {
-      id: 'native_csv',
-      name: 'Native Excel Format (.csv)',
-      extension: '.csv',
-      mimeType: 'text/csv',
-      description: 'Structured spreadsheet format with columns for WPT, Lat, Long, Course, Distance, XTD & Speed.'
-    },
-    {
-      id: 'transas_rt3',
-      name: 'Transas Route (.rt3)',
-      extension: '.rt3',
-      mimeType: 'text/plain',
-      description: 'Transas Navi-Sailor 3000 / 4000 ECDIS standard route exchange file format.'
-    },
-    {
-      id: 'transas_rt4',
-      name: 'Transas iSailor (.rt4)',
-      extension: '.rt4',
-      mimeType: 'application/json',
-      description: 'Transas Wartsila iSailor mobile navigation route exchange format.'
-    },
-    {
-      id: 'wartsila_nacos',
-      name: 'Wartsila NACOS Platinum (.xml)',
-      extension: '.xml',
-      mimeType: 'application/xml',
-      description: 'Wartsila SAM NACOS Platinum integrated navigation system XML route format.'
-    },
-    {
-      id: 'eglobe_rte',
-      name: 'eGlobe ECDIS (.rte)',
-      extension: '.rte',
-      mimeType: 'text/plain',
-      description: 'eGlobe / ChartWorld G2 ECDIS RTE route file format.'
-    },
-    {
-      id: 'eglobe_cb',
-      name: 'eGlobe ECDIS (.cb)',
-      extension: '.cb',
-      mimeType: 'text/plain',
-      description: 'ChartWorld / eGlobe ECDIS CB route exchange file format.'
-    },
-    {
-      id: 'jrc_csv',
-      name: 'JRC ECDIS (.csv)',
-      extension: '.csv',
-      mimeType: 'text/csv',
-      description: 'JRC JAN-701B, 901B, 7201, 9201 standard route CSV format with degrees & minutes.'
-    },
-    {
-      id: 'jrc_rtm',
-      name: 'JRC ECDIS (.rtm)',
-      extension: '.rtm',
-      mimeType: 'text/plain',
-      description: 'JRC ECDIS Master Route (.rtm) binary/text interchange format.'
-    },
-    {
-      id: 'jrc_rtn',
-      name: 'JRC ECDIS (.rtn)',
-      extension: '.rtn',
-      mimeType: 'text/plain',
-      description: 'JRC ECDIS Route File (.rtn) interchange format.'
-    },
-    {
-      id: 'jrc_rta',
-      name: 'JRC ECDIS (.rta)',
-      extension: '.rta',
-      mimeType: 'text/plain',
-      description: 'JRC ECDIS Alternate Route (.rta) format.'
-    },
-    {
-      id: 'jrc_jmr',
-      name: 'JRC JMA-9122 (.jmr)',
-      extension: '.jmr',
-      mimeType: 'text/plain',
-      description: 'JRC JMA-9122, JMA-9132, JMA-9000 Marine Radar route format.'
-    },
-    {
-      id: 'kongsberg_rut',
-      name: 'Kongsberg (.rut)',
-      extension: '.rut',
-      mimeType: 'text/plain',
-      description: 'Kongsberg K-Bridge, K-Nav ECDIS RUT route table file format.'
-    },
-    {
-      id: 'kongsberg_rux',
-      name: 'Kongsberg (.rux)',
-      extension: '.rux',
-      mimeType: 'application/xml',
-      description: 'Kongsberg Maritime XML-based RUX route exchange format.'
-    },
-    {
-      id: 'mecys_txt',
-      name: 'ECDIS MECys PM3D2 (.txt)',
-      extension: '.txt',
-      mimeType: 'text/plain',
-      description: 'ECDIS MECys PM3D2 text waypoint route file.'
-    },
-    {
-      id: 'mecys_rtz',
-      name: 'ECDIS MECys PM3D2 (.rtz)',
-      extension: '.rtz',
-      mimeType: 'application/xml',
-      description: 'ECDIS MECys PM3D2 standard CIRM RTZ XML format.'
-    },
-    {
-      id: 'maxsea_wpt',
-      name: 'MaxSea (.wpt)',
-      extension: '.wpt',
-      mimeType: 'text/plain',
-      description: 'MaxSea Marine / TimeZero WPT waypoint exchange format.'
-    },
-    {
-      id: 'raytheon_cvt',
-      name: 'Raytheon Anschütz ECDIS (.cvt)',
-      extension: '.cvt',
-      mimeType: 'text/plain',
-      description: 'Raytheon Anschütz Synapsis / ECDIS 24 CVT route format.'
-    },
-    {
-      id: 'sperry_route',
-      name: 'Sperry Marine (.route)',
-      extension: '.route',
-      mimeType: 'text/plain',
-      description: 'Sperry Marine VisionMaster FT ECDIS route file format.'
-    },
-    {
-      id: 'simrad_rtx',
-      name: 'SIMRAD Maris ECDIS900 (.rtx)',
-      extension: '.rtx',
-      mimeType: 'text/plain',
-      description: 'Simrad Maris ECDIS900 RTX route export format.'
-    },
-    {
-      id: 'simrad_no_ext',
-      name: 'SIMRAD (No Extension)',
-      extension: '',
-      mimeType: 'text/plain',
-      description: 'Simrad ECDIS ASCII text format without file extension.'
-    },
-    {
-      id: 'sam_no_ext',
-      name: 'SAM Electronics (No Extension)',
-      extension: '',
-      mimeType: 'text/plain',
-      description: 'SAM Electronics / Wartsila SAM ChartPilot route format without extension.'
-    },
-    {
-      id: 'totem_csv',
-      name: 'TOTEM ECDIS (.csv)',
-      extension: '.csv',
-      mimeType: 'text/csv',
-      description: 'Totem Plus ECDIS CSV route format.'
-    },
-    {
-      id: 'chart_pilot_txt',
-      name: 'Chart Pilot (.txt)',
-      extension: '.txt',
-      mimeType: 'text/plain',
-      description: 'Atlas Elektronik / SAM ChartPilot text route plan.'
-    },
-    {
-      id: 'bridgemate_xml',
-      name: 'BridgeMate-DP2 (.xml)',
-      extension: '.xml',
-      mimeType: 'application/xml',
-      description: 'Marine Technologies BridgeMate DP2 XML navigation route format.'
-    },
-    {
-      id: 'spos_xml',
-      name: 'SPOS (.xml)',
-      extension: '.xml',
-      mimeType: 'application/xml',
-      description: 'MeteoGroup / DTN SPOS weather routing route exchange format.'
-    },
-    {
-      id: 'bon_voyage_bvs',
-      name: 'Bon Voyage (.bvs)',
-      extension: '.bvs',
-      mimeType: 'text/plain',
-      description: 'AWT Bon Voyage System (BVS) marine weather routing file format.'
-    },
-    {
-      id: 'admiralty_adc_txt',
-      name: 'Admiralty Digital Catalogue (.txt)',
-      extension: '.txt',
-      mimeType: 'text/plain',
-      description: 'UKHO Admiralty Digital Catalogue (ADC) standard waypoint route file.'
-    },
-    {
-      id: 'opengis_kml',
-      name: 'OpenGIS (.kml)',
-      extension: '.kml',
-      mimeType: 'application/vnd.google-earth.kml+xml',
-      description: 'OpenGIS KML 2.2 format for Google Earth, GIS & ECDIS track verification.'
-    }
-  ];
+  {
+    "id": "furuno_3000_rtz",
+    "name": "Furuno 3000 / 3200 / 3300 (.rtz)",
+    "category": "🇯🇵 Furuno ECDIS & GPS",
+    "extension": ".rtz",
+    "mimeType": "application/xml",
+    "description": "Standard CIRM RTZ 1.0 XML route format utilized by Furuno 3000 / 3200 / 3300 ECDIS."
+  },
+  {
+    "id": "furuno_fea_fmd_txt",
+    "name": "Furuno FEA/FMD (.txt)",
+    "category": "🇯🇵 Furuno ECDIS & GPS",
+    "extension": ".txt",
+    "mimeType": "text/plain",
+    "description": "Furuno FEA-2107 / FMD-3100 / FMD-3200 text-based route exchange format."
+  },
+  {
+    "id": "furuno_gpx",
+    "name": "Furuno GP-170 (.gpx)",
+    "category": "🇯🇵 Furuno ECDIS & GPS",
+    "extension": ".gpx",
+    "mimeType": "application/gpx+xml",
+    "description": "GPX 1.1 format for Furuno GP-170, GP-150 GPS Navigator & NavNet chart plotters."
+  },
+  {
+    "id": "jrc_csv",
+    "name": "JRC ECDIS JAN-701B/901B/9201 (.csv)",
+    "category": "🇯🇵 JRC (Japan Radio Co.)",
+    "extension": ".csv",
+    "mimeType": "text/csv",
+    "description": "JRC JAN-701B, 901B, 7201, 9201 standard route CSV format with degrees & minutes."
+  },
+  {
+    "id": "chartco_csv",
+    "name": "ChartCo PassageManager (.csv)",
+    "category": "🇯🇵 JRC (Japan Radio Co.)",
+    "extension": ".csv",
+    "mimeType": "text/csv",
+    "description": "ChartCo PassageManager route sheet CSV format (compatible with JRC ECDIS)."
+  },
+  {
+    "id": "jrc_rtm",
+    "name": "JRC ECDIS Master Route (.rtm)",
+    "category": "🇯🇵 JRC (Japan Radio Co.)",
+    "extension": ".rtm",
+    "mimeType": "text/plain",
+    "description": "JRC ECDIS Master Route (.rtm) binary/text interchange format."
+  },
+  {
+    "id": "jrc_rtn",
+    "name": "JRC ECDIS Route File (.rtn)",
+    "category": "🇯🇵 JRC (Japan Radio Co.)",
+    "extension": ".rtn",
+    "mimeType": "text/plain",
+    "description": "JRC ECDIS Route File (.rtn) interchange format."
+  },
+  {
+    "id": "jrc_rta",
+    "name": "JRC ECDIS Alternate Route (.rta)",
+    "category": "🇯🇵 JRC (Japan Radio Co.)",
+    "extension": ".rta",
+    "mimeType": "text/plain",
+    "description": "JRC ECDIS Alternate Route (.rta) format."
+  },
+  {
+    "id": "jrc_jmr",
+    "name": "JRC JMA-9122 Marine Radar (.jmr)",
+    "category": "🇯🇵 JRC (Japan Radio Co.)",
+    "extension": ".jmr",
+    "mimeType": "text/plain",
+    "description": "JRC JMA-9122, JMA-9132, JMA-9000 Marine Radar route format."
+  },
+  {
+    "id": "transas_rt3",
+    "name": "Transas Navi-Sailor 3000/4000 (.rt3)",
+    "category": "🇷🇺/🇫🇮 Transas & Wärtsilä",
+    "extension": ".rt3",
+    "mimeType": "text/plain",
+    "description": "Transas Navi-Sailor 3000 / 4000 ECDIS standard route exchange file format."
+  },
+  {
+    "id": "transas_rt4",
+    "name": "Transas Wärtsilä iSailor (.rt4)",
+    "category": "🇷🇺/🇫🇮 Transas & Wärtsilä",
+    "extension": ".rt4",
+    "mimeType": "application/json",
+    "description": "Transas Wärtsilä iSailor mobile navigation route exchange format."
+  },
+  {
+    "id": "wartsila_nacos",
+    "name": "Wärtsilä NACOS Platinum (.xml)",
+    "category": "🇷🇺/🇫🇮 Transas & Wärtsilä",
+    "extension": ".xml",
+    "mimeType": "application/xml",
+    "description": "Wärtsilä SAM NACOS Platinum integrated navigation system XML route format."
+  },
+  {
+    "id": "kongsberg_rut",
+    "name": "Kongsberg K-Bridge (.rut)",
+    "category": "🇳🇴 Kongsberg Maritime",
+    "extension": ".rut",
+    "mimeType": "text/plain",
+    "description": "Kongsberg K-Bridge, K-Nav ECDIS RUT route table file format."
+  },
+  {
+    "id": "kongsberg_rux",
+    "name": "Kongsberg XML Route (.rux)",
+    "category": "🇳🇴 Kongsberg Maritime",
+    "extension": ".rux",
+    "mimeType": "application/xml",
+    "description": "Kongsberg Maritime XML-based RUX route exchange format."
+  },
+  {
+    "id": "sperry_route",
+    "name": "Sperry Marine VisionMaster (.route)",
+    "category": "🇺🇸/🇬🇧 Sperry Marine & eGlobe",
+    "extension": ".route",
+    "mimeType": "text/plain",
+    "description": "Sperry Marine VisionMaster FT ECDIS route file format."
+  },
+  {
+    "id": "eglobe_rte",
+    "name": "eGlobe / ChartWorld G2 (.rte)",
+    "category": "🇺🇸/🇬🇧 Sperry Marine & eGlobe",
+    "extension": ".rte",
+    "mimeType": "text/plain",
+    "description": "eGlobe / ChartWorld G2 ECDIS RTE route file format."
+  },
+  {
+    "id": "eglobe_cb",
+    "name": "eGlobe ChartBrowser (.cb)",
+    "category": "🇺🇸/🇬🇧 Sperry Marine & eGlobe",
+    "extension": ".cb",
+    "mimeType": "text/plain",
+    "description": "ChartWorld / eGlobe ECDIS CB route exchange file format."
+  },
+  {
+    "id": "simrad_rtx",
+    "name": "Simrad Maris ECDIS900 (.rtx)",
+    "category": "🇳🇴 Simrad / Navico",
+    "extension": ".rtx",
+    "mimeType": "text/plain",
+    "description": "Simrad Maris ECDIS900 RTX route export format."
+  },
+  {
+    "id": "simrad_no_ext",
+    "name": "Simrad ECDIS (No Extension)",
+    "category": "🇳🇴 Simrad / Navico",
+    "extension": "",
+    "mimeType": "text/plain",
+    "description": "Simrad ECDIS ASCII text format without file extension."
+  },
+  {
+    "id": "raytheon_cvt",
+    "name": "Raytheon Anschütz Synapsis (.cvt)",
+    "category": "🇩🇪 Raytheon Anschütz & SAM",
+    "extension": ".cvt",
+    "mimeType": "text/plain",
+    "description": "Raytheon Anschütz Synapsis / ECDIS 24 CVT route format."
+  },
+  {
+    "id": "sam_no_ext",
+    "name": "SAM Electronics ChartPilot (No Ext)",
+    "category": "🇩🇪 Raytheon Anschütz & SAM",
+    "extension": "",
+    "mimeType": "text/plain",
+    "description": "SAM Electronics / Wärtsilä SAM ChartPilot route format without extension."
+  },
+  {
+    "id": "chart_pilot_txt",
+    "name": "Chart Pilot 1100 (.txt)",
+    "category": "🇩🇪 Raytheon Anschütz & SAM",
+    "extension": ".txt",
+    "mimeType": "text/plain",
+    "description": "Atlas Elektronik / SAM ChartPilot text route plan."
+  },
+  {
+    "id": "mecys_txt",
+    "name": "ECDIS MECys PM3D2 (.txt)",
+    "category": "🇩🇪 Raytheon Anschütz & SAM",
+    "extension": ".txt",
+    "mimeType": "text/plain",
+    "description": "ECDIS MECys PM3D2 text waypoint route file."
+  },
+  {
+    "id": "mecys_rtz",
+    "name": "ECDIS MECys PM3D2 (.rtz)",
+    "category": "🇩🇪 Raytheon Anschütz & SAM",
+    "extension": ".rtz",
+    "mimeType": "application/xml",
+    "description": "ECDIS MECys PM3D2 standard CIRM RTZ XML format."
+  },
+  {
+    "id": "spos_xml",
+    "name": "MeteoGroup / DTN SPOS (.xml)",
+    "category": "🌦️ Weather Routing & Fleet Systems",
+    "extension": ".xml",
+    "mimeType": "application/xml",
+    "description": "MeteoGroup / DTN SPOS weather routing route exchange format."
+  },
+  {
+    "id": "bon_voyage_bvs",
+    "name": "AWT Bon Voyage System (.bvs)",
+    "category": "🌦️ Weather Routing & Fleet Systems",
+    "extension": ".bvs",
+    "mimeType": "text/plain",
+    "description": "AWT Bon Voyage System (BVS) marine weather routing file format."
+  },
+  {
+    "id": "opengis_kml",
+    "name": "Google Earth OpenGIS (.kml)",
+    "category": "📊 GIS, Office & Open Formats",
+    "extension": ".kml",
+    "mimeType": "application/vnd.google-earth.kml+xml",
+    "description": "OpenGIS KML 2.2 format for Google Earth, GIS & ECDIS track verification."
+  },
+  {
+    "id": "bridgemate_xml",
+    "name": "Marine Tech BridgeMate-DP2 (.xml)",
+    "category": "📊 GIS, Office & Open Formats",
+    "extension": ".xml",
+    "mimeType": "application/xml",
+    "description": "Marine Technologies BridgeMate DP2 XML navigation route format."
+  },
+  {
+    "id": "admiralty_adc_txt",
+    "name": "Admiralty Digital Catalogue ADC (.txt)",
+    "category": "📊 GIS, Office & Open Formats",
+    "extension": ".txt",
+    "mimeType": "text/plain",
+    "description": "UKHO Admiralty Digital Catalogue (ADC) standard waypoint route file."
+  },
+  {
+    "id": "maxsea_wpt",
+    "name": "MaxSea / TimeZero (.wpt)",
+    "category": "📊 GIS, Office & Open Formats",
+    "extension": ".wpt",
+    "mimeType": "text/plain",
+    "description": "MaxSea Marine / TimeZero WPT waypoint exchange format."
+  },
+  {
+    "id": "totem_csv",
+    "name": "TOTEM Plus ECDIS (.csv)",
+    "category": "📊 GIS, Office & Open Formats",
+    "extension": ".csv",
+    "mimeType": "text/csv",
+    "description": "Totem Plus ECDIS CSV route format."
+  },
+  {
+    "id": "native_csv",
+    "name": "Native Excel Spreadsheet (.csv)",
+    "category": "📊 GIS, Office & Open Formats",
+    "extension": ".csv",
+    "mimeType": "text/csv",
+    "description": "Structured spreadsheet format with columns for WPT, Lat, Long, Course, Distance, XTD & Speed."
+  }
+];
 
   // --- Core Universal Parser ---
   function parseAny(text, filename) {
@@ -445,7 +484,8 @@
 
     // 3. Line-by-line parsing (CSV, RT3, Sperry, Furuno TXT, JRC, etc.)
     const lines = trimmed.split(/\r?\n/);
-    const dmsRegex = /(\d{1,2})[°\s\-:]+(\d{1,2}(?:\.\d+)?)[′'\s]*([NSns])[\s,;\t/]+(\d{1,3})[°\s\-:]+(\d{1,2}(?:\.\d+)?)[′'\s]*([EWew])/;
+    const dmsRegex = /(\d{1,2})[°\s\-:,	]+(\d{1,2}(?:\.\d+)?)[′'\s,]*([NSns])[\s,;\t\/]+(\d{1,3})[°\s\-:,	]+(\d{1,2}(?:\.\d+)?)[′'\s,]*([EWew])/i;
+    const splitDmsRegex = /(?:^|[,\t;])\s*(\d{1,2})\s*[,;\t]\s*(\d{1,2}(?:\.\d+)?)\s*[,;\t]\s*([NSns])\s*[,;\t]\s*(\d{1,3})\s*[,;\t]\s*(\d{1,2}(?:\.\d+)?)\s*[,;\t]\s*([EWew])/i;
     const nmeaRegex = /(\d{2})(\d{2}\.\d+)[,\s]*([NSns])[\s,;\t/]+(\d{2,3})(\d{2}\.\d+)[,\s]*([EWew])/;
     const decRegex = /([+-]?\d{1,3}\.\d{3,8})[\s,;\t]+([+-]?\d{1,3}\.\d{3,8})/;
 
@@ -469,8 +509,8 @@
       // Skip table header lines
       if (/^(wpt|no|index|waypoint|name|lat|latitude|leg)/i.test(line) && !/\d{2}/.test(line)) continue;
 
-      // Match DMS
-      let m = line.match(dmsRegex);
+      // Match DMS (unified or split columns)
+      let m = line.match(dmsRegex) || line.match(splitDmsRegex);
       if (m) {
         const latDeg = parseFloat(m[1]), latMin = parseFloat(m[2]), latDir = m[3].toUpperCase();
         const lonDeg = parseFloat(m[4]), lonMin = parseFloat(m[5]), lonDir = m[6].toUpperCase();
@@ -653,7 +693,8 @@
         return out;
       }
 
-      case 'jrc_csv': {
+      case 'jrc_csv':
+      case 'chartco_csv': {
         let out = `// JRC ECDIS Route File\n`;
         out += `// Route Name: ${rName}\n`;
         out += `No.,Name,Latitude,Longitude,Leg type,Turn radius,Port XTD,Starboard XTD,Plan speed\n`;
