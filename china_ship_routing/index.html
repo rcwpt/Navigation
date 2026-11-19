@@ -1230,7 +1230,22 @@
       </div>
     </div>
 
-    <!-- SEARCH & FILTER -->
+    <!-- SIDEBAR TABS -->
+    <div class="sidebar-tabs">
+      <button class="tab-btn active" id="tab-routing" data-tab="routing">
+        <i class="fa-solid fa-compass"></i>
+        <span id="tab-lbl-routing">China Routing Systems</span>
+      </button>
+      <button class="tab-btn" id="tab-compare" data-tab="compare">
+        <i class="fa-solid fa-code-compare"></i>
+        <span id="tab-lbl-compare">Route Compare</span>
+        <span class="compare-badge" id="compare-status-badge">NEW</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: CHINA ROUTING SYSTEMS PANEL -->
+    <div class="tab-panel active" id="panel-routing">
+      <!-- SEARCH & FILTER -->
     <div class="filter-section">
       <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -1302,6 +1317,43 @@
         Click on any navigation route, TSS scheme, or warning zone to inspect coordinates, courses, distances, corridor widths, and navigation notices.
       </div>
     </div>
+    </div> <!-- END OF PANEL-ROUTING -->
+
+    <!-- TAB 2: ROUTE COMPARE PANEL -->
+    <div class="tab-panel" id="panel-compare">
+      <!-- FILE UPLOAD DROPZONE -->
+      <div class="compare-upload-box" id="drop-zone">
+        <input type="file" id="route-file-input" accept=".rtz,.gpx,.csv,.kml,.xml,.json,.geojson,.txt" style="display:none;">
+        <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <div class="upload-title" id="upload-title">Import Vessel Route to Compare</div>
+        <div class="upload-sub" id="upload-sub">Supports ECDIS RTZ, GPX, CSV, KML, TXT, JSON</div>
+        <div class="upload-actions">
+          <button class="quick-pill-btn btn-teal" id="btn-browse-file"><i class="fa-solid fa-folder-open"></i> <span id="lbl-browse">Browse File</span></button>
+          <button class="quick-pill-btn" id="btn-toggle-paste"><i class="fa-solid fa-paste"></i> <span id="lbl-paste">Paste Text</span></button>
+          <button class="quick-pill-btn" id="btn-load-demo"><i class="fa-solid fa-star"></i> <span id="lbl-demo">Demo Route</span></button>
+        </div>
+      </div>
+
+      <!-- PASTE DRAWER -->
+      <div class="paste-drawer" id="paste-drawer">
+        <textarea id="paste-input" class="paste-textarea" placeholder="Paste coordinates here... e.g.:&#10;WP01, 38°58.8'N, 117°51.0'E&#10;WP02, 38°45.0'N, 121°15.0'E&#10;or standard CSV/DMS text"></textarea>
+        <div style="display:flex; gap:6px; justify-content:flex-end;">
+          <button class="quick-pill-btn" id="btn-cancel-paste">Cancel</button>
+          <button class="quick-pill-btn btn-teal" id="btn-parse-paste"><i class="fa-solid fa-check"></i> Parse Route</button>
+        </div>
+      </div>
+
+      <!-- COMPARE DETAILS & RESULTS CONTAINER -->
+      <div id="compare-results-container">
+        <div class="empty-compare-state" id="compare-empty-state">
+          <div class="empty-compare-icon"><i class="fa-solid fa-route"></i></div>
+          <strong id="empty-cmp-title">No Route Loaded for Comparison</strong>
+          <p style="font-size: 0.70rem; margin-top: 6px; line-height: 1.4;" id="empty-cmp-desc">
+            Import your vessel's passage plan (.rtz, .gpx, .csv) or load the demo route to inspect safety clearances, warning zones, and alignment with China Coastal Public Routes.
+          </p>
+        </div>
+      </div>
+    </div> <!-- END OF PANEL-COMPARE -->
 
     <!-- FOOTER / ACTIONS -->
     <div class="sidebar-footer">
@@ -1331,7 +1383,11 @@
       <strong>China Ship Routing</strong>
       <span style="font-size: 0.68rem; color: #a0aec0; margin-left: 6px;">Full Coastal Network</span>
     </div>
-    <span class="engine-tag" id="basemap-tag">OPENSTREETMAP</span>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button id="btn-quick-compare" class="lang-toggle-btn" style="border-color:var(--teal-accent); color:var(--teal-accent); display:flex; align-items:center; gap:4px;" title="Import route for comparison">
+        <i class="fa-solid fa-code-compare"></i> <span id="quick-compare-txt">Compare Route</span>
+      </button>
+      <span class="engine-tag" id="basemap-tag"></div>OPENSTREETMAP</span>
   </div>
 
   <!-- REALTIME CURSOR HUD -->
