@@ -1612,7 +1612,11 @@
     attribution: 'Map data: &copy; OpenSeaMap contributors'
   }).addTo(map);
 
+  // Comparison Route Overlay Layer
+  const comparisonLayerGroup = L.layerGroup().addTo(map);
+
   const overlayMaps = {
+    "⚖️ Imported Comparison Route": comparisonLayerGroup,
     "🌊 OpenSeaMap Marine Seamarks": openSeaMap,
     "🚢 National Outer Routes": layerGroups.national_outer,
     "⛴️ National Inner Routes": layerGroups.national_inner,
