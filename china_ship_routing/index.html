@@ -743,7 +743,446 @@
         top: 56px;
       }
     }
+  
+    /* SIDEBAR TABS */
+    .sidebar-tabs {
+      display: flex;
+      background: var(--navy-900);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      position: relative;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: var(--teal-accent);
+      background: rgba(0, 210, 211, 0.08);
+      border-bottom-color: var(--teal-accent);
+    }
+
+    .compare-badge {
+      font-size: 0.60rem;
+      padding: 1px 5px;
+      border-radius: 8px;
+      background: rgba(0, 210, 211, 0.25);
+      color: var(--teal-accent);
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .compare-badge.active-route {
+      background: #00b894;
+      color: #ffffff;
+    }
+
+    .compare-badge.danger {
+      background: #d63031;
+      color: #ffffff;
+    }
+
+    /* TAB CONTENT PANELS */
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
+    /* DROPZONE & UPLOAD BOX */
+    .compare-upload-box {
+      margin: 12px;
+      padding: 16px 12px;
+      border: 2px dashed #38bdf8;
+      border-radius: 8px;
+      background: #f0f9ff;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .compare-upload-box:hover, .compare-upload-box.dragover {
+      background: #e0f2fe;
+      border-color: #0284c7;
+      transform: scale(1.01);
+    }
+
+    .upload-icon {
+      font-size: 1.8rem;
+      color: #0284c7;
+      margin-bottom: 6px;
+    }
+
+    .upload-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .upload-sub {
+      font-size: 0.68rem;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+
+    .upload-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* QUICK PILL BUTTONS */
+    .quick-pill-btn {
+      padding: 4px 9px;
+      border-radius: 4px;
+      font-size: 0.70rem;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .quick-pill-btn:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .quick-pill-btn.btn-teal {
+      background: #00d2d3;
+      border-color: #00b4b5;
+      color: #070e17;
+    }
+
+    .quick-pill-btn.btn-teal:hover {
+      background: #00bebf;
+    }
+
+    /* PASTE DRAWER */
+    .paste-drawer {
+      display: none;
+      margin: 0 12px 10px 12px;
+      padding: 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .paste-drawer.active {
+      display: block;
+    }
+
+    .paste-textarea {
+      width: 100%;
+      height: 90px;
+      padding: 8px;
+      font-size: 0.70rem;
+      font-family: monospace;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      resize: vertical;
+      margin-bottom: 6px;
+      box-sizing: border-box;
+    }
+
+    /* ROUTE OVERVIEW CARD */
+    .compare-route-card {
+      margin: 0 12px 12px 12px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+
+    .compare-card-header {
+      padding: 10px 12px;
+      background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .compare-route-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .compare-route-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .stat-badge-blue {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .stat-badge-green {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .stat-badge-orange {
+      background: rgba(249, 115, 22, 0.2);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+
+    .stat-badge-red {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* ACTION BAR */
+    .compare-actions-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .action-btn {
+      padding: 5px 6px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .action-btn.btn-danger-outline {
+      color: #dc2626;
+      border-color: #fca5a5;
+    }
+
+    .action-btn.btn-danger-outline:hover {
+      background: #fee2e2;
+    }
+
+    /* SPEED & TRANSIT ROW */
+    .transit-calc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #ffffff;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.72rem;
+      color: #475569;
+    }
+
+    .speed-input {
+      width: 52px;
+      padding: 2px 4px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* SAFETY ALERT CARD */
+    .safety-alert-card {
+      margin: 0 12px 10px 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .safety-alert-card.critical {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .safety-alert-card.caution {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+
+    .safety-alert-card.compliant {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .alert-card-header {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+    }
+
+    .alert-card-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .alert-card-item {
+      padding: 4px 6px;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 4px;
+      line-height: 1.35;
+    }
+
+    /* WAYPOINT MARKER ON MAP */
+    .wpt-compare-pin {
+      background: #ff4757;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      border-radius: 12px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    .wpt-compare-pin:hover {
+      transform: scale(1.15);
+      background: #ee5253;
+      z-index: 1000 !important;
+    }
+
+    .wpt-compare-pin.danger {
+      background: #d63031;
+      border-color: #feca57;
+      animation: pulse-danger 1.5s infinite;
+    }
+
+    @keyframes pulse-danger {
+      0% { box-shadow: 0 0 0 0 rgba(214, 48, 49, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(214, 48, 49, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(214, 48, 49, 0); }
+    }
+
+    /* MAP DROP OVERLAY */
+    .map-drop-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 25, 47, 0.88);
+      z-index: 5000;
+      border: 4px dashed #00d2d3;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #ffffff;
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+    }
+
+    .map-drop-overlay.active {
+      display: flex;
+    }
+
+    .empty-compare-state {
+      padding: 24px 16px;
+      text-align: center;
+      color: #64748b;
+    }
+
+    .empty-compare-icon {
+      font-size: 2.2rem;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .cmp-table tr.clickable-row {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .cmp-table tr.clickable-row:hover {
+      background: #f1f5f9;
+    }
+
+    .cmp-table tr.row-danger {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .cmp-table tr.row-caution {
+      background: #fffbeb;
+      color: #92400e;
+    }
   </style>
+
 </head>
 <body>
 
@@ -878,7 +1317,13 @@
   <button id="sidebar-toggle" title="Toggle Sidebar">◀</button>
 
   <!-- MAP CONTAINER -->
-  <main id="map"></main>
+  <main id="map">
+    <div id="map-drop-overlay" class="map-drop-overlay">
+      <i class="fa-solid fa-ship" style="font-size:3rem; margin-bottom:12px; color:var(--teal-accent);"></i>
+      <h2 style="font-size:1.4rem; font-weight:700;">Drop Route File to Compare</h2>
+      <p style="color:#94a3b8; font-size:0.85rem; margin-top:4px;">Supports RTZ, GPX, CSV, KML, TXT coordinates</p>
+    </div>
+  </main>
 
   <!-- MAP BADGE OVERLAY -->
   <div class="map-badge-overlay">
@@ -906,6 +1351,10 @@
 </script>
 
 <!-- TINY WORLD MAP SCRIPT -->
+
+<!-- ROUTE CONVERTER & COMPARATOR ENGINE -->
+<script src="route_converter.js"></script>
+<script src="route_comparator.js"></script>
 <script src="tiny-world-all-10000.js"></script>
 
 <!-- DATASET SCRIPT -->
@@ -2048,7 +2497,605 @@
     }
   });
 
+  
+  // --- 14B. ROUTE COMPARISON & SAFETY AUDIT ENGINE ---
+  let activeComparisonRoute = null;
+  let activeAuditResult = null;
+  let cruisingSpeed = 12.0;
+  let activeTab = 'routing';
+
+  function switchTab(tabName) {
+    activeTab = tabName;
+    const btnRouting = document.getElementById('tab-routing');
+    const btnCompare = document.getElementById('tab-compare');
+    const panelRouting = document.getElementById('panel-routing');
+    const panelCompare = document.getElementById('panel-compare');
+
+    if (tabName === 'compare') {
+      btnRouting.classList.remove('active');
+      btnCompare.classList.add('active');
+      panelRouting.classList.remove('active');
+      panelCompare.classList.add('active');
+    } else {
+      btnCompare.classList.remove('active');
+      btnRouting.classList.add('active');
+      panelCompare.classList.remove('active');
+      panelRouting.classList.add('active');
+    }
+    setTimeout(() => { map.invalidateSize(); }, 120);
+  }
+
+  function handleRouteImport(textOrObj, filename) {
+    try {
+      let parsed = null;
+      if (typeof textOrObj === 'string') {
+        if (typeof window.RouteConverter !== 'undefined' && typeof window.RouteConverter.parseAny === 'function') {
+          parsed = window.RouteConverter.parseAny(textOrObj, filename);
+        } else {
+          // Internal fallback parser
+          const lines = textOrObj.trim().split(/\r?\n/);
+          const rawWpts = [];
+          lines.forEach((l, idx) => {
+            const tokens = l.split(/[,\t;]+/).map(t => t.trim().replace(/^[\"']|[\"']$/g, '')).filter(Boolean);
+            if (tokens.length >= 2) {
+              const n0 = parseFloat(tokens[0]), n1 = parseFloat(tokens[1]), n2 = tokens.length > 2 ? parseFloat(tokens[2]) : NaN;
+              let lat = null, lon = null, name = null;
+              if (!isNaN(n1) && !isNaN(n2) && Math.abs(n1) <= 90 && Math.abs(n2) <= 180) {
+                name = tokens[0]; lat = n1; lon = n2;
+              } else if (!isNaN(n0) && !isNaN(n1) && Math.abs(n0) <= 90 && Math.abs(n1) <= 180) {
+                lat = n0; lon = n1;
+              }
+              if (lat !== null && lon !== null) rawWpts.push({ id: name || 'WP' + (idx+1), name: name || 'WP' + (idx+1), lat, lon });
+            }
+          });
+          parsed = { routeName: filename || 'IMPORTED_ROUTE', waypoints: rawWpts };
+        }
+      } else if (textOrObj && Array.isArray(textOrObj.waypoints)) {
+        parsed = textOrObj;
+      }
+
+      if (!parsed || !parsed.waypoints || parsed.waypoints.length === 0) {
+        alert(i18n[currentLang].fileReadError || 'Could not parse any valid waypoints from file.');
+        return;
+      }
+
+      // Ensure waypoints have recalculated distances and courses
+      if (typeof window.RouteConverter !== 'undefined' && typeof window.RouteConverter.recalculateRoute === 'function') {
+        parsed.waypoints = window.RouteConverter.recalculateRoute(parsed.waypoints);
+        parsed.totalDistance = parsed.waypoints.length > 0 ? (parsed.waypoints[parsed.waypoints.length - 1].accDist || 0) : 0;
+      }
+
+      activeComparisonRoute = parsed;
+
+      // Run Safety Audit against China Systems
+      if (typeof window.RouteComparator !== 'undefined' && typeof window.RouteComparator.auditRouteAgainstChinaSystems === 'function') {
+        activeAuditResult = window.RouteComparator.auditRouteAgainstChinaSystems(activeComparisonRoute, DATA);
+      } else {
+        activeAuditResult = {
+          isValid: true,
+          routeName: activeComparisonRoute.routeName,
+          totalWaypoints: activeComparisonRoute.waypoints.length,
+          totalDistance: activeComparisonRoute.totalDistance || 0,
+          overallStatus: 'COMPLIANT',
+          violations: [],
+          legAudits: [],
+          primaryMatchedRoute: 'China Coastal Route'
+        };
+      }
+
+      // Render on Map
+      renderComparisonRouteOnMap();
+
+      // Update UI in Sidebar
+      updateComparisonUI();
+
+      // Switch to Comparison Tab
+      switchTab('compare');
+
+      // Fit Bounds to Route
+      fitComparisonRoute();
+
+      // Update Badge
+      const badgeEl = document.getElementById('compare-status-badge');
+      if (badgeEl) {
+        if (activeAuditResult.hasNoSailViolation) {
+          badgeEl.className = 'compare-badge danger';
+          badgeEl.innerText = 'DANGER';
+        } else {
+          badgeEl.className = 'compare-badge active-route';
+          badgeEl.innerText = activeComparisonRoute.waypoints.length + ' WPT';
+        }
+      }
+
+    } catch (err) {
+      console.error('Route Import Error:', err);
+      alert('Error parsing route: ' + (err.message || err));
+    }
+  }
+
+  function renderComparisonRouteOnMap() {
+    comparisonLayerGroup.clearLayers();
+    if (!activeComparisonRoute || !activeComparisonRoute.waypoints || activeComparisonRoute.waypoints.length === 0) return;
+
+    const wpts = activeComparisonRoute.waypoints;
+    const t = i18n[currentLang];
+    const isEn = (currentLang === 'en');
+
+    // Draw Route Legs
+    for (let i = 0; i < wpts.length - 1; i++) {
+      const w1 = wpts[i];
+      const w2 = wpts[i + 1];
+      const pt1 = [w1.lat, w1.lon];
+      const pt2 = [w2.lat, w2.lon];
+
+      let isDangerLeg = false;
+      let isCautionLeg = false;
+      if (activeAuditResult && activeAuditResult.legAudits && activeAuditResult.legAudits[i]) {
+        const la = activeAuditResult.legAudits[i];
+        if (la.severity === 'CRITICAL') isDangerLeg = true;
+        else if (la.severity === 'CAUTION') isCautionLeg = true;
+      }
+
+      // Outer casing line for high-contrast on any nautical basemap
+      const casing = L.polyline([pt1, pt2], {
+        color: '#070e17',
+        weight: 6,
+        opacity: 0.85
+      });
+      casing.addTo(comparisonLayerGroup);
+
+      // Core colored line
+      const coreColor = isDangerLeg ? '#d63031' : (isCautionLeg ? '#f39c12' : '#ff4757');
+      const core = L.polyline([pt1, pt2], {
+        color: coreColor,
+        weight: 3.5,
+        opacity: 0.95,
+        dashArray: isDangerLeg ? '5, 4' : '8, 6'
+      });
+      core.addTo(comparisonLayerGroup);
+
+      // Leg Popup
+      const legDist = (w1.dist !== undefined ? w1.dist : 0).toFixed(1);
+      const legCrs = (w1.course !== undefined ? w1.course : 0).toFixed(1);
+      const legInfo = activeAuditResult && activeAuditResult.legAudits && activeAuditResult.legAudits[i] ? activeAuditResult.legAudits[i] : null;
+
+      core.bindPopup(`
+        <div style="padding: 6px 8px; min-width: 200px;">
+          <strong style="color:${coreColor};">${isDangerLeg ? '🚨 RESTRICTED LEG' : '🚢 ROUTE LEG'} ${i+1}</strong><br>
+          <span style="font-size: 0.75rem; color:#0f172a; font-weight:600;">${w1.name} → ${w2.name}</span><br>
+          <div style="font-size: 0.70rem; color:#475569; margin-top:4px;">
+            <span>${t.course}: <strong>${legCrs}°</strong> | ${t.distance}: <strong>${legDist} NM</strong></span><br>
+            ${legInfo ? `<span>${t.primaryFairway}: <strong>${isEn ? legInfo.closestPublicRoute : legInfo.closestPublicRoute_zh}</strong></span><br>` : ''}
+            ${legInfo && legInfo.distanceToPublicNM !== null ? `<span>Offset: <strong>${legInfo.distanceToPublicNM.toFixed(1)} NM</strong> (${legInfo.alignment})</span><br>` : ''}
+            <span style="color:${isDangerLeg ? '#dc2626' : '#166534'}; font-weight:600;">${isEn ? (legInfo ? legInfo.notice_en : '') : (legInfo ? legInfo.notice_zh : '')}</span>
+          </div>
+        </div>
+      `);
+    }
+
+    // Draw Waypoint Markers
+    wpts.forEach((w, i) => {
+      let isDangerWpt = false;
+      if (activeAuditResult && activeAuditResult.violations) {
+        isDangerWpt = activeAuditResult.violations.some(v => v.severity === 'CRITICAL' && v.wptIndex === i);
+      }
+
+      const wpLabel = w.name || ('WP' + String(i + 1).padStart(2, '0'));
+      const iconHtml = `<div class="wpt-compare-pin ${isDangerWpt ? 'danger' : ''}"><span>${wpLabel}</span></div>`;
+      const icon = L.divIcon({
+        className: 'wpt-div-icon',
+        html: iconHtml,
+        iconSize: [52, 20],
+        iconAnchor: [26, 10]
+      });
+
+      const marker = L.marker([w.lat, w.lon], { icon: icon });
+      const crsStr = w.course !== undefined ? `${w.course.toFixed(1)}°` : '-';
+      const dstStr = w.dist !== undefined ? `${w.dist.toFixed(1)} NM` : '-';
+      const accStr = w.accDist !== undefined ? `${w.accDist.toFixed(1)} NM` : '-';
+
+      marker.bindPopup(`
+        <div style="padding: 6px 8px; min-width: 220px;">
+          <strong style="color: #0f172a; font-size: 0.85rem;">${wpLabel} (#${i+1})</strong><br>
+          <div style="font-size: 0.70rem; color: #475569; margin-top: 4px; line-height: 1.4;">
+            <span>${ddToDms(w.lat, true)}, ${ddToDms(w.lon, false)}</span><br>
+            <span>DD: ${w.lat.toFixed(5)}, ${w.lon.toFixed(5)}</span><br>
+            <span>${t.course}: <strong>${crsStr}</strong> | ${t.distance}: <strong>${dstStr}</strong></span><br>
+            <span>${t.colAccDist}: <strong>${accStr}</strong></span>
+          </div>
+          <button class="quick-pill-btn" style="margin-top: 6px; width: 100%; justify-content: center;" onclick="navigator.clipboard.writeText('${w.lat.toFixed(6)}, ${w.lon.toFixed(6)}')">
+            📋 ${t.copyCoords}
+          </button>
+        </div>
+      `);
+      marker.addTo(comparisonLayerGroup);
+    });
+  }
+
+  function updateComparisonUI() {
+    const container = document.getElementById('compare-results-container');
+    if (!container) return;
+
+    if (!activeComparisonRoute || !activeComparisonRoute.waypoints || activeComparisonRoute.waypoints.length === 0) {
+      container.innerHTML = `
+        <div class="empty-compare-state" id="compare-empty-state">
+          <div class="empty-compare-icon"><i class="fa-solid fa-route"></i></div>
+          <strong id="empty-cmp-title">${i18n[currentLang].emptyCompareTitle}</strong>
+          <p style="font-size: 0.70rem; margin-top: 6px; line-height: 1.4;" id="empty-cmp-desc">
+            ${i18n[currentLang].emptyCompareSub}
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    const t = i18n[currentLang];
+    const isEn = (currentLang === 'en');
+    const r = activeComparisonRoute;
+    const a = activeAuditResult || {};
+    const totalDist = (r.totalDistance || 0).toFixed(1);
+    const wptsCount = r.waypoints.length;
+
+    // Calculate transit time
+    const hours = (r.totalDistance || 0) / cruisingSpeed;
+    const days = Math.floor(hours / 24);
+    const remHours = Math.round(hours % 24);
+    const transitTimeStr = days > 0 ? `${days}d ${remHours}h` : `${remHours}h`;
+
+    // Status Badge & Alert
+    let statusClass = 'stat-badge-green';
+    let statusTxt = t.statusCompliant;
+    let cardAlertClass = 'compliant';
+    let cardAlertTitle = `✅ ${t.statusCompliant}`;
+
+    if (a.hasNoSailViolation) {
+      statusClass = 'stat-badge-red';
+      statusTxt = t.statusCritical;
+      cardAlertClass = 'critical';
+      cardAlertTitle = `🚨 ${t.statusCritical}`;
+    } else if (a.hasTssViolation || a.hasPrecautionaryTransit) {
+      statusClass = 'stat-badge-orange';
+      statusTxt = t.statusCaution;
+      cardAlertClass = 'caution';
+      cardAlertTitle = `⚠️ ${t.statusCaution}`;
+    }
+
+    // Build Violations List HTML
+    let alertsHtml = '';
+    if (a.violations && a.violations.length > 0) {
+      const items = a.violations.map(v => `
+        <li class="alert-card-item">
+          <strong>[${v.severity}] ${isEn ? v.title_en : v.title_zh}</strong><br>
+          <span style="font-size: 0.68rem; color: #475569;">${isEn ? v.desc_en : v.desc_zh}</span>
+        </li>
+      `).join('');
+      alertsHtml = `<ul class="alert-card-list" style="margin-top:6px;">${items}</ul>`;
+    }
+
+    // Build Table Rows
+    const tableRows = r.waypoints.map((w, i) => {
+      const crsStr = w.course !== undefined ? `${w.course.toFixed(0)}°` : '-';
+      const dstStr = w.dist !== undefined ? `${w.dist.toFixed(1)}` : '-';
+      const accStr = w.accDist !== undefined ? `${w.accDist.toFixed(1)}` : '-';
+      const legInfo = a.legAudits && a.legAudits[i] ? a.legAudits[i] : null;
+
+      let rowClass = 'clickable-row';
+      let statusBadge = '<span class="stat-badge stat-badge-green">SAFE</span>';
+      if (legInfo) {
+        if (legInfo.severity === 'CRITICAL') {
+          rowClass += ' row-danger';
+          statusBadge = '<span class="stat-badge stat-badge-red">DANGER</span>';
+        } else if (legInfo.severity === 'CAUTION') {
+          rowClass += ' row-caution';
+          statusBadge = '<span class="stat-badge stat-badge-orange">CAUTION</span>';
+        }
+      }
+
+      const fairwayName = legInfo ? (isEn ? legInfo.closestPublicRoute : legInfo.closestPublicRoute_zh) : '-';
+
+      return `
+        <tr class="${rowClass}" data-wpt-idx="${i}">
+          <td style="font-weight:700;">${w.name || 'WP' + (i+1)}</td>
+          <td>${ddToDms(w.lat, true)}<br>${ddToDms(w.lon, false)}</td>
+          <td>${crsStr}<br><span style="color:#64748b;">${dstStr} NM</span></td>
+          <td style="font-weight:600;">${accStr}</td>
+          <td style="font-size:0.68rem;">${fairwayName}</td>
+          <td>${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <!-- ROUTE OVERVIEW CARD -->
+      <div class="compare-route-card">
+        <div class="compare-card-header">
+          <div class="compare-route-name">
+            <i class="fa-solid fa-ship" style="color:var(--teal-accent);"></i>
+            <span>${r.routeName || 'VESSEL_ROUTE'}</span>
+          </div>
+          <span class="stat-badge ${statusClass}">${wptsCount} WPTs</span>
+        </div>
+
+        <div style="padding: 10px 12px; background: #ffffff;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <span style="font-size:0.68rem; color:#64748b;">${t.distance}:</span>
+              <strong style="font-size:1.1rem; color:#0f172a; margin-left:4px;">${totalDist} NM</strong>
+            </div>
+            <div>
+              <span style="font-size:0.68rem; color:#64748b;">${t.transitTime}:</span>
+              <strong style="font-size:0.95rem; color:#00b894; margin-left:4px;">${transitTimeStr}</strong>
+            </div>
+          </div>
+
+          <div style="font-size:0.72rem; color:#475569; margin-bottom:6px;">
+            <span>${t.primaryFairway}: <strong>${a.primaryMatchedRoute || '-'}</strong></span>
+          </div>
+        </div>
+
+        <!-- SPEED ADJUSTMENT ROW -->
+        <div class="transit-calc-row">
+          <span><i class="fa-solid fa-gauge-high"></i> ${t.speedKts}:</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="number" id="input-cruising-speed" class="speed-input" value="${cruisingSpeed}" min="1" max="40" step="0.5">
+            <span>kts</span>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="compare-actions-bar">
+          <button class="action-btn" id="btn-fit-cmp"><i class="fa-solid fa-crosshairs"></i> ${t.fitRoute}</button>
+          <button class="action-btn" id="btn-toggle-cmp"><i class="fa-solid fa-eye"></i> ${t.showHideRoute}</button>
+          <button class="action-btn" id="btn-copy-report"><i class="fa-solid fa-copy"></i> ${t.copyReport}</button>
+          <button class="action-btn btn-danger-outline" id="btn-clear-cmp"><i class="fa-solid fa-trash"></i> ${t.clearRoute}</button>
+        </div>
+      </div>
+
+      <!-- SAFETY AUDIT ALERT CARD -->
+      <div class="safety-alert-card ${cardAlertClass}">
+        <div class="alert-card-header">
+          <span>${cardAlertTitle}</span>
+        </div>
+        ${alertsHtml}
+      </div>
+
+      <!-- WAYPOINT & LEG COMPARISON TABLE -->
+      <div style="margin: 0 12px 16px 12px;">
+        <strong style="font-size: 0.74rem; color: #334155; display:block; margin-bottom: 6px;">
+          ${t.wptsTableTitle} (${wptsCount}):
+        </strong>
+        <table class="detail-table coords-table cmp-table" style="font-size: 0.68rem;">
+          <thead>
+            <tr>
+              <th>${t.colWpt}</th>
+              <th>${t.colCoords}</th>
+              <th>${t.colCourse}</th>
+              <th>${t.colAccDist}</th>
+              <th>${t.colPublic}</th>
+              <th>${t.colStatus}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Attach dynamic listeners
+    const speedInput = document.getElementById('input-cruising-speed');
+    if (speedInput) {
+      speedInput.addEventListener('change', () => {
+        cruisingSpeed = parseFloat(speedInput.value) || 12.0;
+        updateComparisonUI();
+      });
+    }
+
+    const btnFit = document.getElementById('btn-fit-cmp');
+    if (btnFit) btnFit.addEventListener('click', fitComparisonRoute);
+
+    const btnToggle = document.getElementById('btn-toggle-cmp');
+    if (btnToggle) {
+      btnToggle.addEventListener('click', () => {
+        if (map.hasLayer(comparisonLayerGroup)) map.removeLayer(comparisonLayerGroup);
+        else map.addLayer(comparisonLayerGroup);
+      });
+    }
+
+    const btnCopyReport = document.getElementById('btn-copy-report');
+    if (btnCopyReport) {
+      btnCopyReport.addEventListener('click', () => {
+        if (typeof window.RouteComparator !== 'undefined' && typeof window.RouteComparator.generateReportText === 'function') {
+          const rep = window.RouteComparator.generateReportText(activeAuditResult, cruisingSpeed);
+          navigator.clipboard.writeText(rep).then(() => {
+            btnCopyReport.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            setTimeout(() => { btnCopyReport.innerHTML = '<i class="fa-solid fa-copy"></i> ' + t.copyReport; }, 2000);
+          });
+        }
+      });
+    }
+
+    const btnClear = document.getElementById('btn-clear-cmp');
+    if (btnClear) btnClear.addEventListener('click', clearComparisonRoute);
+
+    // Row click: zoom to waypoint
+    container.querySelectorAll('.clickable-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const idx = parseInt(row.getAttribute('data-wpt-idx'), 10);
+        if (activeComparisonRoute && activeComparisonRoute.waypoints && activeComparisonRoute.waypoints[idx]) {
+          const targetWp = activeComparisonRoute.waypoints[idx];
+          map.flyTo([targetWp.lat, targetWp.lon], 11, { duration: 0.8 });
+          if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
+        }
+      });
+    });
+  }
+
+  function clearComparisonRoute() {
+    comparisonLayerGroup.clearLayers();
+    activeComparisonRoute = null;
+    activeAuditResult = null;
+    updateComparisonUI();
+    const badgeEl = document.getElementById('compare-status-badge');
+    if (badgeEl) {
+      badgeEl.className = 'compare-badge';
+      badgeEl.innerText = i18n[currentLang].compareBadgeNew || 'NEW';
+    }
+  }
+
+  function fitComparisonRoute() {
+    if (!activeComparisonRoute || !activeComparisonRoute.waypoints || activeComparisonRoute.waypoints.length === 0) return;
+    const pts = activeComparisonRoute.waypoints.map(w => [w.lat, w.lon]);
+    map.fitBounds(L.latLngBounds(pts), { padding: [70, 70] });
+    if (typeof autoCloseMobileDrawer === 'function') autoCloseMobileDrawer();
+  }
+
+  function loadDemoRoute() {
+    if (typeof window.RouteComparator !== 'undefined' && typeof window.RouteComparator.getDemoRoute === 'function') {
+      const demo = window.RouteComparator.getDemoRoute();
+      handleRouteImport(demo, 'TIANJIN_TO_SHANGHAI_COASTAL.rtz');
+    }
+  }
+
   // --- 15. INITIALIZE IN ENGLISH ---
+  
+  // --- TAB NAVIGATION LISTENERS ---
+  const tabRoutingBtn = document.getElementById('tab-routing');
+  const tabCompareBtn = document.getElementById('tab-compare');
+  if (tabRoutingBtn) tabRoutingBtn.addEventListener('click', () => switchTab('routing'));
+  if (tabCompareBtn) tabCompareBtn.addEventListener('click', () => switchTab('compare'));
+
+  const quickCompareBadgeBtn = document.getElementById('btn-quick-compare');
+  if (quickCompareBadgeBtn) {
+    quickCompareBadgeBtn.addEventListener('click', () => {
+      switchTab('compare');
+      const fileInput = document.getElementById('route-file-input');
+      if (fileInput) fileInput.click();
+    });
+  }
+
+  // --- UPLOAD & FILE PICKER LISTENERS ---
+  const fileInputEl = document.getElementById('route-file-input');
+  const btnBrowseFile = document.getElementById('btn-browse-file');
+  const dropZone = document.getElementById('drop-zone');
+
+  if (btnBrowseFile && fileInputEl) {
+    btnBrowseFile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInputEl.click();
+    });
+  }
+
+  if (dropZone && fileInputEl) {
+    dropZone.addEventListener('click', () => {
+      fileInputEl.click();
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (evt) => handleRouteImport(evt.target.result, file.name);
+        reader.readAsText(file);
+      }
+    });
+  }
+
+  if (fileInputEl) {
+    fileInputEl.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (evt) => handleRouteImport(evt.target.result, file.name);
+        reader.readAsText(file);
+        fileInputEl.value = '';
+      }
+    });
+  }
+
+  // --- PASTE TEXT LISTENERS ---
+  const btnTogglePaste = document.getElementById('btn-toggle-paste');
+  const pasteDrawer = document.getElementById('paste-drawer');
+  const btnCancelPaste = document.getElementById('btn-cancel-paste');
+  const btnParsePaste = document.getElementById('btn-parse-paste');
+  const pasteInput = document.getElementById('paste-input');
+
+  if (btnTogglePaste && pasteDrawer) {
+    btnTogglePaste.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pasteDrawer.classList.toggle('active');
+    });
+  }
+
+  if (btnCancelPaste && pasteDrawer) {
+    btnCancelPaste.addEventListener('click', () => {
+      pasteDrawer.classList.remove('active');
+    });
+  }
+
+  if (btnParsePaste && pasteInput) {
+    btnParsePaste.addEventListener('click', () => {
+      const text = pasteInput.value.trim();
+      if (!text) return;
+      handleRouteImport(text, 'PASTED_ROUTE');
+      pasteDrawer.classList.remove('active');
+      pasteInput.value = '';
+    });
+  }
+
+  // --- DEMO ROUTE BUTTON ---
+  const btnLoadDemo = document.getElementById('btn-load-demo');
+  if (btnLoadDemo) {
+    btnLoadDemo.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadDemoRoute();
+    });
+  }
+
+  // --- MAP DRAG & DROP OVERLAY LISTENERS ---
+  const mapEl = document.getElementById('map');
+  const mapOverlay = document.getElementById('map-drop-overlay');
+
+  if (mapEl && mapOverlay) {
+    window.addEventListener('dragenter', (e) => {
+      if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+        mapOverlay.classList.add('active');
+      }
+    });
+
+    mapEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    mapOverlay.addEventListener('dragleave', (e) => {
+      if (e.relatedTarget === null || !mapOverlay.contains(e.relatedTarget)) {
+        mapOverlay.classList.remove('active');
+      }
+    });
+
+    window.addEventListener('drop', (e) => {
+      mapOverlay.classList.remove('active');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (evt) => handleRouteImport(evt.target.result, file.name);
+        reader.readAsText(file);
+      }
+    });
+  }
+
   updateLanguage('en');
 
   // Initial fit to bounding box

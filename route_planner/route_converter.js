@@ -547,26 +547,53 @@
         continue;
       }
 
-      // Match Decimal
-      m = line.match(decRegex);
+      // Match Delimited / CSV / Decimal tokens
+      const tokens = line.split(/[,\t;]+/).map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+      if (tokens.length >= 2) {
+        let name = null, lat = null, lon = null;
+        const num0 = parseFloat(tokens[0]);
+        const num1 = parseFloat(tokens[1]);
+        const num2 = tokens.length > 2 ? parseFloat(tokens[2]) : NaN;
+
+        if (!isNaN(num1) && !isNaN(num2) && Math.abs(num1) <= 90 && Math.abs(num2) <= 180) {
+          name = tokens[0];
+          lat = num1;
+          lon = num2;
+        } else if (!isNaN(num0) && !isNaN(num1) && Math.abs(num0) <= 90 && Math.abs(num1) <= 180) {
+          lat = num0;
+          lon = num1;
+          if (tokens.length > 2 && isNaN(num2)) name = tokens[2];
+        } else if (!isNaN(num0) && !isNaN(num1) && Math.abs(num0) > 90 && Math.abs(num0) <= 180 && Math.abs(num1) <= 90) {
+          // Swapped lon/lat
+          lon = num0;
+          lat = num1;
+          if (tokens.length > 2 && isNaN(num2)) name = tokens[2];
+        }
+
+        if (lat !== null && lon !== null) {
+          rawWpts.push({ id: name || `WP${String(idCounter).padStart(3, '0')}`, name: name || `WP${String(idCounter).padStart(3, '0')}`, lat, lon });
+          idCounter++;
+          continue;
+        }
+      }
+
+      // Regex fallback for decimal with arbitrary whitespace
+      m = line.match(/([+-]?\d{1,3}(?:\.\d+)?)\s*[,;\t\s]+\s*([+-]?\d{1,3}(?:\.\d+)?)/);
       if (m) {
         const v1 = parseFloat(m[1]), v2 = parseFloat(m[2]);
         const lat = Math.abs(v1) <= 90 ? v1 : v2;
         const lon = Math.abs(v1) <= 90 ? v2 : v1;
-
-        let wpName = null;
-        const parts = line.split(/[,\t;=]/);
-        if (parts.length >= 2 && isNaN(parseFloat(parts[0].trim()))) {
-          wpName = parts[0].trim().replace(/^["']|["']$/g, '');
+        if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+          rawWpts.push({ id: `WP${String(idCounter).padStart(3, '0')}`, name: `WP${String(idCounter).padStart(3, '0')}`, lat, lon });
+          idCounter++;
+          continue;
         }
-
-        rawWpts.push({ id: wpName || `WP${String(idCounter).padStart(3, '0')}`, lat, lon });
-        idCounter++;
-        continue;
       }
     }
 
-    return { routeName, waypoints: recalculateRoute(rawWpts) };
+    const waypoints = recalculateRoute(rawWpts);
+    const totalDistance = waypoints.length > 0 ? (waypoints[waypoints.length - 1].accDist || 0) : 0;
+    return { routeName, waypoints, totalDistance };
   }
 
   // --- Core Serializer to 31 Formats ---
